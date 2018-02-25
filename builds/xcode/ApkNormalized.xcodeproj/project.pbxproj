@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D651193C2042392D00805001 /* apk-normalized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D651193B2042392D00805001 /* apk-normalized.cpp */; };
+		D6511947204243D200805001 /* apk-normalized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6511943204243D200805001 /* apk-normalized.cpp */; };
+		D6511948204243D200805001 /* UnZipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6511945204243D200805001 /* UnZipper.cpp */; };
+		D651194F2042457700805001 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D651194D2042457700805001 /* Zipper.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +26,11 @@
 
 /* Begin PBXFileReference section */
 		D65119312041AF8400805001 /* ApkNormalized */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ApkNormalized; sourceTree = BUILT_PRODUCTS_DIR; };
-		D651193B2042392D00805001 /* apk-normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "apk-normalized.cpp"; path = "../apk-normalized.cpp"; sourceTree = "<group>"; };
+		D6511943204243D200805001 /* apk-normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "apk-normalized.cpp"; path = "../../apk-normalized.cpp"; sourceTree = "<group>"; };
+		D6511945204243D200805001 /* UnZipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UnZipper.cpp; sourceTree = "<group>"; };
+		D6511946204243D200805001 /* UnZipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UnZipper.h; sourceTree = "<group>"; };
+		D651194D2042457700805001 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
+		D651194E2042457700805001 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,9 +47,9 @@
 		D65119282041AF8400805001 = {
 			isa = PBXGroup;
 			children = (
-				D651193B2042392D00805001 /* apk-normalized.cpp */,
-				D651193D20423F6900805001 /* diff */,
-				D651193E20423F6900805001 /* patch */,
+				D6511943204243D200805001 /* apk-normalized.cpp */,
+				D6511942204243D200805001 /* diff */,
+				D6511944204243D200805001 /* patch */,
 				D65119322041AF8400805001 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,20 +62,24 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D651193D20423F6900805001 /* diff */ = {
+		D6511942204243D200805001 /* diff */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = diff;
-			path = ../src/diff;
+			path = ../../src/diff;
 			sourceTree = "<group>";
 		};
-		D651193E20423F6900805001 /* patch */ = {
+		D6511944204243D200805001 /* patch */ = {
 			isa = PBXGroup;
 			children = (
+				D6511945204243D200805001 /* UnZipper.cpp */,
+				D6511946204243D200805001 /* UnZipper.h */,
+				D651194D2042457700805001 /* Zipper.cpp */,
+				D651194E2042457700805001 /* Zipper.h */,
 			);
 			name = patch;
-			path = ../src/patch;
+			path = ../../src/patch;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -129,7 +139,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D651193C2042392D00805001 /* apk-normalized.cpp in Sources */,
+				D6511948204243D200805001 /* UnZipper.cpp in Sources */,
+				D651194F2042457700805001 /* Zipper.cpp in Sources */,
+				D6511947204243D200805001 /* apk-normalized.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
