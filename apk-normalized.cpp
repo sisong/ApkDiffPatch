@@ -10,9 +10,8 @@
 //  (需要另外用Android工具对输出的apk文件执行v2签名)
 #include <iostream>
 #include "src/patch/Zipper.h"
-#include "src/patch/UnZipper.h"
 
-void ApkNormalized(const char* srcApk,const char* dstApk);
+bool ApkNormalized(const char* srcApk,const char* dstApk);
 
 int main(int argc, const char * argv[]) {
     if (argc!=3){
@@ -22,12 +21,32 @@ int main(int argc, const char * argv[]) {
     const char* srcApk=argv[1];
     const char* dstApk=argv[2];
     std::cout << "Hello, ApkNormalized!\n";
-    ApkNormalized(srcApk,dstApk);
+    if (!ApkNormalized(srcApk,dstApk))
+        return 1;
     return 0;
 }
 
-void ApkNormalized(const char* srcApk,const char* dstApk){
-    UnZipper unzipper(srcApk);
-    Zipper zipper(dstApk);
+#define  check(value,info) { \
+    if (!(value)){ std::cout<<info<<" error!\n";  \
+                   _result=false; if (!_isInClear){ goto clear; } } }
+
+bool ApkNormalized(const char* srcApk,const char* dstApk){
+    bool _result=true;
+    bool _isInClear=false;
+    UnZipper unzipper;
+    Zipper   zipper;
+    UnZipper_init(&unzipper);
+    Zipper_init(&zipper);
     
+    check(UnZipper_openRead(&unzipper,srcApk),"UnZipper_openRead \""<<srcApk<<"\"");
+    check(Zipper_openWrite(&zipper,dstApk),"Zipper_openWrite \""<<dstApk<<"\"");
+    
+    
+    
+    
+clear:
+    _isInClear=true;
+    check(UnZipper_close(&unzipper),"UnZipper_close \""<<srcApk<<"\"");
+    check(Zipper_close(&zipper),"Zipper_close \""<<dstApk<<"\"");
+    return _result;
 }
