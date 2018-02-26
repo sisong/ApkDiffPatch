@@ -42,24 +42,24 @@ bool ApkNormalized(const char* srcApk,const char* dstApk){
     Zipper_init(&zipper);
     
     check(UnZipper_openRead(&unzipper,srcApk));
-    fileCount=UnZipper_FileEntry_count(&unzipper);
+    fileCount=UnZipper_fileCount(&unzipper);
     check(Zipper_openWrite(&zipper,dstApk,fileCount));
     
     for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_FileEntry_isCompressed(&unzipper,i)) {
-            ZipFilePos_t uncompressedSize=UnZipper_FileEntry_uncompressedSize(&unzipper,i);
+        if (UnZipper_file_isCompressed(&unzipper,i)) {
+            ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(&unzipper,i);
             assert(uncompressedSize==(size_t)uncompressedSize);
             memBuf.setNeedCap((size_t)uncompressedSize);
-            check(UnZipper_FileEntry_decompress(&unzipper,i,memBuf.buf()));
-            check(Zipper_FileEntry_appendWith(&zipper,&unzipper,i,memBuf.buf(),uncompressedSize,true));
+            check(UnZipper_file_decompress(&unzipper,i,memBuf.buf()));
+            check(Zipper_file_appendWith(&zipper,&unzipper,i,memBuf.buf(),uncompressedSize,true));
         }else{
-            check(Zipper_FileEntry_append(&zipper,&unzipper,i));
+            check(Zipper_file_append(&zipper,&unzipper,i));
         }
     }
     for (int i=0; i<fileCount; ++i) {
-        check(Zipper_FileHeader_append(&zipper,&unzipper,i));
+        check(Zipper_fileHeader_append(&zipper,&unzipper,i));
     }
-    check(Zipper_EndCentralDirectory_append(&zipper,&unzipper));
+    check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
 clear:
     _isInClear=true;
     check(UnZipper_close(&unzipper));
