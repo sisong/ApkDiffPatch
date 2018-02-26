@@ -28,6 +28,7 @@
 		D6511943204243D200805001 /* apk-normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "apk-normalized.cpp"; path = "../../apk-normalized.cpp"; sourceTree = "<group>"; };
 		D651194D2042457700805001 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
 		D651194E2042457700805001 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
+		D65119502043AD4900805001 /* membuf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = membuf.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +73,7 @@
 			children = (
 				D651194D2042457700805001 /* Zipper.cpp */,
 				D651194E2042457700805001 /* Zipper.h */,
+				D65119502043AD4900805001 /* membuf.h */,
 			);
 			name = patch;
 			path = ../../src/patch;
