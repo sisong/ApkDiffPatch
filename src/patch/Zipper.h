@@ -18,7 +18,6 @@ extern "C" {
 typedef uint32_t ZipFilePos_t;
 
 typedef struct{
-    ZipFilePos_t  endCDir_pos;
     int           fileHeader_count;
     ZipFilePos_t  fileHeader_size;
     ZipFilePos_t  fileHeader_pos;
@@ -28,7 +27,8 @@ typedef struct UnZipper{
     FILE*           _file;
     ZipFilePos_t    _fileLength;
     ZipFilePos_t    _file_curPos;
-    _t_EndCentralDirectoryInfo _endCDirInfo;
+    ZipFilePos_t    _endCentralDirectory_pos;
+    unsigned char*  _endCentralDirectoryInfo;
     ZipFilePos_t*   _fileHeaderOffsets;
     //mem
     unsigned char*  _buf;
@@ -37,8 +37,8 @@ typedef struct UnZipper{
 void UnZipper_init(UnZipper* self);
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName);
 bool UnZipper_close(UnZipper* self);
-inline static int   UnZipper_fileCount(const UnZipper* self) { return self->_endCDirInfo.fileHeader_count; }
-int                  UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
+int                 UnZipper_fileCount(const UnZipper* self);
+int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
 const unsigned char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex);
 bool                UnZipper_file_isCompressed(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
