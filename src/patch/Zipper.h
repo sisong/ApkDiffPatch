@@ -14,14 +14,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define kZipAlignSize 8
+#define kZipAlignSize (1<<3)
 typedef uint32_t ZipFilePos_t;
-
-typedef struct{
-    int           fileHeader_count;
-    ZipFilePos_t  fileHeader_size;
-    ZipFilePos_t  fileHeader_pos;
-} _t_EndCentralDirectoryInfo;
 
 typedef struct UnZipper{
     FILE*           _file;
@@ -32,7 +26,7 @@ typedef struct UnZipper{
     ZipFilePos_t*   _fileHeaderOffsets;
     //mem
     unsigned char*  _buf;
-    unsigned char*  _cache_fileHeader;
+    unsigned char*  _cache_fileHeaders;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName);
@@ -58,6 +52,7 @@ typedef struct Zipper{
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
     int             _fileHeaderCount;
+    ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
     unsigned char*  _extFieldLens;
     //mem
