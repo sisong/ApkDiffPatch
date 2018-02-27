@@ -30,4 +30,24 @@ private:
     }
 };
 
+class MemBufWriter{
+private:
+    unsigned char*  _buf;
+    size_t          _bufCap;
+    size_t          _curLen;
+public:
+    inline MemBufWriter(unsigned char*  buf,size_t bufCap)
+    :_buf(buf),_bufCap(bufCap),_curLen(0){}
+    inline size_t len()const{ return _curLen; }
+    inline bool write(const unsigned char*data,size_t dataLen){
+        if (_curLen+dataLen<=_bufCap){
+            memcpy(_buf+_curLen,data,dataLen);
+            _curLen+=dataLen;
+            return true;
+        }else{
+            return false;
+        }
+    }
+};
+
 #endif /* membuf_h */

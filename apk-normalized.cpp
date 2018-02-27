@@ -31,6 +31,11 @@ int main(int argc, const char * argv[]) {
     if (!(value)){ std::cout<<#value<<" ERROR!\n";  \
         _result=false; if (!_isInClear){ goto clear; } } }
 
+bool _MemBufWriter_write(void* dstHandle,const unsigned char* data,const  unsigned char* dataEnd){
+    MemBufWriter* writer=(MemBufWriter*)dstHandle;
+    return writer->write(data,dataEnd-data);
+}
+
 bool ApkNormalized(const char* srcApk,const char* dstApk){
     bool _result=true;
     bool _isInClear=false;
@@ -46,13 +51,15 @@ bool ApkNormalized(const char* srcApk,const char* dstApk){
     check(Zipper_openWrite(&zipper,dstApk,fileCount));
     
     for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isCompressed(&unzipper,i)) {
+        /*if (UnZipper_file_isCompressed(&unzipper,i)) {
             ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(&unzipper,i);
             assert(uncompressedSize==(size_t)uncompressedSize);
             memBuf.setNeedCap((size_t)uncompressedSize);
-            check(UnZipper_file_decompress(&unzipper,i,memBuf.buf()));
+            MemBufWriter MemBufWriter(memBuf.buf(),uncompressedSize);
+            check(UnZipper_fileData_decompressTo(&unzipper,i,&MemBufWriter,_MemBufWriter_write));
+            check(uncompressedSize==MemBufWriter.len());
             check(Zipper_file_appendWith(&zipper,&unzipper,i,memBuf.buf(),uncompressedSize,true));
-        }else{
+        }else*/{
             check(Zipper_file_append(&zipper,&unzipper,i));
         }
     }

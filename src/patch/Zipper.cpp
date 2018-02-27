@@ -19,26 +19,14 @@ inline static uint32_t readUInt32(const TByte* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
 }
 
-#define kBufSize                    (4*1024)
+#define kBufSize                    (16*1024)
 
 #define kENDHEADERMAGIC             (0x06054b50)
 #define kMaxEndGlobalComment        (1<<(2*8)) //2 byte
 #define kMinEndCentralDirectory     (22)  //struct size
 #define kCENTRALHEADERMAGIC         (0x02014b50)
 #define kMinFileHeader              (46)  //struct size
-
 #define kLOCALHEADERMAGIC           (0x04034b50)
-
-
-bool UnZipper_file_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
-    //当前的实现不支持多线程;
-    ZipFilePos_t curPos=self->_file_curPos;
-    if (file_pos!=curPos)
-        if (!fileSeek64(self->_file,file_pos,SEEK_SET)) return false;
-    self->_file_curPos=file_pos+(ZipFilePos_t)(bufEnd-buf);
-    assert(self->_file_curPos<=self->_fileLength);
-    return fileRead(self->_file,buf,bufEnd);
-}
 
 //反向找到第一个kENDHEADERMAGIC的位置;
 static bool _UnZipper_searchEndCentralDirectory(UnZipper* self,ZipFilePos_t* out_endCDir_pos){
@@ -52,7 +40,7 @@ static bool _UnZipper_searchEndCentralDirectory(UnZipper* self,ZipFilePos_t* out
         ZipFilePos_t readLen=max_back_pos-readed_pos;
         if (readLen>kBufSize) readLen=kBufSize;
         readed_pos+=readLen;
-        check(UnZipper_file_read(self,self->_fileLength-readed_pos,buf,buf+readLen));
+        check(UnZipper_fileData_read(self,self->_fileLength-readed_pos,buf,buf+readLen));
         for (int i=(int)readLen-1; i>=0; --i) {
             cur_value=(cur_value<<8)|buf[i];
             if (cur_value==kENDHEADERMAGIC){
@@ -68,7 +56,7 @@ static bool _UnZipper_searchEndCentralDirectory(UnZipper* self,ZipFilePos_t* out
 static bool _UnZipper_ReadEndCentralDirectory(UnZipper* self){
     TByte*  buf=self->_buf;
     assert(kBufSize>=kMinEndCentralDirectory);
-    check(UnZipper_file_read(self,self->_endCDirInfo.endCDir_pos,buf,buf+kMinEndCentralDirectory));
+    check(UnZipper_fileData_read(self,self->_endCDirInfo.endCDir_pos,buf,buf+kMinEndCentralDirectory));
     self->_endCDirInfo.fileHeader_count=readUInt16(buf+8);
     self->_endCDirInfo.fileHeader_size=readUInt32(buf+12);
     self->_endCDirInfo.fileHeader_pos=readUInt32(buf+16);
@@ -97,7 +85,7 @@ static bool _UnZipper_cacheFileHeader(UnZipper* self){
     TByte* buf=(TByte*)malloc(self->_endCDirInfo.fileHeader_size
                               +sizeof(ZipFilePos_t)*(fileCount+1));
     self->_cache_fileHeader=buf;
-    check(UnZipper_file_read(self,self->_endCDirInfo.fileHeader_pos,buf,buf+self->_endCDirInfo.fileHeader_size));
+    check(UnZipper_fileData_read(self,self->_endCDirInfo.fileHeader_pos,buf,buf+self->_endCDirInfo.fileHeader_size));
     
     size_t alignBuf=_hpatch_align_upper((buf+self->_endCDirInfo.fileHeader_size),sizeof(ZipFilePos_t));
     self->_fileHeaderOffsets=(ZipFilePos_t*)alignBuf;
@@ -152,32 +140,44 @@ ZipFilePos_t UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex){
     return readUInt32(fileHeaderBuf(self,fileIndex)+24);
 }
 
-ZipFilePos_t UnZipper_file_dataOffset(UnZipper* self,int fileIndex){
+ZipFilePos_t UnZipper_fileData_offset(UnZipper* self,int fileIndex){
     const ZipFilePos_t entryOffset=readUInt32(fileHeaderBuf(self,fileIndex)+42);
     TByte buf[4];
-    check(UnZipper_file_read(self,entryOffset+26,buf,buf+4));
+    check(UnZipper_fileData_read(self,entryOffset+26,buf,buf+4));
     return entryOffset+30+readUInt16(buf)+readUInt16(buf+2);
 }
 
-bool UnZipper_file_decompress(UnZipper* self,int fileIndex,unsigned char* dst){
-    return false;
+bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
+    //当前的实现不支持多线程;
+    ZipFilePos_t curPos=self->_file_curPos;
+    if (file_pos!=curPos)
+        if (!fileSeek64(self->_file,file_pos,SEEK_SET)) return false;
+    self->_file_curPos=file_pos+(ZipFilePos_t)(bufEnd-buf);
+    assert(self->_file_curPos<=self->_fileLength);
+    return fileRead(self->_file,buf,bufEnd);
 }
 
-typedef bool (*_t_write_callback)(void* dstHandle,const TByte* data,const TByte* dataEnd);
-static bool _UnZipper_fileSavedData_writeTo(UnZipper* self,int fileIndex,Zipper* dstHandle,_t_write_callback write_callback){
+bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
+                              void* dstHandle,UnZipper_fileData_callback callback){
     TByte* buf=self->_buf;
     ZipFilePos_t fileSavedSize=UnZipper_file_compressedSize(self,fileIndex);
-    ZipFilePos_t fileDataOffset=UnZipper_file_dataOffset(self,fileIndex);
+    ZipFilePos_t fileDataOffset=UnZipper_fileData_offset(self,fileIndex);
     ZipFilePos_t writedLen=0;
     while (writedLen<fileSavedSize) {
         ZipFilePos_t readLen=fileSavedSize-writedLen;
         if (readLen>kBufSize) readLen=kBufSize;
-        check(UnZipper_file_read(self,fileDataOffset+writedLen,buf,buf+readLen));
-        check(write_callback(dstHandle,buf,buf+readLen));
+        check(UnZipper_fileData_read(self,fileDataOffset+writedLen,buf,buf+readLen));
+        check(callback(dstHandle,buf,buf+readLen));
         writedLen+=readLen;
     }
     return true;
 }
+
+bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
+                                    void* dstHandle,UnZipper_fileData_callback callback){
+    return false;
+}
+
 
 
 //----
@@ -194,23 +194,40 @@ bool Zipper_close(Zipper* self){
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount){
     assert(self->_file==0);
     if (!fileOpenForCreateOrReWrite(zipFileName,&self->_file)) return false;
-    TByte* buf=(TByte*)malloc(kBufSize+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1));
+    TByte* buf=(TByte*)malloc(kBufSize+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1)+fileEntryMaxCount*sizeof(TByte));
     self->_buf=buf;
     size_t alignBuf=_hpatch_align_upper((buf+kBufSize),sizeof(ZipFilePos_t));
     self->_fileEntryOffsets=(ZipFilePos_t*)alignBuf;
+    self->_extFieldLens=(TByte*)(self->_fileEntryOffsets+fileEntryMaxCount);
+    memset(self->_extFieldLens,0xff,fileEntryMaxCount*sizeof(TByte));//set error len
     self->_fileEntryCount=0;
     self->_fileEntryMaxCount=fileEntryMaxCount;
+    self->_fileHeaderCount=0;
     self->_curFilePos=0;
     return true;
 }
 
 static bool _writeFlush(Zipper* self){
-    //todo:
-    return false;
+    size_t curBufLen=self->_curBufLen;
+    if (curBufLen>0){
+        self->_curBufLen=0;
+        return fileWrite(self->_file,self->_buf,self->_buf+curBufLen);
+    }else{
+        return true;
+    }
 }
 static bool _write(Zipper* self,const TByte* data,size_t len){
-    //todo:
-    return false;
+    self->_curFilePos+=len;
+    size_t curBufLen=self->_curBufLen;
+    if (((curBufLen>0)||(len*2<=kBufSize)) && (curBufLen+len<=kBufSize)){//to buf
+        memcpy(self->_buf+curBufLen,data,len);
+        self->_curBufLen=curBufLen+len;
+        return true;
+    }else{
+        if (curBufLen>0)
+            check(_writeFlush(self));
+        return fileWrite(self->_file,data,data+len);
+    }
 }
 static bool _Zipper_write(void* self,const TByte* data,const TByte* dataEnd){
     return _write((Zipper*)self,data,dataEnd-data);
@@ -246,32 +263,56 @@ inline static bool _writeToAlign(Zipper* self){
         return true;
 }
 
+bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
+    const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
+    check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
+    if (isFullInfo)
+        check(_write(self,headBuf+4,2));//压缩版本;
+    check(_write(self,headBuf+6,2));//解压缩版本;
+    uint16_t fileTag=readUInt16(headBuf+8);//标志;
+    check(_writeUInt16(self,fileTag&(~(1<<3))));//标志中去掉Data descriptor标识;
+    check(_write(self,headBuf+10,30-10));//压缩方式--文件名称长度;
+    
+    uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
+    
+    uint16_t extFieldLen=0;
+    if (!isFullInfo){
+        //利用 扩展字段 对齐文件数据开始位置;
+        extFieldLen=_getAlignSkipLen(self->_curFilePos+2+fileNameLen);
+        self->_extFieldLens[fileIndex]=(TByte)extFieldLen;
+    }else{
+        extFieldLen=self->_extFieldLens[fileIndex];
+    }
+    check(_writeUInt16(self,extFieldLen));//扩展字段长度;
+    
+    uint16_t fileCommentLen=0;
+    if (isFullInfo){
+        //todo:需要吗？ 利用 文件注释 对齐下一个FileHeader数据开始位置;
+        check(_writeUInt16(self,fileCommentLen));//文件注释长度;
+        check(_write(self,headBuf+34,42-34));//文件开始的分卷号--文件外部属性;
+        check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件实体在文件中的偏移;
+    }
+    
+    check(_write(self,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen));//文件名;
+    if (extFieldLen>0)
+        check(_writeAlignSkip(self,extFieldLen));
+    if (fileCommentLen>0)
+        check(_writeAlignSkip(self,fileCommentLen));
+    return  true;
+}
+
 bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
     ZipFilePos_t curFileIndex=self->_fileEntryCount;
-    assert(curFileIndex < self->_fileEntryMaxCount);
-    if (curFileIndex >= self->_fileEntryMaxCount) return false;
+    check(curFileIndex < self->_fileEntryMaxCount);
     self->_fileEntryOffsets[curFileIndex]=self->_curFilePos;
     self->_fileEntryCount=curFileIndex+1;
     
-    const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
-    check(_writeUInt32(self,kLOCALHEADERMAGIC));
-    check(_write(self,headBuf+6,30-6));//解压缩版本--文件名称长度;
-    uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
-    
-    //利用 扩展字段 对齐文件数据开始位置;
-    uint16_t extFieldLen=_getAlignSkipLen(self->_curFilePos+2+fileNameLen);
-    check(_writeUInt16(self,extFieldLen));//扩展字段长度;
-    
-    //文件名
-    check(_write(self,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen));
-    if (extFieldLen>0)
-        check(_writeAlignSkip(self,extFieldLen));
-    
+    check(_write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,false));
     //copy文件数据
-    check(_UnZipper_fileSavedData_writeTo(srcZip,srcFileIndex,self,_Zipper_write));
-    
+    check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,self,_Zipper_write));
+    //可以填充数据对齐?
     check(_writeToAlign(self));
-    return  false;
+    return  true;
 }
 
 bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
@@ -281,11 +322,15 @@ bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
 }
 
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
-    //todo:
-        return  false;
+    ZipFilePos_t curFileIndex=self->_fileHeaderCount;
+    check(curFileIndex < self->_fileEntryCount);
+    self->_fileHeaderCount=curFileIndex+1;
+    
+    return _write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,true);
 }
 
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
+    check(self->_fileEntryCount==self->_fileHeaderCount);
     //todo:
     return  _writeFlush(self);
 }

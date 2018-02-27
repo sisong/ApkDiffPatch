@@ -43,18 +43,26 @@ const unsigned char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex)
 bool                UnZipper_file_isCompressed(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
-ZipFilePos_t        UnZipper_file_dataOffset(UnZipper* self,int fileIndex);
-bool                UnZipper_file_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
-bool                UnZipper_file_decompress(UnZipper* self,int fileIndex,unsigned char* dst);
+    
+ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
+bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
+typedef bool (*UnZipper_fileData_callback)(void* dstHandle,const unsigned char* data,const  unsigned char* dataEnd);
+bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
+                                             void* dstHandle,UnZipper_fileData_callback callback);
+bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
+                                                   void* dstHandle,UnZipper_fileData_callback callback);
 
 typedef struct Zipper{
     FILE*           _file;
     ZipFilePos_t    _curFilePos;
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
+    int             _fileHeaderCount;
     ZipFilePos_t*   _fileEntryOffsets;
+    unsigned char*  _extFieldLens;
     //mem
     unsigned char*  _buf;
+    size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount);
