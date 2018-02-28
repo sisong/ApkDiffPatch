@@ -12,8 +12,9 @@
 #include "../../zlib1.2.11/zlib.h"
 //https://en.wikipedia.org/wiki/Zip_(file_format)
 
-const char* kZlibVesion="1.2.11"; //fixed zlib version
-const int   kCompressLevel=5;     //fixed Compress Level, for patch speed
+#define     kZipAlignSize  8
+#define     kZlibVesion    "1.2.11" //fixed zlib version
+#define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
@@ -396,16 +397,16 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
     check(_writeUInt32(self,self->_fileCompressedSizes[fileIndex]));//压缩后大小;
     check(_write(self,headBuf+24,30-24));//压缩前大小--文件名称长度;
     
+    bool     isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     
     uint16_t extFieldLen=0;
     if (!isFullInfo){
-        //利用 扩展字段 对齐;
-        extFieldLen=_getAlignSkipLen(self->_curFilePos+2+fileNameLen);
+        extFieldLen=isCompressed ? 0 : //压缩文件不需要对齐;
+            _getAlignSkipLen(self->_curFilePos+2+fileNameLen);//利用 扩展字段 对齐;
         self->_extFieldLens[fileIndex]=(TByte)extFieldLen;
     }else{
-        //已经设置过了 扩展字段 的长度;
-        extFieldLen=self->_extFieldLens[fileIndex];
+        extFieldLen=self->_extFieldLens[fileIndex];//已经设置过了 扩展字段 的长度;
     }
     check(_writeUInt16(self,extFieldLen));//扩展字段长度;
     
@@ -422,7 +423,7 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
         check(_writeAlignSkip(self,extFieldLen));
     if (fileCommentLen>0)
         check(_writeAlignSkip(self,fileCommentLen));
-    assert_align(self);
+    if ((!isCompressed)||(isFullInfo)) assert_align(self);
     return  true;
 }
 
@@ -507,12 +508,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(_writeUInt16(self,self->_fileEntryCount));
     check(_writeUInt32(self,centralDirectory_size));
     check(_writeUInt32(self,self->_centralDirectory_pos));
-    
-    uint16_t zipCommentLen=_getAlignSkipLen(self->_curFilePos+2);//利用 Zip文件注释 对齐;
-    check(_writeUInt16(self,zipCommentLen));//Zip文件注释长度;
-    if (zipCommentLen>0)
-        check(_writeAlignSkip(self,zipCommentLen));
-    assert_align(self);
+    check(_writeUInt16(self,0));//Zip文件注释长度;
     return  _writeFlush(self);  
 }
 

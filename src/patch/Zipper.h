@@ -15,7 +15,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define kZipAlignSize (1<<3)
 typedef uint32_t ZipFilePos_t;
 
 typedef struct UnZipper{
