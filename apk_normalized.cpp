@@ -33,68 +33,24 @@
 //  apksigner sign --v2-signing-enabled --ks *.keystore --ks-pass pass:* --in normalized.apk --out result.apk
 
 #include <iostream>
-#include "src/patch/Zipper.h"
-#include "src/patch/membuf.h"
+#include "src/normalized.h"
 #include "../HDiffPatch/_clock_for_demo.h"
-
-bool ApkNormalized(const char* srcApk,const char* dstApk);
 
 int main(int argc, const char * argv[]) {
     if (argc!=3){
-        std::cout << "input: srcApk dstApk\n";
+        std::cout << "parameter: srcApk dstApk\n";
         return 1;
     }
     int exitCode=0;
     const char* srcApk=argv[1];
     const char* dstApk=argv[2];
     double time0=clock_s();
-    if (!ApkNormalized(srcApk,dstApk)){
+    if (!ZipNormalized(srcApk,dstApk)){
         std::cout << "ApkNormalized error\n";
         exitCode=1;
     }
     double time1=clock_s();
-    std::cout<<"ApkNormalized  time:"<<(time1-time0)<<" s\n";
+    std::cout<<"ApkNormalized time:"<<(time1-time0)<<" s\n";
     return exitCode;
 }
 
-#define  check(value) { \
-    if (!(value)){ std::cout<<#value<<" ERROR!\n";  \
-        result=false; if (!_isInClear){ goto clear; } } }
-
-bool ApkNormalized(const char* srcApk,const char* dstApk){
-    bool result=true;
-    bool _isInClear=false;
-    int fileCount=0;
-    MemBuf   memBuf;
-    UnZipper unzipper;
-    Zipper   zipper;
-    UnZipper_init(&unzipper);
-    Zipper_init(&zipper);
-    
-    check(UnZipper_openRead(&unzipper,srcApk));
-    fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openWrite(&zipper,dstApk,fileCount));
-    
-    for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isCompressed(&unzipper,i)) {
-            ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(&unzipper,i);
-            assert(uncompressedSize==(size_t)uncompressedSize);
-            memBuf.setNeedCap((size_t)uncompressedSize);
-            check((uncompressedSize==0)||(memBuf.buf()!=0));
-            MemBufWriter MemBufWriter(memBuf.buf(),uncompressedSize);
-            check(UnZipper_fileData_decompressTo(&unzipper,i,memBuf.buf(),uncompressedSize));
-            check(Zipper_file_appendWith(&zipper,&unzipper,i,memBuf.buf(),uncompressedSize,0));
-        }else{
-            check(Zipper_file_append(&zipper,&unzipper,i));
-        }
-    }
-    for (int i=0; i<fileCount; ++i) {
-        check(Zipper_fileHeader_append(&zipper,&unzipper,i));
-    }
-    check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
-clear:
-    _isInClear=true;
-    check(UnZipper_close(&unzipper));
-    check(Zipper_close(&zipper));
-    return result;
-}

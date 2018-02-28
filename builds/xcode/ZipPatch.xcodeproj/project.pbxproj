@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D6126B8A20468CE400183A42 /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6126B8B20468CE400183A42 /* libzlib.a */; };
 		D651194C204244C200805001 /* zip_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D651194B204244C200805001 /* zip_patch.cpp */; };
+		D688888C204688640042E2B3 /* patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888886204688640042E2B3 /* patch.cpp */; };
+		D688888D204688640042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888889204688640042E2B3 /* Zipper.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,8 +26,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D6126B8B20468CE400183A42 /* libzlib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libzlib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D651194B204244C200805001 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../zip_patch.cpp; sourceTree = "<group>"; };
+		D6888886204688640042E2B3 /* patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = patch.cpp; path = ../../src/patch.cpp; sourceTree = "<group>"; };
+		D6888888204688640042E2B3 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
+		D6888889204688640042E2B3 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
+		D688888A204688640042E2B3 /* membuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = membuf.h; sourceTree = "<group>"; };
+		D688888B204688640042E2B3 /* patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = patch.h; path = ../../src/patch.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,17 +41,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D6126B8A20468CE400183A42 /* libzlib.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D6126B8920468CE400183A42 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D6126B8B20468CE400183A42 /* libzlib.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		D65118FC2041A9B400805001 = {
 			isa = PBXGroup;
 			children = (
+				D6888886204688640042E2B3 /* patch.cpp */,
+				D688888B204688640042E2B3 /* patch.h */,
 				D651194B204244C200805001 /* zip_patch.cpp */,
+				D6888887204688640042E2B3 /* patch */,
 				D65119062041A9B400805001 /* Products */,
+				D6126B8920468CE400183A42 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -52,6 +74,17 @@
 				D65119052041A9B400805001 /* ZipPatch */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D6888887204688640042E2B3 /* patch */ = {
+			isa = PBXGroup;
+			children = (
+				D6888888204688640042E2B3 /* Zipper.h */,
+				D6888889204688640042E2B3 /* Zipper.cpp */,
+				D688888A204688640042E2B3 /* membuf.h */,
+			);
+			name = patch;
+			path = ../../src/patch;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -111,7 +144,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D688888D204688640042E2B3 /* Zipper.cpp in Sources */,
 				D651194C204244C200805001 /* zip_patch.cpp in Sources */,
+				D688888C204688640042E2B3 /* patch.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
