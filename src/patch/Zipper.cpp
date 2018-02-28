@@ -7,8 +7,13 @@
 //
 
 #include "Zipper.h"
+#include <string.h>
 #include "../../HDiffPatch/file_for_patch.h"
+#include "../../zlib1.2.11/zlib.h"
 //https://en.wikipedia.org/wiki/Zip_(file_format)
+
+const char* kZlibVesion="1.2.11"; //fixed zlib version
+const int   kCompressLevel=5;     //fixed Compress Level, for patch speed
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
@@ -136,8 +141,11 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
     return true;
 }
 
+static uint16_t  _file_compressType(const UnZipper* self,int fileIndex){
+    return readUInt16(fileHeaderBuf(self,fileIndex)+10);
+}
 bool  UnZipper_file_isCompressed(const UnZipper* self,int fileIndex){
-    uint16_t compressType=readUInt16(fileHeaderBuf(self,fileIndex)+10);
+    uint16_t compressType=_file_compressType(self,fileIndex);
     return compressType!=0;
 }
 ZipFilePos_t UnZipper_file_compressedSize(const UnZipper* self,int fileIndex){
@@ -180,12 +188,110 @@ bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
     return true;
 }
 
+#define check_clear(v) { if (!(v)) { result=false; goto clear; } }
 bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
-                                    void* dstHandle,UnZipper_fileData_callback callback){
-    return false;
+                                    unsigned char* dstBuf,size_t dstBufSize){
+    //todo: +API void* dstHandle,UnZipper_fileData_callback callback
+    if (!UnZipper_file_isCompressed(self,fileIndex)){
+        MemBufWriter writer(dstBuf,dstBufSize);
+        check(UnZipper_fileData_copyTo(self,fileIndex,&writer,MemBufWriter::writer));
+        return writer.len()==dstBufSize;
+    }
+    uint16_t compressType=_file_compressType(self,fileIndex);
+    check(Z_DEFLATED==compressType);
+    
+    z_stream d_stream;
+    memset(&d_stream,0,sizeof(z_stream));
+    check(Z_OK==inflateInit2(&d_stream,-MAX_WBITS));
+    bool result=true;
+    
+    d_stream.next_out = dstBuf;
+    d_stream.avail_out =(uInt)dstBufSize;
+    ZipFilePos_t code_begin=0;
+    ZipFilePos_t code_end=UnZipper_file_compressedSize(self,fileIndex);
+    ZipFilePos_t file_offset=UnZipper_fileData_offset(self,fileIndex);
+    while (d_stream.avail_out>0) {
+        uInt avail_out_back,avail_in_back;
+        int ret;
+        int codeLen=(int)(code_end - code_begin);
+        if ((d_stream.avail_in==0)&&(codeLen>0)) {
+            int readLen=kBufSize;
+            d_stream.next_in=self->_buf;
+            if (readLen>codeLen) readLen=codeLen;
+            check_clear(readLen>0);
+            check_clear(UnZipper_fileData_read(self,file_offset+code_begin,self->_buf,self->_buf+readLen));
+            d_stream.avail_in=(uInt)readLen;
+            code_begin+=readLen;
+        }
+        
+        avail_out_back=d_stream.avail_out;
+        avail_in_back=d_stream.avail_in;
+        ret=inflate(&d_stream,Z_PARTIAL_FLUSH);
+        if (ret==Z_OK){
+            check_clear(!((d_stream.avail_in==avail_in_back)&&(d_stream.avail_out==avail_out_back)));
+        }else if (ret==Z_STREAM_END){
+            check_clear(d_stream.avail_out==0);
+        }else{
+            check_clear(false);
+        }
+    }
+    check_clear(code_begin==code_end);
+clear:
+    check(Z_OK==inflateEnd(&d_stream));
+    return result;
 }
 
-
+static bool _compressTo(const TByte* data,size_t dataSize,
+                          TByte* codeBuf,size_t codeBufSize,
+                          void* dstHandle,UnZipper_fileData_callback callback){
+    if (strcmp(ZLIB_VERSION,kZlibVesion)!=0)
+        return 0; //error
+    
+    z_stream           s;
+    int                is_eof=0;
+    int                is_stream_end=0;
+    hpatch_StreamPos_t readFromPos=0;
+    memset(&s,0,sizeof(s));
+    s.next_out = (Bytef*)codeBuf;
+    s.avail_out =(uInt)codeBufSize;
+    check(Z_OK==deflateInit2(&s,kCompressLevel,Z_DEFLATED,-MAX_WBITS,MAX_MEM_LEVEL,Z_DEFAULT_STRATEGY));
+    bool     result=true;
+    while (1) {
+        if ((s.avail_out<codeBufSize)|is_stream_end){
+            size_t writeLen=codeBufSize-s.avail_out;
+            if (writeLen>0){
+                check_clear(callback(dstHandle,codeBuf,codeBuf+writeLen));
+            }
+            s.next_out=(Bytef*)codeBuf;
+            s.avail_out=(uInt)codeBufSize;
+            if (is_stream_end)
+                break;//end loop
+        }else{
+            if (s.avail_in>0){
+                check_clear(Z_OK==deflate(&s,Z_NO_FLUSH));
+            }else if (is_eof){
+                int ret=deflate(&s,Z_FINISH);
+                is_stream_end= (ret==Z_STREAM_END);
+                check_clear(!((ret!=Z_STREAM_END)&&(ret!=Z_OK)));
+            }else{
+                size_t readLen=dataSize;
+                if (readFromPos+readLen>dataSize)
+                    readLen=(size_t)(dataSize-readFromPos);
+                if (readLen==0){
+                    is_eof=1;
+                }else{
+                    readLen=dataSize;
+                    readFromPos+=readLen;
+                    s.next_in=(Bytef*)data;
+                    s.avail_in=(uInt)readLen;
+                }
+            }
+        }
+    }
+clear:
+    check(Z_OK==deflateEnd(&s));
+    return result;
+}
 
 //----
 
@@ -200,12 +306,16 @@ bool Zipper_close(Zipper* self){
 
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount){
     assert(self->_file==0);
-    if (!fileOpenForCreateOrReWrite(zipFileName,&self->_file)) return false;
-    TByte* buf=(TByte*)malloc(kBufSize+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1)+fileEntryMaxCount*sizeof(TByte));
+    check(fileOpenForCreateOrReWrite(zipFileName,&self->_file));
+    TByte* buf=(TByte*)malloc(kBufSize*2+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1)
+                              +fileEntryMaxCount*sizeof(uint32_t)+fileEntryMaxCount*sizeof(TByte));
     self->_buf=buf;
-    size_t alignBuf=_hpatch_align_upper((buf+kBufSize),sizeof(ZipFilePos_t));
+    self->_codeBuf=buf+kBufSize;
+    size_t alignBuf=_hpatch_align_upper((buf+kBufSize*2),sizeof(ZipFilePos_t));
     self->_fileEntryOffsets=(ZipFilePos_t*)alignBuf;
-    self->_extFieldLens=(TByte*)(self->_fileEntryOffsets+fileEntryMaxCount);
+    self->_fileCompressedSizes=(uint32_t*)(self->_fileEntryOffsets+fileEntryMaxCount);
+    memset(self->_fileCompressedSizes,0,fileEntryMaxCount*sizeof(uint32_t));//set error len
+    self->_extFieldLens=(TByte*)(self->_fileCompressedSizes+fileEntryMaxCount);
     memset(self->_extFieldLens,0xff,fileEntryMaxCount*sizeof(TByte));//set error len
     self->_fileEntryCount=0;
     self->_fileEntryMaxCount=fileEntryMaxCount;
@@ -282,7 +392,9 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
     check(_write(self,headBuf+6,2));//解压缩版本;
     uint16_t fileTag=readUInt16(headBuf+8);//标志;
     check(_writeUInt16(self,fileTag&(~(1<<3))));//标志中去掉Data descriptor标识;
-    check(_write(self,headBuf+10,30-10));//压缩方式--文件名称长度;
+    check(_write(self,headBuf+10,20-10));//压缩方式--CRC-32校验;
+    check(_writeUInt32(self,self->_fileCompressedSizes[fileIndex]));//压缩后大小;
+    check(_write(self,headBuf+24,30-24));//压缩前大小--文件名称长度;
     
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     
@@ -314,23 +426,66 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
     return  true;
 }
 
-
-bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
+bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
+                            const TByte* data,size_t dataSize,size_t checkCompressedSize){
+    #define kUnknowCompressedSize 0
     ZipFilePos_t curFileIndex=self->_fileEntryCount;
     check(curFileIndex < self->_fileEntryMaxCount);
     self->_fileEntryOffsets[curFileIndex]=self->_curFilePos;
     self->_fileEntryCount=curFileIndex+1;
+    const bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
+    
+    const TByte* compressedData=0;
+    if (data==0){//copy file data from srcZip
+        assert(dataSize==0);
+        size_t oldCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);
+        if (checkCompressedSize==kUnknowCompressedSize)
+            checkCompressedSize=oldCompressedSize;
+        else
+            check(checkCompressedSize==oldCompressedSize);
+    }else{
+        if (!isCompressed){
+            if (checkCompressedSize==kUnknowCompressedSize)
+                checkCompressedSize=dataSize;
+            else
+                check(checkCompressedSize==dataSize);
+        }else{
+            if (checkCompressedSize==kUnknowCompressedSize){
+                //先压缩数据才能得到checkCompressedSize的实际大小;
+                self->_compressMemBuf.setNeedCap(dataSize+dataSize/8+kBufSize);
+                MemBufWriter memBufWriter(self->_compressMemBuf.buf(),self->_compressMemBuf.cap());
+                check(_compressTo(data,dataSize,self->_codeBuf,kBufSize,&memBufWriter,memBufWriter.writer));
+                checkCompressedSize=memBufWriter.len();
+                check(checkCompressedSize!=kUnknowCompressedSize);
+                compressedData=self->_compressMemBuf.buf();
+            }
+        }
+    }
+    self->_fileCompressedSizes[curFileIndex]=(uint32_t)checkCompressedSize;
     
     check(_write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,false));
-    check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,self,_Zipper_write));//copy文件数据
+    if (data==0){
+        check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,self,_Zipper_write));//从srcZip的srcFileIndex位置copy文件数据;
+    }else{
+        if (!isCompressed){
+            check(_write(self,data,dataSize));//直接保存不用压缩的数据;
+        }else{
+            if (compressedData){
+                check(_write(self,compressedData,checkCompressedSize));//已压缩的数据;
+            }else{
+                ZipFilePos_t backPos=self->_curFilePos;
+                check(_compressTo(data,dataSize,self->_codeBuf,kBufSize,self,_Zipper_write));//数据压缩后保存;
+                size_t compressedSize=self->_curFilePos-backPos;
+                check(checkCompressedSize==compressedSize);
+            }
+        }
+    }
     check(_writeToAlign(self));//填充数据对齐;
     return  true;
 }
 
-bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                                 const unsigned char* data,size_t dataSize,bool isNeedCompress){
-    //todo:
-    return  false;
+bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
+    return Zipper_file_appendWith(self,srcZip,srcFileIndex,0,0,0);
 }
 
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
@@ -360,3 +515,4 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     assert_align(self);
     return  _writeFlush(self);  
 }
+

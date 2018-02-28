@@ -10,6 +10,7 @@
 #define Zipper_h
 #include <stdio.h> //FILE
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "membuf.h"
 //todo: support zip64
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +45,7 @@ typedef bool (*UnZipper_fileData_callback)(void* dstHandle,const unsigned char* 
 bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
                                              void* dstHandle,UnZipper_fileData_callback callback);
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
-                                                   void* dstHandle,UnZipper_fileData_callback callback);
+                                                   unsigned char* dstBuf,size_t dstBufSize);
 
 typedef struct Zipper{
     FILE*           _file;
@@ -54,7 +55,10 @@ typedef struct Zipper{
     int             _fileHeaderCount;
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
+    uint32_t*       _fileCompressedSizes;
     unsigned char*  _extFieldLens;
+    MemBuf          _compressMemBuf;
+    unsigned char*  _codeBuf;
     //mem
     unsigned char*  _buf;
     size_t          _curBufLen;
@@ -64,7 +68,7 @@ bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                                 const unsigned char* data,size_t dataSize,bool isNeedCompress);
+                            const unsigned char* data,size_t dataSize,size_t checkCompressedSize);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
 #ifdef __cplusplus

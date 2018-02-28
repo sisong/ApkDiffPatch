@@ -48,6 +48,11 @@ public:
             return false;
         }
     }
+    
+    static bool writer(void* dstHandle,const unsigned char* data,const  unsigned char* dataEnd){
+        MemBufWriter* writer=(MemBufWriter*)dstHandle;
+        return writer->write(data,dataEnd-data);
+    }
 };
 
 #endif /* membuf_h */
