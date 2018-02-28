@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D651194C204244C200805001 /* apk-patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D651194B204244C200805001 /* apk-patch.cpp */; };
+		D651194A204244BA00805001 /* zip_diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6511949204244BA00805001 /* zip_diff.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		D65119032041A9B400805001 /* CopyFiles */ = {
+		D65119192041ADA900805001 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -23,12 +23,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		D65119052041A9B400805001 /* ApkPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ApkPatch; sourceTree = BUILT_PRODUCTS_DIR; };
-		D651194B204244C200805001 /* apk-patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "apk-patch.cpp"; path = "../../apk-patch.cpp"; sourceTree = "<group>"; };
+		D651191B2041ADA900805001 /* ZipDiff */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipDiff; sourceTree = BUILT_PRODUCTS_DIR; };
+		D6511949204244BA00805001 /* zip_diff.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_diff.cpp; path = ../../zip_diff.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		D65119022041A9B400805001 /* Frameworks */ = {
+		D65119182041ADA900805001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -38,18 +38,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		D65118FC2041A9B400805001 = {
+		D65119122041ADA900805001 = {
 			isa = PBXGroup;
 			children = (
-				D651194B204244C200805001 /* apk-patch.cpp */,
-				D65119062041A9B400805001 /* Products */,
+				D6511949204244BA00805001 /* zip_diff.cpp */,
+				D651191C2041ADA900805001 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		D65119062041A9B400805001 /* Products */ = {
+		D651191C2041ADA900805001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D65119052041A9B400805001 /* ApkPatch */,
+				D651191B2041ADA900805001 /* ZipDiff */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,68 +57,68 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D65119042041A9B400805001 /* ApkPatch */ = {
+		D651191A2041ADA900805001 /* ZipDiff */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D651190C2041A9B400805001 /* Build configuration list for PBXNativeTarget "ApkPatch" */;
+			buildConfigurationList = D65119222041ADA900805001 /* Build configuration list for PBXNativeTarget "ZipDiff" */;
 			buildPhases = (
-				D65119012041A9B400805001 /* Sources */,
-				D65119022041A9B400805001 /* Frameworks */,
-				D65119032041A9B400805001 /* CopyFiles */,
+				D65119172041ADA900805001 /* Sources */,
+				D65119182041ADA900805001 /* Frameworks */,
+				D65119192041ADA900805001 /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = ApkPatch;
-			productName = ApkPatch;
-			productReference = D65119052041A9B400805001 /* ApkPatch */;
+			name = ZipDiff;
+			productName = ZipDiff;
+			productReference = D651191B2041ADA900805001 /* ZipDiff */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		D65118FD2041A9B400805001 /* Project object */ = {
+		D65119132041ADA900805001 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0920;
 				ORGANIZATIONNAME = housisong;
 				TargetAttributes = {
-					D65119042041A9B400805001 = {
+					D651191A2041ADA900805001 = {
 						CreatedOnToolsVersion = 9.2;
 						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = D65119002041A9B400805001 /* Build configuration list for PBXProject "ApkPatch" */;
+			buildConfigurationList = D65119162041ADA900805001 /* Build configuration list for PBXProject "ZipDiff" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 			);
-			mainGroup = D65118FC2041A9B400805001;
-			productRefGroup = D65119062041A9B400805001 /* Products */;
+			mainGroup = D65119122041ADA900805001;
+			productRefGroup = D651191C2041ADA900805001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D65119042041A9B400805001 /* ApkPatch */,
+				D651191A2041ADA900805001 /* ZipDiff */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		D65119012041A9B400805001 /* Sources */ = {
+		D65119172041ADA900805001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D651194C204244C200805001 /* apk-patch.cpp in Sources */,
+				D651194A204244BA00805001 /* zip_diff.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		D651190A2041A9B400805001 /* Debug */ = {
+		D65119202041ADA900805001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -173,7 +173,7 @@
 			};
 			name = Debug;
 		};
-		D651190B2041A9B400805001 /* Release */ = {
+		D65119212041ADA900805001 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -221,7 +221,7 @@
 			};
 			name = Release;
 		};
-		D651190D2041A9B400805001 /* Debug */ = {
+		D65119232041ADA900805001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -229,7 +229,7 @@
 			};
 			name = Debug;
 		};
-		D651190E2041A9B400805001 /* Release */ = {
+		D65119242041ADA900805001 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -240,25 +240,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D65119002041A9B400805001 /* Build configuration list for PBXProject "ApkPatch" */ = {
+		D65119162041ADA900805001 /* Build configuration list for PBXProject "ZipDiff" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D651190A2041A9B400805001 /* Debug */,
-				D651190B2041A9B400805001 /* Release */,
+				D65119202041ADA900805001 /* Debug */,
+				D65119212041ADA900805001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D651190C2041A9B400805001 /* Build configuration list for PBXNativeTarget "ApkPatch" */ = {
+		D65119222041ADA900805001 /* Build configuration list for PBXNativeTarget "ZipDiff" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D651190D2041A9B400805001 /* Debug */,
-				D651190E2041A9B400805001 /* Release */,
+				D65119232041ADA900805001 /* Debug */,
+				D65119242041ADA900805001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = D65118FD2041A9B400805001 /* Project object */;
+	rootObject = D65119132041ADA900805001 /* Project object */;
 }

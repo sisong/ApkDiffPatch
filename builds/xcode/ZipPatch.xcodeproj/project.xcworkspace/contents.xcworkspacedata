@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:ApkPatch.xcodeproj">
+      location = "self:ZipPatch.xcodeproj">
    </FileRef>
 </Workspace>

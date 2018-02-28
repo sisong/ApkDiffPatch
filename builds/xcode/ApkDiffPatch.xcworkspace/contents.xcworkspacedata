@@ -5,9 +5,9 @@
       location = "group:ApkNormalized.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:ApkDiff.xcodeproj">
+      location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/ZipDiff.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:ApkPatch.xcodeproj">
+      location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/ZipPatch.xcodeproj">
    </FileRef>
 </Workspace>

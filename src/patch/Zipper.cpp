@@ -1,11 +1,30 @@
-//
 //  Zipper.cpp
-//  ApkPatch
-//
-//  Created by housisong on 2018/2/25.
-//  Copyright © 2018年 housisong. All rights reserved.
-//
-
+//  ZipPatch
+/*
+ The MIT License (MIT)
+ Copyright (c) 2012-2017 HouSisong
+ 
+ Permission is hereby granted, free of charge, to any person
+ obtaining a copy of this software and associated documentation
+ files (the "Software"), to deal in the Software without
+ restriction, including without limitation the rights to use,
+ copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following
+ conditions:
+ 
+ The above copyright notice and this permission notice shall be
+ included in all copies of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
+ */
 #include "Zipper.h"
 #include <string.h>
 #include "../../HDiffPatch/file_for_patch.h"
@@ -25,6 +44,7 @@ inline static uint32_t readUInt32(const TByte* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
 }
 
+#define kIsAlignFileInfo            false
 #define kBufSize                    (16*1024)
 
 #define kMaxEndGlobalComment        (1<<(2*8)) //2 byte
@@ -385,7 +405,7 @@ inline static bool _writeToAlign(Zipper* self){
 #define assert_align(self) assert((self->_curFilePos&(kZipAlignSize-1))==0);
 
 bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
-    assert_align(self);
+    if (kIsAlignFileInfo) assert_align(self);
     const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
     check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
     if (isFullInfo)
@@ -412,7 +432,8 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
     
     uint16_t fileCommentLen=0;
     if (isFullInfo){
-        fileCommentLen=_getAlignSkipLen(self->_curFilePos+2+(42-34)+4+fileNameLen+extFieldLen);//利用 文件注释 对齐;
+        fileCommentLen = (!kIsAlignFileInfo) ? 0:
+            _getAlignSkipLen(self->_curFilePos+2+(42-34)+4+fileNameLen+extFieldLen);//利用 文件注释 对齐;
         check(_writeUInt16(self,fileCommentLen));//文件注释长度;
         check(_write(self,headBuf+34,42-34));//文件开始的分卷号--文件外部属性;
         check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件实体在文件中的偏移;
@@ -423,7 +444,7 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
         check(_writeAlignSkip(self,extFieldLen));
     if (fileCommentLen>0)
         check(_writeAlignSkip(self,fileCommentLen));
-    if ((!isCompressed)||(isFullInfo)) assert_align(self);
+    if (kIsAlignFileInfo&&((!isCompressed)||(isFullInfo))) assert_align(self);
     return  true;
 }
 
@@ -481,7 +502,7 @@ bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
             }
         }
     }
-    check(_writeToAlign(self));//填充数据对齐;
+    if (kIsAlignFileInfo) check(_writeToAlign(self));//填充数据对齐;
     return  true;
 }
 
@@ -499,7 +520,7 @@ bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
 }
 
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
-    assert_align(self);
+    if (kIsAlignFileInfo) assert_align(self);
     check(self->_fileEntryCount==self->_fileHeaderCount);
     const TByte* endBuf=srcZip->_endCentralDirectoryInfo;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
