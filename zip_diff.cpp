@@ -2,7 +2,7 @@
 //  ZipDiff
 /*
  The MIT License (MIT)
- Copyright (c) 2012-2017 HouSisong
+ Copyright (c) 2016-2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -27,9 +27,24 @@
  */
 
 #include <iostream>
+#include "src/diff.h"
+#include "../HDiffPatch/_clock_for_demo.h"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, ZipDiff!\n";
-    return 0;
+    if (argc!=4){
+        std::cout << "parameter: oldZip newZip outDiffFileName\n";
+        return 1;
+    }
+    int exitCode=0;
+    const char* oldZipPath     =argv[1];
+    const char* newZipPath     =argv[2];
+    const char* outDiffFileName=argv[3];
+    double time0=clock_s();
+    if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName)){
+        std::cout << "ZipDiff error!\n";
+        exitCode=1;
+    }
+    double time1=clock_s();
+    std::cout<<"ZipDiff time:"<<(time1-time0)<<" s\n";
+    return exitCode;
 }

@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		D6126B8D20468CF000183A42 /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6126B8E20468CF000183A42 /* libzlib.a */; };
 		D651194A204244BA00805001 /* zip_diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6511949204244BA00805001 /* zip_diff.cpp */; };
+		D671B6592047DD30002D17A7 /* diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B6582047DD30002D17A7 /* diff.cpp */; };
+		D671B7182047EA57002D17A7 /* libzstd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D671B7192047EA57002D17A7 /* libzstd.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -27,6 +29,9 @@
 		D6126B8E20468CF000183A42 /* libzlib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libzlib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D651191B2041ADA900805001 /* ZipDiff */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipDiff; sourceTree = BUILT_PRODUCTS_DIR; };
 		D6511949204244BA00805001 /* zip_diff.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_diff.cpp; path = ../../zip_diff.cpp; sourceTree = "<group>"; };
+		D671B6572047DD30002D17A7 /* diff.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = diff.h; path = ../../src/diff.h; sourceTree = "<group>"; };
+		D671B6582047DD30002D17A7 /* diff.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = diff.cpp; path = ../../src/diff.cpp; sourceTree = "<group>"; };
+		D671B7192047EA57002D17A7 /* libzstd.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libzstd.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -34,6 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D671B7182047EA57002D17A7 /* libzstd.a in Frameworks */,
 				D6126B8D20468CF000183A42 /* libzlib.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -44,6 +50,7 @@
 		D6126B8C20468CF000183A42 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D671B7192047EA57002D17A7 /* libzstd.a */,
 				D6126B8E20468CF000183A42 /* libzlib.a */,
 			);
 			name = Frameworks;
@@ -53,6 +60,8 @@
 			isa = PBXGroup;
 			children = (
 				D6511949204244BA00805001 /* zip_diff.cpp */,
+				D671B6582047DD30002D17A7 /* diff.cpp */,
+				D671B6572047DD30002D17A7 /* diff.h */,
 				D651191C2041ADA900805001 /* Products */,
 				D6126B8C20468CF000183A42 /* Frameworks */,
 			);
@@ -123,6 +132,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D671B6592047DD30002D17A7 /* diff.cpp in Sources */,
 				D651194A204244BA00805001 /* zip_diff.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -1,5 +1,5 @@
-//  patch.h
-//  ZipPatch
+//  diff.cpp
+//  ZipDiff
 /*
  The MIT License (MIT)
  Copyright (c) 2016-2018 HouSisong
@@ -25,23 +25,9 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipPatch_patch_h
-#define ZipPatch_patch_h
-#include <string.h>
+#include "diff.h"
+#include <stdio.h>
 
-typedef enum TPatchResult {
-    PATCH_SUCCESS=0,
-    PATCH_ERROR,
-    PATCH_READ_ERROR,
-    PATCH_WRITE_ERROR,
-    PATCH_HEADINFO_ERROR,
-    PATCH_COMPRESSTYPE_ERROR,
-    PATCH_OLDDATA_ERROR,
-    PATCH_MEM_ERROR,
-    PATCH_CLOSEFILE_ERROR
-} TPatchResult;
-
-TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
-                      size_t maxUncompressMemory,const char* tempUncompressFileName);
-
-#endif //ZipPatch_patch_h
+bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName){
+    return false;
+}

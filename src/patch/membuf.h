@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2012-2017 HouSisong
+ Copyright (c) 2016-2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -26,8 +26,8 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef membuf_h
-#define membuf_h
+#ifndef ZipPatch_membuf_h
+#define ZipPatch_membuf_h
 #include <assert.h>
 #include <string.h> //malloc,free
 
@@ -75,4 +75,4 @@ public:
     }
 };
 
-#endif /* membuf_h */
+#endif //ZipPatch_membuf_h

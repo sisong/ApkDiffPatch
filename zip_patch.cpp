@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2012-2017 HouSisong
+ Copyright (c) 2016-2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -30,15 +30,15 @@
 #include "src/patch.h"
 
 int main(int argc, const char * argv[]) {
-    const char* oldZipFile=0;
-    const char* zipDiffFile=0;
-    const char* outNewZipFile=0;
-    size_t maxUncompressMemory=0;
+    const char* oldZipPath=0;
+    const char* zipDiffPath=0;
+    const char* outNewZipPath=0;
+    size_t      maxUncompressMemory=0;
     const char* tempUncompressFileName=0;
     if (argc==6){
-        oldZipFile   =argv[1];
-        zipDiffFile  =argv[2];
-        outNewZipFile=argv[3];
+        oldZipPath   =argv[1];
+        zipDiffPath  =argv[2];
+        outNewZipPath=argv[3];
         long _byteSize=atol(argv[4]);
         if (_byteSize<0){
             printf("parameter maxUncompressMemory error!\n");
@@ -47,17 +47,17 @@ int main(int argc, const char * argv[]) {
         maxUncompressMemory=(size_t)_byteSize;
         tempUncompressFileName=argv[5];
     }else if (argc==4){
-        oldZipFile   =argv[1];
-        zipDiffFile  =argv[2];
-        outNewZipFile=argv[3];
+        oldZipPath   =argv[1];
+        zipDiffPath  =argv[2];
+        outNewZipPath=argv[3];
     }else{
-        printf("parameter: oldZip zipDiffFile outNewZip [maxUncompressMemory tempUncompressFileName]\n");
+        printf("parameter: oldZip zipDiffPath outNewZip [maxUncompressMemory tempUncompressFileName]\n");
         return 1;
     }
     
     int exitCode=0;
     double time0=clock_s();
-    if (!(ZipPatch(oldZipFile,zipDiffFile,outNewZipFile,maxUncompressMemory,tempUncompressFileName)))
+    if (!(ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName)))
         exitCode=1;
     double time1=clock_s();
     if (exitCode==0)

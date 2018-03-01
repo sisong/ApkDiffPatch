@@ -1,4 +1,4 @@
-//  patch.h
+//  NewStream.h
 //  ZipPatch
 /*
  The MIT License (MIT)
@@ -25,23 +25,10 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipPatch_patch_h
-#define ZipPatch_patch_h
-#include <string.h>
+#ifndef ZipPatch_NewStream_h
+#define ZipPatch_NewStream_h
 
-typedef enum TPatchResult {
-    PATCH_SUCCESS=0,
-    PATCH_ERROR,
-    PATCH_READ_ERROR,
-    PATCH_WRITE_ERROR,
-    PATCH_HEADINFO_ERROR,
-    PATCH_COMPRESSTYPE_ERROR,
-    PATCH_OLDDATA_ERROR,
-    PATCH_MEM_ERROR,
-    PATCH_CLOSEFILE_ERROR
-} TPatchResult;
+//对外模拟成一个输出流;
+//利用sameList、CHEqs数据对需要输出的数据进行加工生成newZip;
 
-TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
-                      size_t maxUncompressMemory,const char* tempUncompressFileName);
-
-#endif //ZipPatch_patch_h
+#endif //ZipPatch_NewStream_h
