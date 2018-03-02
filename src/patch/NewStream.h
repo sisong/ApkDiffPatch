@@ -27,8 +27,30 @@
  */
 #ifndef ZipPatch_NewStream_h
 #define ZipPatch_NewStream_h
+#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "Zipper.h"
 
 //对外模拟成一个输出流;
 //利用samePairList、CHEqs数据对需要输出的数据进行加工生成newZip;
+typedef struct NewStream{
+    const hpatch_TStreamOutput* stream;
+//private:
+    Zipper*                 _out_newZip;
+    UnZipper*               _oldZip;
+    size_t                  _newZipVCESize;
+    size_t                  _newZipCHeadNEqSize;
+    const uint32_t*         _samePairList;
+    size_t                  _samePairCount;
+    const uint8_t*          _CHeadEqList;
+    size_t                  _CHeadEqBitCount;
+    hpatch_TStreamOutput    _stream;
+} NewStream;
+
+void NewStream_init(NewStream* self);
+bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
+                    size_t newZipVCESize,size_t newZipCHeadNEqSize,size_t newDataSize,
+                    const uint32_t* samePairList,size_t samePairCount,
+                    const uint8_t* CHeadEqList,size_t CHeadEqBitCount);
+void NewStream_close(NewStream* self);
 
 #endif //ZipPatch_NewStream_h

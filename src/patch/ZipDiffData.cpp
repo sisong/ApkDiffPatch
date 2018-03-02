@@ -54,7 +54,7 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
     hpatch_StreamPos_t  headDataSize=0;
     hpatch_StreamPos_t  headDataCompressedSize=0;
     size_t              headDataPos=0;
-    TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*6];
+    TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*9];
     int readLen=sizeof(buf);
     {//type+version
         if (readLen>diffData->base.streamSize)
@@ -65,7 +65,10 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
     {//head
         hpatch_StreamPos_t hdiffzSize=0;
         const TByte* curBuf=buf+kVersionTypeLen;
+        checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->newZipCHeadNEqSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->refCount,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->refDataSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->CHeadEqBitCount,size_t);
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&hdiffzSize));

@@ -26,3 +26,49 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "NewStream.h"
+
+void NewStream_init(NewStream* self){
+    memset(self,0,sizeof(NewStream));
+}
+void NewStream_close(NewStream* self){
+    //todo:
+}
+
+#define  check(value) { \
+    if (!(value)){ printf(#value" ERROR!\n");  \
+        result=0; assert(false); if (!_isInClear){ goto clear; } } }
+
+
+static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
+                             const hpatch_StreamPos_t writeToPos,
+                             const unsigned char* data,const unsigned char* data_end){
+    long result=(long)(data_end-data);
+    bool _isInClear=false;
+    NewStream* self=(NewStream*)streamHandle;
+    
+    
+clear:
+    _isInClear=true;
+    return result;
+}
+
+bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
+                    size_t newZipVCESize,size_t newZipCHeadNEqSize,size_t newDataSize,
+                    const uint32_t* samePairList,size_t samePairCount,
+                    const uint8_t* CHeadEqList,size_t CHeadEqBitCount){
+    self->_out_newZip=out_newZip;
+    self->_oldZip=oldZip;
+    self->_newZipVCESize=newZipVCESize;
+    self->_newZipCHeadNEqSize=newZipCHeadNEqSize;
+    self->_samePairList=samePairList;
+    self->_samePairCount=samePairCount;
+    self->_CHeadEqList=CHeadEqList;
+    self->_CHeadEqBitCount=CHeadEqBitCount;
+    
+    self->_stream.streamHandle=self;
+    self->_stream.streamSize=newDataSize;
+    self->_stream.write=_NewStream_write;
+    self->stream=&self->_stream;
+    
+    return true;
+}

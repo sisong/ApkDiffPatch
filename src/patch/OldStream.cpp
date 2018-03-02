@@ -26,3 +26,26 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "OldStream.h"
+
+void OldStream_init(OldStream* self){
+    memset(self,0,sizeof(OldStream));
+}
+void OldStream_close(OldStream* self){
+    //todo:
+}
+
+#define  check(value) { \
+    if (!(value)){ printf(#value" ERROR!\n");  \
+        result=false; assert(false); if (!_isInClear){ goto clear; } } }
+
+bool OldStream_open(OldStream* self,UnZipper* oldZip,
+                    const uint32_t* refList,size_t refCount,
+                    const hpatch_TStreamInput* input_refBuf,hpatch_TStreamOutput* output_refBuf){
+    bool result=true;
+    bool _isInClear=false;
+    
+    
+clear:
+    _isInClear=true;
+    return result;
+}

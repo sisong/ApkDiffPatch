@@ -27,7 +27,22 @@
  */
 #ifndef ZipPatch_OldStream_h
 #define ZipPatch_OldStream_h
+#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "Zipper.h"
 
 //利用oldZip、refList模拟成一个输入流;
+typedef struct OldStream{
+    const hpatch_TStreamInput* stream;
+//private:
+    UnZipper*                   _oldZip;
+    const hpatch_TStreamInput*  _input_refBuf;
+    hpatch_TStreamInput         _stream;
+} OldStream;
+
+void OldStream_init(OldStream* self);
+bool OldStream_open(OldStream* self,UnZipper* oldZip,
+                    const uint32_t* refList,size_t refCount,
+                    const hpatch_TStreamInput* input_refBuf,hpatch_TStreamOutput* output_refBuf);
+void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

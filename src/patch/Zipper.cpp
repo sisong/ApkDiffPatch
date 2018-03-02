@@ -28,7 +28,7 @@
 #include "Zipper.h"
 #include <string.h>
 #include "../../HDiffPatch/file_for_patch.h"
-#include "../../zlib1.2.11/zlib.h"
+#include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
 //https://en.wikipedia.org/wiki/Zip_(file_format)
 
 #define     kZipAlignSize  8

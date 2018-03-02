@@ -33,11 +33,14 @@
 extern "C" {
 #endif
     
-//解析补丁文件,获得refList、samePairList、CHEqs和HDiffZ结构;
+//解析补丁文件,获得refList、samePairList、CHEqs和HDiffZ数据;
 //  并将HDiffZ模拟成一个输入流;
 typedef struct ZipDiffData{
     uint32_t*   refList;
     size_t      refCount;
+    size_t      refDataSize;
+    size_t      newZipVCESize;
+    size_t      newZipCHeadNEqSize;
     uint32_t*   samePairList;
     size_t      samePairCount;
     uint8_t*    CHeadEqList;
