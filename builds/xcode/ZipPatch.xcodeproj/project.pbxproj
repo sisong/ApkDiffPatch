@@ -74,8 +74,6 @@
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D651194B204244C200805001 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../zip_patch.cpp; sourceTree = "<group>"; };
 		D671B65A2047DF87002D17A7 /* zstd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zstd.h; path = ../../zstd/lib/zstd.h; sourceTree = "<group>"; };
-		D671B7152047EA41002D17A7 /* zlib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = zlib.xcodeproj; path = /Users/Shared/ApkDiffPatch/builds/xcode/zlib.xcodeproj; sourceTree = "<absolute>"; };
-		D671B7162047EA41002D17A7 /* zstd.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = zstd.xcodeproj; sourceTree = "<group>"; };
 		D6888886204688640042E2B3 /* patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = patch.cpp; path = ../../src/patch.cpp; sourceTree = "<group>"; };
 		D6888888204688640042E2B3 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
 		D6888889204688640042E2B3 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
@@ -173,7 +171,6 @@
 		D65118FC2041A9B400805001 = {
 			isa = PBXGroup;
 			children = (
-				D671B7172047EA41002D17A7 /* lib */,
 				D651194B204244C200805001 /* zip_patch.cpp */,
 				D6888886204688640042E2B3 /* patch.cpp */,
 				D688888B204688640042E2B3 /* patch.h */,
@@ -191,15 +188,6 @@
 				D65119052041A9B400805001 /* ZipPatch */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		D671B7172047EA41002D17A7 /* lib */ = {
-			isa = PBXGroup;
-			children = (
-				D671B7152047EA41002D17A7 /* zlib.xcodeproj */,
-				D671B7162047EA41002D17A7 /* zstd.xcodeproj */,
-			);
-			name = lib;
 			sourceTree = "<group>";
 		};
 		D6888887204688640042E2B3 /* patch */ = {

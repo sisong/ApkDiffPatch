@@ -27,17 +27,31 @@
  */
 #ifndef ZipPatch_ZipDiffData_h
 #define ZipPatch_ZipDiffData_h
+#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "../../HDiffPatch/file_for_patch.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
     
-//解析补丁文件,获得refList、sameList、CHEqs和HDiffZ结构;
+//解析补丁文件,获得refList、samePairList、CHEqs和HDiffZ结构;
 //  并将HDiffZ模拟成一个输入流;
 typedef struct ZipDiffData{
-    //
+    uint32_t*   refList;
+    size_t      refCount;
+    uint32_t*   samePairList;
+    size_t      samePairCount;
+    uint8_t*    CHeadEqList;
+    size_t      CHeadEqBitCount;
+    const hpatch_TStreamInput* hdiffzData;
+//private:
+    TByte*              _buf;
+    TFileStreamInput    _hdiffzData;
 } ZipDiffData;
-    
-    
+
+void ZipDiffData_init(ZipDiffData* self);
+bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
+void ZipDiffData_close(ZipDiffData* self);
+
 #ifdef __cplusplus
 }
 #endif

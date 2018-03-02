@@ -29,6 +29,6 @@
 #define ZipPatch_NewStream_h
 
 //对外模拟成一个输出流;
-//利用sameList、CHEqs数据对需要输出的数据进行加工生成newZip;
+//利用samePairList、CHEqs数据对需要输出的数据进行加工生成newZip;
 
 #endif //ZipPatch_NewStream_h
