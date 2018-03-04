@@ -40,10 +40,11 @@ typedef struct OldStream{
 } OldStream;
 
 
-bool OldStream_getRefData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                          hpatch_TStreamOutput* output_refStream);
+bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* decompressList,
+                                 size_t decompressCount, hpatch_TStreamOutput* output_refStream);
 void OldStream_init(OldStream* self);
-bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream);
+bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream,
+                    hpatch_StreamPos_t streamSize);
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

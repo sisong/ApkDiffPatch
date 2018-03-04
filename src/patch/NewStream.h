@@ -38,19 +38,18 @@ typedef struct NewStream{
     Zipper*                 _out_newZip;
     UnZipper*               _oldZip;
     size_t                  _newZipVCESize;
-    size_t                  _newZipCHeadNEqSize;
-    const uint32_t*         _samePairList;
+    size_t                  _newZipNEFilePosCount;
     size_t                  _samePairCount;
-    const uint8_t*          _CHeadEqList;
-    size_t                  _CHeadEqBitCount;
+    const uint32_t*         _newZipNEFilePosList;
+    const uint32_t*         _samePairList;
     hpatch_TStreamOutput    _stream;
 } NewStream;
 
 void NewStream_init(NewStream* self);
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
-                    size_t newZipVCESize,size_t newZipCHeadNEqSize,size_t newDataSize,
-                    const uint32_t* samePairList,size_t samePairCount,
-                    const uint8_t* CHeadEqList,size_t CHeadEqBitCount);
+                    size_t newDataSize,size_t newZipVCESize,
+                    const uint32_t* newZipNEFilePosList,size_t newZipNEFilePosCount,
+                    const uint32_t* samePairList,size_t samePairCount);
 void NewStream_close(NewStream* self);
 
 #endif //ZipPatch_NewStream_h

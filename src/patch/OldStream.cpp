@@ -27,6 +27,16 @@
  */
 #include "OldStream.h"
 
+bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* decompressList,size_t decompressCount,
+                                 hpatch_TStreamOutput* output_refStream){
+    for (size_t i=0;i<decompressCount;++i){
+        if (!UnZipper_fileData_decompressTo(oldZip,decompressList[i],output_refStream))
+            return false;
+    }
+    return true;
+}
+
+
 void OldStream_init(OldStream* self){
     memset(self,0,sizeof(OldStream));
 }
@@ -34,24 +44,36 @@ void OldStream_close(OldStream* self){
     //todo:
 }
 
-bool OldStream_getRefData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                          hpatch_TStreamOutput* output_refStream){
-    for (size_t i=0;i<refCount;++i){
-        if (!UnZipper_fileData_decompressTo(oldZip,refList[i],output_refStream))
-            return false;
-    }
-    return true;
-}
-
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; assert(false); if (!_isInClear){ goto clear; } } }
 
-bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream){
+
+static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
+                            const hpatch_StreamPos_t readFromPos,
+                            unsigned char* out_data,unsigned char* out_data_end){
+    OldStream* self=(OldStream*)streamHandle;
+    
+    
+    
+    return 0;
+}
+
+
+bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream,
+                    hpatch_StreamPos_t streamSize){
+    assert(self->stream==0);
     bool result=true;
     bool _isInClear=false;
+    self->_oldZip=oldZip;
     
     
+    
+    self->_input_refStream=input_refStream;
+    self->_stream.streamHandle=self;
+    self->_stream.streamSize=streamSize;
+    self->_stream.read=_OldStream_read;
+    self->stream=&self->_stream;
 clear:
     _isInClear=true;
     return result;

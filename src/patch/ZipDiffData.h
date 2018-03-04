@@ -33,18 +33,19 @@
 extern "C" {
 #endif
     
-//解析补丁文件,获得refList、samePairList、CHEqs和HDiffZ数据;
-//  并将HDiffZ模拟成一个输入流;
+//解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{
-    uint32_t*   refList;
-    size_t      refCount;
-    size_t      refDataSize;
+    size_t      oldZipVCESize;
     size_t      newZipVCESize;
-    size_t      newZipCHeadNEqSize;
-    uint32_t*   samePairList;
+    size_t      oldZipNEFilePosCount;
+    size_t      newZipNEFilePosCount;
+    size_t      decompressCount;
+    size_t      decompressSumSize;
     size_t      samePairCount;
-    uint8_t*    CHeadEqList;
-    size_t      CHeadEqBitCount;
+    uint32_t*   oldZipNEFilePosList;
+    uint32_t*   newZipNEFilePosList;
+    uint32_t*   decompressList;
+    uint32_t*   samePairList;//newFileIndex<->oldFileIndex
     const hpatch_TStreamInput* hdiffzData;
 //private:
     TByte*              _buf;
