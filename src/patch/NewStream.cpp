@@ -34,23 +34,9 @@ void NewStream_close(NewStream* self){
     //todo:
 }
 
-#define  check(value) { \
-    if (!(value)){ printf(#value" ERROR!\n");  \
-        result=0; assert(false); if (!_isInClear){ goto clear; } } }
-
-
 static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
                              const hpatch_StreamPos_t writeToPos,
-                             const unsigned char* data,const unsigned char* data_end){
-    long result=(long)(data_end-data);
-    bool _isInClear=false;
-    NewStream* self=(NewStream*)streamHandle;
-    
-    
-clear:
-    _isInClear=true;
-    return result;
-}
+                             const unsigned char* data,const unsigned char* data_end);
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newZipVCESize,size_t newZipCHeadNEqSize,size_t newDataSize,
@@ -71,4 +57,22 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->stream=&self->_stream;
     
     return true;
+}
+
+
+#define  check(value) { \
+    if (!(value)){ printf(#value" ERROR!\n");  \
+        result=0; assert(false); if (!_isInClear){ goto clear; } } }
+
+static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
+                             const hpatch_StreamPos_t writeToPos,
+                             const unsigned char* data,const unsigned char* data_end){
+    long result=(long)(data_end-data);
+    bool _isInClear=false;
+    NewStream* self=(NewStream*)streamHandle;
+    
+    
+clear:
+    _isInClear=true;
+    return result;
 }

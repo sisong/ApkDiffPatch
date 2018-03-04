@@ -27,7 +27,6 @@
  */
 #include "normalized.h"
 #include "patch/Zipper.h"
-#include "patch/membuf.h"
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -37,7 +36,6 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
     bool result=true;
     bool _isInClear=false;
     int fileCount=0;
-    MemBuf   memBuf;
     UnZipper unzipper;
     Zipper   zipper;
     UnZipper_init(&unzipper);
@@ -51,13 +49,13 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
         if (UnZipper_file_isCompressed(&unzipper,i)) {
             ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(&unzipper,i);
             assert(uncompressedSize==(size_t)uncompressedSize);
-            memBuf.setNeedCap((size_t)uncompressedSize);
-            check((uncompressedSize==0)||(memBuf.buf()!=0));
-            MemBufWriter MemBufWriter(memBuf.buf(),uncompressedSize);
-            check(UnZipper_fileData_decompressTo(&unzipper,i,memBuf.buf(),uncompressedSize));
-            check(Zipper_file_appendWith(&zipper,&unzipper,i,memBuf.buf(),uncompressedSize,0));
+            check(Zipper_file_append_begin(&zipper,&unzipper,i,uncompressedSize,false));
+            const hpatch_TStreamOutput* stream=Zipper_file_append_part_as_stream(&zipper);
+            check(stream!=0);
+            check(UnZipper_fileData_decompressTo(&unzipper,i,stream));
+            check(Zipper_file_append_end(&zipper));
         }else{
-            check(Zipper_file_append(&zipper,&unzipper,i));
+            check(Zipper_file_append_copy(&zipper,&unzipper,i));
         }
     }
     for (int i=0; i<fileCount; ++i) {

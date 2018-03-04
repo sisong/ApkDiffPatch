@@ -35,14 +35,15 @@ typedef struct OldStream{
     const hpatch_TStreamInput* stream;
 //private:
     UnZipper*                   _oldZip;
-    const hpatch_TStreamInput*  _input_refBuf;
+    const hpatch_TStreamInput*  _input_refStream;
     hpatch_TStreamInput         _stream;
 } OldStream;
 
+
+bool OldStream_getRefData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
+                          hpatch_TStreamOutput* output_refStream);
 void OldStream_init(OldStream* self);
-bool OldStream_open(OldStream* self,UnZipper* oldZip,
-                    const uint32_t* refList,size_t refCount,
-                    const hpatch_TStreamInput* input_refBuf,hpatch_TStreamOutput* output_refBuf);
+bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream);
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

@@ -31,8 +31,8 @@
 #include "../../HDiffPatch/file_for_patch.h"
 
 #include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
-#define _IsNeedIncludeDefaultCompressHead 0
 #define _CompressPlugin_zstd
+#define _IsNeedIncludeDefaultCompressHead 0
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
 #include "patch/Zipper.h"
@@ -102,8 +102,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
         input_ref=&input_ref_cache;
     }
     
-    check(OldStream_open(&oldStream,&oldZip,zipDiffData.refList,zipDiffData.refCount,
-                         input_ref,output_ref), PATCH_OLDDATA_ERROR);
+    check(OldStream_getRefData(&oldZip,zipDiffData.refList,zipDiffData.refCount,output_ref), PATCH_OLDDATA_ERROR);
+    check(OldStream_open(&oldStream,&oldZip,input_ref), PATCH_OLDDATA_ERROR);
     check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
     
@@ -119,10 +119,10 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     
 clear:
     _isInClear=true;
-    ZipDiffData_close(&zipDiffData);
     check(Zipper_close(&out_newZip),PATCH_CLOSEFILE_ERROR);
     OldStream_close(&oldStream);
     check(UnZipper_close(&oldZip),PATCH_CLOSEFILE_ERROR);
+    ZipDiffData_close(&zipDiffData);
     check(TFileStreamInput_close(&diffData),PATCH_CLOSEFILE_ERROR);
     check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(TFileStreamInput_close(&input_refFile),PATCH_CLOSEFILE_ERROR);

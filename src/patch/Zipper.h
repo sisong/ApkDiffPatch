@@ -28,8 +28,8 @@
 #ifndef ZipPatch_Zipper_h
 #define ZipPatch_Zipper_h
 #include <stdio.h> //FILE
+#include <assert.h>
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
-#include "membuf.h"
 //todo: support zip64
 #ifdef __cplusplus
 extern "C" {
@@ -37,14 +37,16 @@ extern "C" {
 typedef uint32_t ZipFilePos_t;
 
 typedef struct UnZipper{
+//private:
     FILE*           _file;
     ZipFilePos_t    _fileLength;
     ZipFilePos_t    _file_curPos;
     ZipFilePos_t    _endCentralDirectory_pos;
     unsigned char*  _endCentralDirectoryInfo;
     ZipFilePos_t*   _fileHeaderOffsets;
+    hpatch_TStreamInput _stream;
     //mem
-    unsigned char*  _buf;
+    unsigned char*  _buf; //file read buf
     unsigned char*  _cache_fileHeaders;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
@@ -59,13 +61,28 @@ ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int file
     
 ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
-typedef bool (*UnZipper_fileData_callback)(void* dstHandle,const unsigned char* data,const  unsigned char* dataEnd);
-bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
-                                             void* dstHandle,UnZipper_fileData_callback callback);
-bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
-                                                   unsigned char* dstBuf,size_t dstBufSize);
+bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream);
+bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream);
 
-typedef struct Zipper{
+    struct Zipper;
+    struct _zlib_TCompress;
+    struct Zipper_file_append_stream:public hpatch_TStreamOutput{
+    //private:
+        hpatch_StreamPos_t    inputPos;
+        hpatch_StreamPos_t    outputPos;
+        struct Zipper*        self;
+
+        struct _zlib_TCompress* compressHandle;
+        hpatch_TStreamOutput    compressOutStream;
+        ZipFilePos_t            curFileIndex;
+        static long _append_part_input(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
+                                       const unsigned char* part_data,const unsigned char* part_data_end);
+        static long _append_part_output(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
+                                       const unsigned char* part_data,const unsigned char* part_data_end);
+    };
+    
+    typedef struct Zipper{
+//private:
     FILE*           _file;
     ZipFilePos_t    _curFilePos;
     int             _fileEntryMaxCount;
@@ -75,18 +92,23 @@ typedef struct Zipper{
     ZipFilePos_t*   _fileEntryOffsets;
     uint32_t*       _fileCompressedSizes;
     unsigned char*  _extFieldLens;
-    MemBuf          _compressMemBuf;
     unsigned char*  _codeBuf;
+    Zipper_file_append_stream _append_stream;
     //mem
-    unsigned char*  _buf;
+    unsigned char*  _buf; //file out buf
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount);
 bool Zipper_close(Zipper* self);
-bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
-bool Zipper_file_appendWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                            const unsigned char* data,size_t dataSize,size_t checkCompressedSize);
+bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex);
+bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex,
+                        const unsigned char* data,size_t dataSize,bool dataIsCompressed);
+bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,size_t dataSize,bool dataIsCompressed);
+const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
+bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
+bool Zipper_file_append_end(Zipper* self);
+    
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
 #ifdef __cplusplus

@@ -34,13 +34,20 @@ void OldStream_close(OldStream* self){
     //todo:
 }
 
+bool OldStream_getRefData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
+                          hpatch_TStreamOutput* output_refStream){
+    for (size_t i=0;i<refCount;++i){
+        if (!UnZipper_fileData_decompressTo(oldZip,refList[i],output_refStream))
+            return false;
+    }
+    return true;
+}
+
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; assert(false); if (!_isInClear){ goto clear; } } }
 
-bool OldStream_open(OldStream* self,UnZipper* oldZip,
-                    const uint32_t* refList,size_t refCount,
-                    const hpatch_TStreamInput* input_refBuf,hpatch_TStreamOutput* output_refBuf){
+bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream){
     bool result=true;
     bool _isInClear=false;
     

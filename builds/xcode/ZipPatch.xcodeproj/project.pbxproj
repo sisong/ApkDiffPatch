@@ -74,6 +74,8 @@
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D651194B204244C200805001 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../zip_patch.cpp; sourceTree = "<group>"; };
 		D671B65A2047DF87002D17A7 /* zstd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zstd.h; path = ../../zstd/lib/zstd.h; sourceTree = "<group>"; };
+		D671B71B204A4830002D17A7 /* decompress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decompress_plugin_demo.h; path = ../../HDiffPatch/decompress_plugin_demo.h; sourceTree = "<group>"; };
+		D671B71C204A4830002D17A7 /* compress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compress_plugin_demo.h; path = ../../HDiffPatch/compress_plugin_demo.h; sourceTree = "<group>"; };
 		D6888886204688640042E2B3 /* patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = patch.cpp; path = ../../src/patch.cpp; sourceTree = "<group>"; };
 		D6888888204688640042E2B3 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
 		D6888889204688640042E2B3 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
@@ -101,12 +103,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		D6126BBC2047B65E00183A42 /* HDiffPatch_patch */ = {
+		D6126BBC2047B65E00183A42 /* HDiffPatch */ = {
 			isa = PBXGroup;
 			children = (
+				D671B71C204A4830002D17A7 /* compress_plugin_demo.h */,
+				D671B71B204A4830002D17A7 /* decompress_plugin_demo.h */,
 				D6126BE22047B98500183A42 /* HPatch */,
 			);
-			name = HDiffPatch_patch;
+			name = HDiffPatch;
 			sourceTree = "<group>";
 		};
 		D6126BBD2047B92E00183A42 /* zstd_decompress */ = {
@@ -175,7 +179,7 @@
 				D6888886204688640042E2B3 /* patch.cpp */,
 				D688888B204688640042E2B3 /* patch.h */,
 				D6888887204688640042E2B3 /* patch */,
-				D6126BBC2047B65E00183A42 /* HDiffPatch_patch */,
+				D6126BBC2047B65E00183A42 /* HDiffPatch */,
 				D6126BBD2047B92E00183A42 /* zstd_decompress */,
 				D65119062041A9B400805001 /* Products */,
 				D6126B8920468CE400183A42 /* Frameworks */,
