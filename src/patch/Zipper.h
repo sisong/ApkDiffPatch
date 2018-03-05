@@ -37,17 +37,22 @@ extern "C" {
 typedef uint32_t ZipFilePos_t;
 
 typedef struct UnZipper{
+    hpatch_TStreamInput* stream;
 //private:
     FILE*           _file;
     ZipFilePos_t    _fileLength;
     ZipFilePos_t    _file_curPos;
-    ZipFilePos_t    _endCentralDirectory_pos;
-    unsigned char*  _endCentralDirectoryInfo;
-    ZipFilePos_t*   _fileHeaderOffsets;
     hpatch_TStreamInput _stream;
+    
+    ZipFilePos_t    _vce_size;
+    unsigned char*  _endCentralDirectory;
+    unsigned char*  _centralDirectory;
+    uint32_t*       _fileHeaderOffsets; //在_cache_vce中的偏移位置;
+    uint32_t*       _fileCompressedSizes;
+    ZipFilePos_t*   _fileEntryOffsets;
     //mem
     unsigned char*  _buf; //file read buf
-    unsigned char*  _cache_fileHeaders;
+    unsigned char*  _cache_vce;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName);
@@ -91,7 +96,6 @@ bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
     uint32_t*       _fileCompressedSizes;
-    unsigned char*  _extFieldLens;
     unsigned char*  _codeBuf;
     Zipper_file_append_stream _append_stream;
     //mem
