@@ -58,17 +58,15 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
-        result=0; assert(false); if (!_isInClear){ goto clear; } } }
+        result=0; assert(false); goto clear; } }
 
 static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
                              const hpatch_StreamPos_t writeToPos,
                              const unsigned char* data,const unsigned char* data_end){
     long result=(long)(data_end-data);
-    bool _isInClear=false;
     NewStream* self=(NewStream*)streamHandle;
     
     
 clear:
-    _isInClear=true;
     return result;
 }
