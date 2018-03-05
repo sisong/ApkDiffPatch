@@ -105,7 +105,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(OldStream_getDecompressData(&oldZip,zipDiffData.decompressList,
                                       zipDiffData.decompressCount,output_ref), PATCH_OLDDATA_ERROR);
     check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
-    check(OldStream_open(&oldStream,&oldZip,input_ref,diffInfo.oldDataSize), PATCH_OLDDATA_ERROR);
+    check(OldStream_open(&oldStream,&oldZip,input_ref,diffInfo.oldDataSize,
+                         zipDiffData.oldZipNEFilePosList,zipDiffData.oldZipNEFilePosCount), PATCH_OLDDATA_ERROR);
 
     check(NewStream_open(&newStream,&out_newZip,&oldZip,
                          diffInfo.newDataSize,zipDiffData.newZipVCESize,

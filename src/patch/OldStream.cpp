@@ -61,17 +61,18 @@ static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
 
 
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream,
-                    hpatch_StreamPos_t streamSize){
+                    hpatch_StreamPos_t oldDataSize,const uint32_t* oldZipNEFilePosList,size_t oldZipNEFilePosCount){
     assert(self->stream==0);
     bool result=true;
     bool _isInClear=false;
     self->_oldZip=oldZip;
-    
-    
-    
     self->_input_refStream=input_refStream;
+    self->_oldZipNEFilePosList=oldZipNEFilePosList;
+    self->_oldZipNEFilePosCount=oldZipNEFilePosCount;
+    
+    
     self->_stream.streamHandle=self;
-    self->_stream.streamSize=streamSize;
+    self->_stream.streamSize=oldDataSize;
     self->_stream.read=_OldStream_read;
     self->stream=&self->_stream;
 clear:

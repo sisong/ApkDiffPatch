@@ -50,7 +50,6 @@ inline static uint32_t readUInt32(const TByte* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
 }
 
-#define kIsAlignFileInfo            false
 #define kBufSize                    (16*1024)
 
 //https://en.wikipedia.org/wiki/Zip_(file_format)
@@ -343,19 +342,21 @@ inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
     return _write(self,_alignSkipBuf,alignSkipLen);
 }
 
-inline static bool _writeToAlign(Zipper* self){
-    size_t alignSkipLen=_getAlignSkipLen(self->_curFilePos);
-    if (alignSkipLen>0)
-        return _writeAlignSkip(self,alignSkipLen);
-    else
-        return true;
-}
-
 #define assert_align(self) assert((self->_curFilePos&(kZipAlignSize-1))==0);
 
-bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
-    if (kIsAlignFileInfo) assert_align(self);
+static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
     const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
+    bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
+    uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
+    uint16_t extraFieldLen=readUInt16(headBuf+30);
+    if (!isFullInfo){
+        if (!isCompressed){//进行对齐;
+            size_t headInfoLen=30+fileNameLen+extraFieldLen;
+            size_t skipLen=_getAlignSkipLen(self->_curFilePos+headInfoLen);
+            check(_writeAlignSkip(self,skipLen));
+        }
+        self->_fileEntryOffsets[fileIndex]=self->_curFilePos;
+    }
     check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
     if (isFullInfo)
         check(_write(self,headBuf+4,2));//压缩版本;
@@ -364,39 +365,19 @@ bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFi
     check(_writeUInt16(self,fileTag&(~(1<<3))));//标志中去掉Data descriptor标识;
     check(_write(self,headBuf+10,20-10));//压缩方式--CRC-32校验;
     check(_writeUInt32(self,self->_fileCompressedSizes[fileIndex]));//压缩后大小;
-    check(_write(self,headBuf+24,30-24));//压缩前大小--文件名称长度;
+    check(_write(self,headBuf+24,32-24));//压缩前大小--扩展字段长度;
     
-    bool     isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
-    
-    uint16_t extFieldLen=0;
-    if (!isFullInfo){
-        extFieldLen=isCompressed ? 0 : //压缩文件不需要对齐;
-            _getAlignSkipLen(self->_curFilePos+2+fileNameLen);//利用 扩展字段 对齐;
-        self->_extFieldLens[fileIndex]=(TByte)extFieldLen;
-    }else{
-        extFieldLen=self->_extFieldLens[fileIndex];//已经设置过了 扩展字段 的长度;
-    }
-    check(_writeUInt16(self,extFieldLen));//扩展字段长度;
-    
-    uint16_t fileCommentLen=0;
+    uint16_t fileCommentLen=0;//文件注释长度;
     if (isFullInfo){
-        fileCommentLen = (!kIsAlignFileInfo) ? 0:
-            _getAlignSkipLen(self->_curFilePos+2+(42-34)+4+fileNameLen+extFieldLen);//利用 文件注释 对齐;
-        check(_writeUInt16(self,fileCommentLen));//文件注释长度;
+        fileCommentLen=readUInt16(headBuf+32);
+        check(_writeUInt16(self,fileCommentLen));
         check(_write(self,headBuf+34,42-34));//文件开始的分卷号--文件外部属性;
-        check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件实体在文件中的偏移;
+        check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件在文件中的偏移;
     }
-    
-    check(_write(self,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen));//文件名;
-    if (extFieldLen>0)
-        check(_writeAlignSkip(self,extFieldLen));
-    if (fileCommentLen>0)
-        check(_writeAlignSkip(self,fileCommentLen));
-    if (kIsAlignFileInfo&&((!isCompressed)||(isFullInfo))) assert_align(self);
+    check(_write(self,headBuf+46,fileNameLen+extraFieldLen+fileCommentLen));//文件名称 + 扩展字段 [+文件注释];
+    if ((!isCompressed)&(!isFullInfo)) assert_align(self);//对齐检查;
     return  true;
 }
-
 
 long Zipper_file_append_stream::_append_part_input(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
                                                    const unsigned char *part_data,
@@ -446,11 +427,10 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     
     ZipFilePos_t curFileIndex=self->_fileEntryCount;
     check(curFileIndex < self->_fileEntryMaxCount);
-    self->_fileEntryOffsets[curFileIndex]=self->_curFilePos;
-    self->_fileCompressedSizes[curFileIndex]=(!isCompressed)?(uint32_t)dataSize: //finally value
-                                              UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
     self->_fileEntryCount=curFileIndex+1;
     check(_write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,false));//out file info
+    self->_fileCompressedSizes[curFileIndex]=(!isCompressed)?(uint32_t)dataSize:                //finally value
+                                                UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
     
     append_state->self=self;
     append_state->inputPos=0;
@@ -500,7 +480,6 @@ bool Zipper_file_append_end(Zipper* self){
     }
     
     check_clear(append_state->inputPos==append_state->streamSize);
-    if (kIsAlignFileInfo) check_clear(_writeToAlign(self));//填充数据对齐;
     
     if (append_state->compressHandle!=0){
         assert(append_state->outputPos==(uint32_t)append_state->outputPos);
@@ -553,7 +532,6 @@ bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
 }
 
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
-    if (kIsAlignFileInfo) assert_align(self);
     check(self->_fileEntryCount==self->_fileHeaderCount);
     const TByte* endBuf=srcZip->_endCentralDirectoryInfo;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;

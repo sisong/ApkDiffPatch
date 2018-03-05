@@ -30,7 +30,7 @@
 //该过程对zip\jar\apk包进行规范化处理:
 //   输入包文件,重新按固定压缩算法生成对齐的新包文件(扩展字段、注释、jar的签名和apk文件的v1签名会被保留,apk的v2签名等数据会被删除)
 // ps: 要同时支持apk的v1、v2签名,需要在规范化前执行过v1、v2签名;
-//     需要往apk里添加自己的其他私有信息时,可以在规范化后v2签名前利用扩展字段和注释字段写入信息;
+//     需要往apk里添加自己的其他私有信息时,建议在规范化后v2签名前利用扩展字段和注释字段写入信息;
 //     规范化后可以用Android签名工具对输出的apk文件单独执行v2签名,比如:
 //  apksigner sign --v2-signing-enabled --ks *.keystore --ks-pass pass:* --in normalized.apk --out result.apk
 
