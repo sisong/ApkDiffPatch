@@ -37,10 +37,11 @@ extern "C" {
 typedef struct ZipDiffData{
     size_t      oldZipVCESize;
     size_t      newZipVCESize;
-    size_t      decompressCount;
-    size_t      decompressSumSize;
+    size_t      refCount;
+    size_t      refSumSize;
+    uint32_t    oldCrc;
     size_t      samePairCount;
-    uint32_t*   decompressList;
+    uint32_t*   refList;
     uint32_t*   samePairList;//newFileIndex<->oldFileIndex
     const hpatch_TStreamInput* hdiffzData;
 //private:

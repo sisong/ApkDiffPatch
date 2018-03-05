@@ -58,12 +58,12 @@ void UnZipper_init(UnZipper* self);
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
-int                 UnZipper_uncompressed_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
 const unsigned char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex);
 bool                UnZipper_file_isCompressed(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
+uint32_t            UnZipper_file_crc32(const UnZipper* self,int fileIndex);
     
 ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);

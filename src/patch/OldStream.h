@@ -35,22 +35,26 @@ typedef struct OldStream{
     const hpatch_TStreamInput* stream;
 //private:
     UnZipper*                   _oldZip;
-    const hpatch_TStreamInput*  _input_refStream;
+    const hpatch_TStreamInput*  _input_decompressStream;
     hpatch_TStreamInput         _stream;
     
     uint32_t*                   _rangeEndList;
     uint32_t*                   _rangeFileOffsets;
-    size_t                      _rangeCount;
+    unsigned char*              _rangIsCompressed;
+    size_t                      _rangeCount;//==1+refCount
+    int                         _curRangeIndex;
     //mem
     unsigned char*              _buf;
 } OldStream;
 
+ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
+bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
+                                 hpatch_TStreamOutput* output_refStream);
+uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 
-bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* decompressList,
-                                 size_t decompressCount, hpatch_TStreamOutput* output_refStream);
 void OldStream_init(OldStream* self);
-bool OldStream_open(OldStream* self,UnZipper* oldZip,
-                    const hpatch_TStreamInput* input_refStream,hpatch_StreamPos_t oldDataSize);
+bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
+                    const hpatch_TStreamInput* input_decompressStream);
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

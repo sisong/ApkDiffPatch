@@ -115,14 +115,6 @@ ZipFilePos_t _fileData_offset_read(UnZipper* self,ZipFilePos_t entryOffset){
     return entryOffset+30+readUInt16(buf)+readUInt16(buf+2);
 }
 
-int UnZipper_uncompressed_fileCount(const UnZipper* self){
-    int fileCount=UnZipper_fileCount(self);
-    int curCount=0;
-    for (int i=0; i<fileCount; ++i) {
-        curCount+=UnZipper_file_isCompressed(self,i)?0:1;
-    }
-    return curCount;
-}
 int UnZipper_fileCount(const UnZipper* self){
     return readUInt16(self->_endCentralDirectory+8);
 }
@@ -247,6 +239,10 @@ ZipFilePos_t UnZipper_file_compressedSize(const UnZipper* self,int fileIndex){
 }
 ZipFilePos_t UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex){
     return readUInt32(fileHeaderBuf(self,fileIndex)+24);
+}
+
+uint32_t UnZipper_file_crc32(const UnZipper* self,int fileIndex){
+    return readUInt32(fileHeaderBuf(self,fileIndex)+16);
 }
 
 ZipFilePos_t UnZipper_fileData_offset(UnZipper* self,int fileIndex){

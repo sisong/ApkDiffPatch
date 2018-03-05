@@ -26,14 +26,48 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "OldStream.h"
+#include "../../zlib1.2.11/zlib.h" //crc32 // http://zlib.net/  https://github.com/madler/zlib
 
-bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* decompressList,size_t decompressCount,
+
+ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
+    ZipFilePos_t decompressSumSize=0;
+    for (int i=0; i<refCount; ++i) {
+        int fileIndex=(int)refList[i];
+        if (UnZipper_file_isCompressed(oldZip,fileIndex)){
+            decompressSumSize+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
+        }
+    }
+    return decompressSumSize;
+}
+
+bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                                  hpatch_TStreamOutput* output_refStream){
-    for (size_t i=0;i<decompressCount;++i){
-        if (!UnZipper_fileData_decompressTo(oldZip,decompressList[i],output_refStream))
-            return false;
+    for (int i=0;i<refCount;++i){
+        int fileIndex=(int)refList[i];
+        if (UnZipper_file_isCompressed(oldZip,fileIndex)){
+            if (!UnZipper_fileData_decompressTo(oldZip,fileIndex,output_refStream))
+                return false;
+        }
     }
     return true;
+}
+
+inline static void writeUInt32_to(unsigned char* out_buf4,uint32_t v){
+    out_buf4[0]=(unsigned char)v; out_buf4[1]=(unsigned char)(v>>8);
+    out_buf4[2]=(unsigned char)(v>>16); out_buf4[3]=(unsigned char)(v>>24);
+}
+
+uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
+    unsigned char buf4[4];
+    uLong crc=0;
+    crc=crc32(crc,oldZip->_cache_vce,oldZip->_vce_size);
+    for (int i=0;i<refCount;++i){
+        int fileIndex=(int)refList[i];
+        uint32_t fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
+        writeUInt32_to(buf4,fileCrc);
+        crc=crc32(crc,buf4,4);
+    }
+    return (uint32_t)crc;
 }
 
 
@@ -54,50 +88,58 @@ static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
                             unsigned char* out_data,unsigned char* out_data_end){
     OldStream* self=(OldStream*)streamHandle;
     
+    long  result=(long)(out_data_end-out_data);
+    if (readFromPos+result<=self->_rangeEndList[0]){
+        //todo:
+    }else{
+        
+    }
     
     
-    return 0;
+    return result;
 }
 
-bool _createRange(OldStream* self){
+bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount){
     assert(self->_buf==0);
-    int fileCount=UnZipper_fileCount(self->_oldZip);
-    int uncCount=UnZipper_uncompressed_fileCount(self->_oldZip);
-    self->_rangeCount=uncCount+2;
-    self->_buf=(unsigned char*)malloc(sizeof(uint32_t)*self->_rangeCount*2);
+    self->_rangeCount= 1 + refCount;
+    self->_buf=(unsigned char*)malloc((sizeof(uint32_t)*2+1)*self->_rangeCount);
     self->_rangeEndList=(uint32_t*)self->_buf;
     self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
+    self->_rangIsCompressed=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
     
-    int rangeIndex=0;
     uint32_t curSize=self->_oldZip->_vce_size;
-    self->_rangeEndList[rangeIndex]=curSize;
-    self->_rangeFileOffsets[rangeIndex]=0;
-    ++rangeIndex;
-    curSize+=self->_input_refStream->streamSize;
-    self->_rangeEndList[rangeIndex]=curSize;
-    self->_rangeFileOffsets[rangeIndex]=0;
-    ++rangeIndex;
-    for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isCompressed(self->_oldZip,i)) continue;
-        assert(rangeIndex<self->_rangeCount);
-        curSize+=UnZipper_file_uncompressedSize(self->_oldZip,i);
-        self->_rangeEndList[rangeIndex]=curSize;
-        self->_rangeFileOffsets[rangeIndex]=UnZipper_fileData_offset(self->_oldZip,i);
-        ++rangeIndex;
+    self->_rangeEndList[0]=curSize;
+    self->_rangeFileOffsets[0]=0;
+    self->_rangIsCompressed[0]=0;
+    uint32_t curDecompressSize=0;
+    for (int i=0; i<refCount; ++i) {
+        int fileIndex=(int)refList[i];
+        bool isCompressed=UnZipper_file_isCompressed(self->_oldZip,fileIndex);
+        ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,fileIndex);
+        curSize+=uncompressedSize;
+        self->_rangeEndList[i+1]=curSize;
+        self->_rangIsCompressed[i+1]=isCompressed?1:0;
+        if (isCompressed) {
+            self->_rangeFileOffsets[i+1]=curDecompressSize;
+            curDecompressSize+=uncompressedSize;
+        }else{
+            self->_rangeFileOffsets[i+1]=UnZipper_fileData_offset(self->_oldZip,fileIndex);
+        }
     }
-    assert(rangeIndex==self->_rangeCount);
+    self->_curRangeIndex=0;
     return true;
 }
 
-bool OldStream_open(OldStream* self,UnZipper* oldZip,
-                    const hpatch_TStreamInput* input_refStream,hpatch_StreamPos_t oldDataSize){
+bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,
+                    size_t refCount,const hpatch_TStreamInput* input_decompressStream){
     assert(self->stream==0);
     bool result=true;
     bool _isInClear=false;
     self->_oldZip=oldZip;
-    self->_input_refStream=input_refStream;
-    _createRange(self);
-    check(self->_rangeEndList[self->_rangeCount-1]==oldDataSize);
+    self->_input_decompressStream=input_decompressStream;
+    _createRange(self,refList,refCount);
+    assert(self->_rangeCount>0);
+    uint32_t oldDataSize=self->_rangeEndList[self->_rangeCount-1];
     
     self->_stream.streamHandle=self;
     self->_stream.streamSize=oldDataSize;

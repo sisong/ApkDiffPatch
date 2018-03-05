@@ -65,7 +65,7 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
     size_t              headDataPos=0;
     {
         //read head
-        TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*(5+3)];
+        TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*(6+3)];
         int readLen=sizeof(buf);
         if (readLen>diffData->base.streamSize)
             readLen=(int)diffData->base.streamSize;
@@ -77,8 +77,9 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
         const TByte* curBuf=buf+kVersionTypeLen;
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->decompressCount,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->decompressSumSize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->refCount,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->refSumSize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->oldCrc,uint32_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&hdiffzSize));
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataSize));
@@ -92,7 +93,7 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
         //  memBuf used as:
         //  [  zstd compressed headData  ]    [ uncompressed headData(packed list) ]
         //  [              unpacked_list     ]
-        size_t memLeft=(self->decompressCount+self->samePairCount*2)*sizeof(uint32_t);
+        size_t memLeft=(self->refCount+self->samePairCount*2)*sizeof(uint32_t);
         if (headDataCompressedSize>memLeft) memLeft=headDataCompressedSize;
         assert(self->_buf==0);
         self->_buf=(TByte*)malloc(memLeft+headDataSize);
@@ -102,12 +103,12 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
                                                           self->_buf,self->_buf+headDataCompressedSize));
         check(_uncompress(self->_buf,headDataCompressedSize,self->_buf+memLeft,headDataSize,decompressPlugin));
         
-        self->decompressList=(uint32_t*)self->_buf;
-        self->samePairList=self->decompressList+self->decompressCount;
+        self->refList=(uint32_t*)self->_buf;
+        self->samePairList=self->refList+self->refCount;
         
         const TByte* curBuf=self->_buf+memLeft;
         const TByte* const bufEnd=curBuf+headDataSize;
-        unpackList(self->decompressList,self->decompressCount,curBuf,bufEnd);
+        unpackList(self->refList,self->refCount,curBuf,bufEnd);
     
         uint32_t backPairNew=0;
         hpatch_StreamPos_t backPairOld=0;
