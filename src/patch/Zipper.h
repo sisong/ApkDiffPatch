@@ -47,9 +47,9 @@ typedef struct UnZipper{
     ZipFilePos_t    _vce_size;
     unsigned char*  _endCentralDirectory;
     unsigned char*  _centralDirectory;
-    uint32_t*       _fileHeaderOffsets; //在_cache_vce中的偏移位置;
+    uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
     uint32_t*       _fileCompressedSizes;
-    ZipFilePos_t*   _fileEntryOffsets;
+    ZipFilePos_t*   _fileDataOffsets;
     //mem
     unsigned char*  _buf; //file read buf
     unsigned char*  _cache_vce;
@@ -58,6 +58,7 @@ void UnZipper_init(UnZipper* self);
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
+int                 UnZipper_uncompressed_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
 const unsigned char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex);
 bool                UnZipper_file_isCompressed(const UnZipper* self,int fileIndex);
@@ -86,7 +87,7 @@ bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                        const unsigned char* part_data,const unsigned char* part_data_end);
     };
     
-    typedef struct Zipper{
+typedef struct Zipper{
 //private:
     FILE*           _file;
     ZipFilePos_t    _curFilePos;

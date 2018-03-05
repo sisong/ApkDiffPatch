@@ -40,13 +40,10 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newDataSize,size_t newZipVCESize,
-                    const uint32_t* newZipNEFilePosList,size_t newZipNEFilePosCount,
                     const uint32_t* samePairList,size_t samePairCount){
     self->_out_newZip=out_newZip;
     self->_oldZip=oldZip;
     self->_newZipVCESize=newZipVCESize;
-    self->_newZipNEFilePosList=newZipNEFilePosList;
-    self->_newZipNEFilePosCount=newZipNEFilePosCount;
     self->_samePairList=samePairList;
     self->_samePairCount=samePairCount;
     

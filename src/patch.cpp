@@ -80,6 +80,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(TFileStreamInput_open(&diffData,zipDiffPath),PATCH_READ_ERROR);
     check(UnZipper_openRead(&oldZip,oldZipPath),PATCH_READ_ERROR);
     check(ZipDiffData_open(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
+    check(zipDiffData.oldZipVCESize==oldZip._vce_size, PATCH_ZIPDIFFINFO_ERROR);
     
     check(getCompressedDiffInfo(&diffInfo,zipDiffData.hdiffzData),PATCH_HDIFFINFO_ERROR);
     if (strlen(diffInfo.compressType) > 0) {
@@ -105,12 +106,10 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(OldStream_getDecompressData(&oldZip,zipDiffData.decompressList,
                                       zipDiffData.decompressCount,output_ref), PATCH_OLDDATA_ERROR);
     check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
-    check(OldStream_open(&oldStream,&oldZip,input_ref,diffInfo.oldDataSize,
-                         zipDiffData.oldZipNEFilePosList,zipDiffData.oldZipNEFilePosCount), PATCH_OLDDATA_ERROR);
+    check(OldStream_open(&oldStream,&oldZip,input_ref,diffInfo.oldDataSize), PATCH_OLDDATA_ERROR);
 
     check(NewStream_open(&newStream,&out_newZip,&oldZip,
                          diffInfo.newDataSize,zipDiffData.newZipVCESize,
-                         zipDiffData.newZipNEFilePosList,zipDiffData.newZipNEFilePosCount,
                          zipDiffData.samePairList,zipDiffData.samePairCount),PATCH_NEWDATA_ERROR);
     
     temp_cache =(TByte*)malloc(CACHE_SIZE);

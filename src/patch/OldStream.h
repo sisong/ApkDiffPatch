@@ -36,11 +36,11 @@ typedef struct OldStream{
 //private:
     UnZipper*                   _oldZip;
     const hpatch_TStreamInput*  _input_refStream;
-    const uint32_t*             _oldZipNEFilePosList;
-    size_t                      _oldZipNEFilePosCount;
     hpatch_TStreamInput         _stream;
     
-    
+    uint32_t*                   _rangeEndList;
+    uint32_t*                   _rangeFileOffsets;
+    size_t                      _rangeCount;
     //mem
     unsigned char*              _buf;
 } OldStream;
@@ -49,8 +49,8 @@ typedef struct OldStream{
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* decompressList,
                                  size_t decompressCount, hpatch_TStreamOutput* output_refStream);
 void OldStream_init(OldStream* self);
-bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream,
-                    hpatch_StreamPos_t oldDataSize,const uint32_t* oldZipNEFilePosList,size_t oldZipNEFilePosCount);
+bool OldStream_open(OldStream* self,UnZipper* oldZip,
+                    const hpatch_TStreamInput* input_refStream,hpatch_StreamPos_t oldDataSize);
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

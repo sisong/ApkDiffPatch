@@ -65,7 +65,7 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
     size_t              headDataPos=0;
     {
         //read head
-        TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*(7+3)];
+        TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*(5+3)];
         int readLen=sizeof(buf);
         if (readLen>diffData->base.streamSize)
             readLen=(int)diffData->base.streamSize;
@@ -77,8 +77,6 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
         const TByte* curBuf=buf+kVersionTypeLen;
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->oldZipNEFilePosCount,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->newZipNEFilePosCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->decompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->decompressSumSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
@@ -94,8 +92,7 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
         //  memBuf used as:
         //  [  zstd compressed headData  ]    [ uncompressed headData(packed list) ]
         //  [              unpacked_list     ]
-        size_t memLeft=(self->oldZipNEFilePosCount+self->newZipNEFilePosCount
-                        +self->decompressCount+self->samePairCount*2)*sizeof(uint32_t);
+        size_t memLeft=(self->decompressCount+self->samePairCount*2)*sizeof(uint32_t);
         if (headDataCompressedSize>memLeft) memLeft=headDataCompressedSize;
         assert(self->_buf==0);
         self->_buf=(TByte*)malloc(memLeft+headDataSize);
@@ -105,15 +102,11 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
                                                           self->_buf,self->_buf+headDataCompressedSize));
         check(_uncompress(self->_buf,headDataCompressedSize,self->_buf+memLeft,headDataSize,decompressPlugin));
         
-        self->oldZipNEFilePosList=(uint32_t*)self->_buf;
-        self->newZipNEFilePosList=self->oldZipNEFilePosList+self->oldZipNEFilePosCount;
-        self->decompressList=self->newZipNEFilePosList+self->newZipNEFilePosCount;
+        self->decompressList=(uint32_t*)self->_buf;
         self->samePairList=self->decompressList+self->decompressCount;
         
         const TByte* curBuf=self->_buf+memLeft;
         const TByte* const bufEnd=curBuf+headDataSize;
-        unpackList(self->oldZipNEFilePosList,self->oldZipNEFilePosCount,curBuf,bufEnd);
-        unpackList(self->newZipNEFilePosList,self->newZipNEFilePosCount,curBuf,bufEnd);
         unpackList(self->decompressList,self->decompressCount,curBuf,bufEnd);
     
         uint32_t backPairNew=0;

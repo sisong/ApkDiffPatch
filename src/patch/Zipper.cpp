@@ -109,6 +109,20 @@ static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirecto
 }
 
 
+ZipFilePos_t _fileData_offset_read(UnZipper* self,ZipFilePos_t entryOffset){
+    TByte buf[4];
+    check(UnZipper_fileData_read(self,entryOffset+26,buf,buf+4));
+    return entryOffset+30+readUInt16(buf)+readUInt16(buf+2);
+}
+
+int UnZipper_uncompressed_fileCount(const UnZipper* self){
+    int fileCount=UnZipper_fileCount(self);
+    int curCount=0;
+    for (int i=0; i<fileCount; ++i) {
+        curCount+=UnZipper_file_isCompressed(self,i)?0:1;
+    }
+    return curCount;
+}
 int UnZipper_fileCount(const UnZipper* self){
     return readUInt16(self->_endCentralDirectory+8);
 }
@@ -117,7 +131,7 @@ static inline int32_t _centralDirectory_size(const UnZipper* self){
 }
 
 inline static const TByte* fileHeaderBuf(const UnZipper* self,int fileIndex){
-    return self->_cache_vce+self->_fileHeaderOffsets[fileIndex];
+    return self->_centralDirectory+self->_fileHeaderOffsets[fileIndex];
 }
 
 int UnZipper_file_nameLen(const UnZipper* self,int fileIndex){
@@ -148,8 +162,9 @@ static bool _UnZipper_vce_normalized(UnZipper* self){
         self->_fileCompressedSizes[i]=readUInt32(headBuf+20);
         writeUInt32_to(headBuf+20,UnZipper_file_uncompressedSize(self,i));//normalized 暂时写入未压缩大小占位;
         
-        self->_fileEntryOffsets[i]=readUInt32(headBuf+42);
+        uint32_t fileEntryOffset=readUInt32(headBuf+42);
         writeUInt32_to(headBuf+42,0);//normalized
+        self->_fileDataOffsets[i]=_fileData_offset_read(self,fileEntryOffset);
         
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
@@ -206,8 +221,8 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
     size_t alignBuf=_hpatch_align_upper((self->_cache_vce+self->_vce_size),sizeof(ZipFilePos_t));
-    self->_fileEntryOffsets=(ZipFilePos_t*)alignBuf;
-    self->_fileHeaderOffsets=(uint32_t*)(self->_fileEntryOffsets+fileCount);
+    self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
+    self->_fileHeaderOffsets=(uint32_t*)(self->_fileDataOffsets+fileCount);
     self->_fileCompressedSizes=(uint32_t*)(self->_fileHeaderOffsets+fileCount);
     
     check(UnZipper_fileData_read(self,v2sign_pos,self->_cache_vce,self->_cache_vce+self->_vce_size));
@@ -235,10 +250,7 @@ ZipFilePos_t UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex){
 }
 
 ZipFilePos_t UnZipper_fileData_offset(UnZipper* self,int fileIndex){
-    const ZipFilePos_t entryOffset=self->_fileEntryOffsets[fileIndex];
-    TByte buf[4];
-    check(UnZipper_fileData_read(self,entryOffset+26,buf,buf+4));
-    return entryOffset+30+readUInt16(buf)+readUInt16(buf+2);
+    return self->_fileDataOffsets[fileIndex];
 }
 
 bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){

@@ -59,17 +59,45 @@ static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
     return 0;
 }
 
+bool _createRange(OldStream* self){
+    assert(self->_buf==0);
+    int fileCount=UnZipper_fileCount(self->_oldZip);
+    int uncCount=UnZipper_uncompressed_fileCount(self->_oldZip);
+    self->_rangeCount=uncCount+2;
+    self->_buf=(unsigned char*)malloc(sizeof(uint32_t)*self->_rangeCount*2);
+    self->_rangeEndList=(uint32_t*)self->_buf;
+    self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
+    
+    int rangeIndex=0;
+    uint32_t curSize=self->_oldZip->_vce_size;
+    self->_rangeEndList[rangeIndex]=curSize;
+    self->_rangeFileOffsets[rangeIndex]=0;
+    ++rangeIndex;
+    curSize+=self->_input_refStream->streamSize;
+    self->_rangeEndList[rangeIndex]=curSize;
+    self->_rangeFileOffsets[rangeIndex]=0;
+    ++rangeIndex;
+    for (int i=0; i<fileCount; ++i) {
+        if (UnZipper_file_isCompressed(self->_oldZip,i)) continue;
+        assert(rangeIndex<self->_rangeCount);
+        curSize+=UnZipper_file_uncompressedSize(self->_oldZip,i);
+        self->_rangeEndList[rangeIndex]=curSize;
+        self->_rangeFileOffsets[rangeIndex]=UnZipper_fileData_offset(self->_oldZip,i);
+        ++rangeIndex;
+    }
+    assert(rangeIndex==self->_rangeCount);
+    return true;
+}
 
-bool OldStream_open(OldStream* self,UnZipper* oldZip,const hpatch_TStreamInput* input_refStream,
-                    hpatch_StreamPos_t oldDataSize,const uint32_t* oldZipNEFilePosList,size_t oldZipNEFilePosCount){
+bool OldStream_open(OldStream* self,UnZipper* oldZip,
+                    const hpatch_TStreamInput* input_refStream,hpatch_StreamPos_t oldDataSize){
     assert(self->stream==0);
     bool result=true;
     bool _isInClear=false;
     self->_oldZip=oldZip;
     self->_input_refStream=input_refStream;
-    self->_oldZipNEFilePosList=oldZipNEFilePosList;
-    self->_oldZipNEFilePosCount=oldZipNEFilePosCount;
-    
+    _createRange(self);
+    check(self->_rangeEndList[self->_rangeCount-1]==oldDataSize);
     
     self->_stream.streamHandle=self;
     self->_stream.streamSize=oldDataSize;
