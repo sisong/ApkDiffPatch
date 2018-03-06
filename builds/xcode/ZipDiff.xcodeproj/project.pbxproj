@@ -26,6 +26,7 @@
 		D671B75C204E801D002D17A7 /* diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B74F204E801D002D17A7 /* diff.cpp */; };
 		D671B75D204E801D002D17A7 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D671B752204E801D002D17A7 /* patch.c */; };
 		D671B76B204E8346002D17A7 /* zip_diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B76A204E8346002D17A7 /* zip_diff.cpp */; };
+		D671B76E204EA161002D17A7 /* DiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B76D204EA161002D17A7 /* DiffData.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -89,6 +90,8 @@
 		D671B752204E801D002D17A7 /* patch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = patch.c; sourceTree = "<group>"; };
 		D671B753204E801D002D17A7 /* patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch.h; sourceTree = "<group>"; };
 		D671B76A204E8346002D17A7 /* zip_diff.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_diff.cpp; path = ../../src/zip_diff.cpp; sourceTree = "<group>"; };
+		D671B76C204EA161002D17A7 /* DiffData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DiffData.h; sourceTree = "<group>"; };
+		D671B76D204EA161002D17A7 /* DiffData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DiffData.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,12 +142,12 @@
 				D671B71D204E7649002D17A7 /* patch.cpp */,
 				D671B728204E7649002D17A7 /* patch.h */,
 				D671B71F204E7649002D17A7 /* Zipper.h */,
-				D671B720204E7649002D17A7 /* OldStream.cpp */,
-				D671B721204E7649002D17A7 /* ZipDiffData.cpp */,
-				D671B722204E7649002D17A7 /* NewStream.cpp */,
 				D671B723204E7649002D17A7 /* Zipper.cpp */,
+				D671B720204E7649002D17A7 /* OldStream.cpp */,
 				D671B724204E7649002D17A7 /* OldStream.h */,
+				D671B721204E7649002D17A7 /* ZipDiffData.cpp */,
 				D671B725204E7649002D17A7 /* ZipDiffData.h */,
+				D671B722204E7649002D17A7 /* NewStream.cpp */,
 				D671B727204E7649002D17A7 /* NewStream.h */,
 			);
 			name = patch;
@@ -236,6 +239,8 @@
 			children = (
 				D671B6582047DD30002D17A7 /* diff.cpp */,
 				D671B6572047DD30002D17A7 /* diff.h */,
+				D671B76C204EA161002D17A7 /* DiffData.h */,
+				D671B76D204EA161002D17A7 /* DiffData.cpp */,
 			);
 			name = diff;
 			path = ../../src/diff;
@@ -304,6 +309,7 @@
 				D671B75D204E801D002D17A7 /* patch.c in Sources */,
 				D671B72D204E7649002D17A7 /* Zipper.cpp in Sources */,
 				D671B72A204E7649002D17A7 /* OldStream.cpp in Sources */,
+				D671B76E204EA161002D17A7 /* DiffData.cpp in Sources */,
 				D671B75B204E801D002D17A7 /* adler_roll.c in Sources */,
 				D671B729204E7649002D17A7 /* patch.cpp in Sources */,
 				D671B75A204E801D002D17A7 /* stream_serialize.cpp in Sources */,

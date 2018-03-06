@@ -26,7 +26,6 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "patch.h"
-#include <stdio.h>
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h" //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/file_for_patch.h"
 
