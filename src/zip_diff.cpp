@@ -1,5 +1,5 @@
-//  membuf.h
-//  ZipPatch
+//  zip_diff.cpp
+//  ZipDiff
 /*
  The MIT License (MIT)
  Copyright (c) 2016-2018 HouSisong
@@ -26,28 +26,25 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ZipPatch_membuf_h
-#define ZipPatch_membuf_h
-#include <assert.h>
-#include <string.h> //malloc,free
+#include <iostream>
+#include "diff/diff.h"
+#include "../HDiffPatch/_clock_for_demo.h"
 
-class MemBuf {
-public:
-    inline MemBuf():_buf(0),_bufCap(0){}
-    inline ~MemBuf(){ clear(); }
-    inline unsigned char* buf(){ return _buf; }
-    inline size_t cap()const{ return _bufCap; }
-    inline void clear(){ if (_buf) { free(_buf); _buf=0; _bufCap=0; } }
-    inline void setNeedCap(size_t needCap){ if (needCap<=_bufCap) ; else newMem(needCap); }
-private:
-    unsigned char*  _buf;
-    size_t          _bufCap;
-    void newMem(size_t needCap){
-        clear();
-        _bufCap=needCap;
-        _buf=(unsigned char*)malloc(needCap);
-        assert(_buf!=0);
+int main(int argc, const char * argv[]) {
+    if (argc!=4){
+        std::cout << "parameter: oldZip newZip outDiffFileName\n";
+        return 1;
     }
-};
-
-#endif //ZipPatch_membuf_h
+    int exitCode=0;
+    const char* oldZipPath     =argv[1];
+    const char* newZipPath     =argv[2];
+    const char* outDiffFileName=argv[3];
+    double time0=clock_s();
+    if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName)){
+        std::cout << "ZipDiff error!\n";
+        exitCode=1;
+    }
+    double time1=clock_s();
+    std::cout<<"ZipDiff time:"<<(time1-time0)<<" s\n";
+    return exitCode;
+}

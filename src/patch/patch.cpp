@@ -35,10 +35,10 @@
 #define _IsNeedIncludeDefaultCompressHead 0
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
-#include "patch/Zipper.h"
-#include "patch/ZipDiffData.h"
-#include "patch/OldStream.h"
-#include "patch/NewStream.h"
+#include "Zipper.h"
+#include "ZipDiffData.h"
+#include "OldStream.h"
+#include "NewStream.h"
 
 #define  check(value,error) { \
     if (!(value)){ printf(#value" "#error"!\n");  \
@@ -80,7 +80,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     
     check(TFileStreamInput_open(&diffData,zipDiffPath),PATCH_READ_ERROR);
     check(UnZipper_openRead(&oldZip,oldZipPath),PATCH_READ_ERROR);
-    check(ZipDiffData_open(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
+    check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
     check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.refList,
                                                   zipDiffData.refCount), PATCH_OLDDATA_ERROR);

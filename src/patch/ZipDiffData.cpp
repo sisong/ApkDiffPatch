@@ -57,7 +57,7 @@ bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpat
     }   \
 }
 
-bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin){
+bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin){
     bool result=true;
     bool _isInClear=false;
     hpatch_StreamPos_t  headDataSize=0;

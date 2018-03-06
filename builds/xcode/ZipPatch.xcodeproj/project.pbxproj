@@ -21,8 +21,8 @@
 		D6126BE62047B98500183A42 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE42047B98500183A42 /* patch.c */; };
 		D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE82047BF8C00183A42 /* OldStream.cpp */; };
 		D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126BEB2047BFC900183A42 /* NewStream.cpp */; };
-		D651194C204244C200805001 /* zip_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D651194B204244C200805001 /* zip_patch.cpp */; };
-		D688888C204688640042E2B3 /* patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888886204688640042E2B3 /* patch.cpp */; };
+		D671B767204E82CD002D17A7 /* patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B766204E82CD002D17A7 /* patch.cpp */; };
+		D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B768204E82F4002D17A7 /* zip_patch.cpp */; };
 		D688888D204688640042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888889204688640042E2B3 /* Zipper.cpp */; };
 /* End PBXBuildFile section */
 
@@ -72,15 +72,14 @@
 		D6126BEA2047BFC900183A42 /* NewStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NewStream.h; sourceTree = "<group>"; };
 		D6126BEB2047BFC900183A42 /* NewStream.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NewStream.cpp; sourceTree = "<group>"; };
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
-		D651194B204244C200805001 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../zip_patch.cpp; sourceTree = "<group>"; };
 		D671B65A2047DF87002D17A7 /* zstd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = zstd.h; path = ../../zstd/lib/zstd.h; sourceTree = "<group>"; };
 		D671B71B204A4830002D17A7 /* decompress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decompress_plugin_demo.h; path = ../../HDiffPatch/decompress_plugin_demo.h; sourceTree = "<group>"; };
 		D671B71C204A4830002D17A7 /* compress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compress_plugin_demo.h; path = ../../HDiffPatch/compress_plugin_demo.h; sourceTree = "<group>"; };
-		D6888886204688640042E2B3 /* patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = patch.cpp; path = ../../src/patch.cpp; sourceTree = "<group>"; };
+		D671B765204E82CD002D17A7 /* patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch.h; sourceTree = "<group>"; };
+		D671B766204E82CD002D17A7 /* patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = patch.cpp; sourceTree = "<group>"; };
+		D671B768204E82F4002D17A7 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../src/zip_patch.cpp; sourceTree = "<group>"; };
 		D6888888204688640042E2B3 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
 		D6888889204688640042E2B3 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
-		D688888A204688640042E2B3 /* membuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = membuf.h; sourceTree = "<group>"; };
-		D688888B204688640042E2B3 /* patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = patch.h; path = ../../src/patch.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,9 +174,7 @@
 		D65118FC2041A9B400805001 = {
 			isa = PBXGroup;
 			children = (
-				D651194B204244C200805001 /* zip_patch.cpp */,
-				D6888886204688640042E2B3 /* patch.cpp */,
-				D688888B204688640042E2B3 /* patch.h */,
+				D671B768204E82F4002D17A7 /* zip_patch.cpp */,
 				D6888887204688640042E2B3 /* patch */,
 				D6126BBC2047B65E00183A42 /* HDiffPatch */,
 				D6126BBD2047B92E00183A42 /* zstd_decompress */,
@@ -197,9 +194,10 @@
 		D6888887204688640042E2B3 /* patch */ = {
 			isa = PBXGroup;
 			children = (
+				D671B766204E82CD002D17A7 /* patch.cpp */,
+				D671B765204E82CD002D17A7 /* patch.h */,
 				D6888888204688640042E2B3 /* Zipper.h */,
 				D6888889204688640042E2B3 /* Zipper.cpp */,
-				D688888A204688640042E2B3 /* membuf.h */,
 				D6126B8F204697FC00183A42 /* ZipDiffData.h */,
 				D6126B90204697FC00183A42 /* ZipDiffData.cpp */,
 				D6126BE72047BF8C00183A42 /* OldStream.h */,
@@ -268,12 +266,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */,
 				D6126BE62047B98500183A42 /* patch.c in Sources */,
 				D688888D204688640042E2B3 /* Zipper.cpp in Sources */,
 				D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */,
 				D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */,
-				D651194C204244C200805001 /* zip_patch.cpp in Sources */,
-				D688888C204688640042E2B3 /* patch.cpp in Sources */,
 				D6126BE12047B95A00183A42 /* error_private.c in Sources */,
 				D6126BDC2047B95A00183A42 /* fse_decompress.c in Sources */,
 				D6126BDA2047B95A00183A42 /* zstd_decompress.c in Sources */,
@@ -284,6 +281,7 @@
 				D6126BDD2047B95A00183A42 /* xxhash.c in Sources */,
 				D6126BDB2047B95A00183A42 /* entropy_common.c in Sources */,
 				D6126BE02047B95A00183A42 /* zstd_common.c in Sources */,
+				D671B767204E82CD002D17A7 /* patch.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

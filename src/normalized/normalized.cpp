@@ -26,7 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "normalized.h"
-#include "patch/Zipper.h"
+#include "../patch/Zipper.h"
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \

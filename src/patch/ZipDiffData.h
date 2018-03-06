@@ -53,7 +53,7 @@ typedef struct ZipDiffData{
 } ZipDiffData;
 
 void ZipDiffData_init(ZipDiffData* self);
-bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
+bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 
 #ifdef __cplusplus

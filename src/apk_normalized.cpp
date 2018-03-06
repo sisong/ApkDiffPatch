@@ -1,5 +1,5 @@
-//  zip_patch.cpp
-//  ZipPatch
+//  apk_normalized.cpp
+//  ApkNormalized
 /*
  The MIT License (MIT)
  Copyright (c) 2016-2018 HouSisong
@@ -25,43 +25,34 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <stdio.h>
-#include "../HDiffPatch/_clock_for_demo.h"
-#include "src/patch.h"
+
+//apk_normalized是为了diff/patch过程兼容apk的v2版签名而提供;
+//该过程对zip\jar\apk包进行规范化处理:
+//   输入包文件,重新按固定压缩算法生成对齐的新包文件(扩展字段、注释、jar的签名和apk文件的v1签名会被保留,apk的v2签名等数据会被删除)
+// ps: 要同时支持apk的v1、v2签名,需要在规范化前执行过v1、v2签名;
+//     需要往apk里添加自己的其他私有信息时,建议在规范化后v2签名前利用扩展字段和注释字段写入信息;
+//     规范化后可以用Android签名工具对输出的apk文件单独执行v2签名,比如:
+//  apksigner sign --v2-signing-enabled --ks *.keystore --ks-pass pass:* --in normalized.apk --out result.apk
+
+#include <iostream>
+#include "normalized/normalized.h"
+#include "../../HDiffPatch/_clock_for_demo.h"
 
 int main(int argc, const char * argv[]) {
-    const char* oldZipPath=0;
-    const char* zipDiffPath=0;
-    const char* outNewZipPath=0;
-    size_t      maxUncompressMemory=0;
-    const char* tempUncompressFileName=0;
-    if (argc==6){
-        oldZipPath   =argv[1];
-        zipDiffPath  =argv[2];
-        outNewZipPath=argv[3];
-        long _byteSize=atol(argv[4]);
-        if (_byteSize<0){
-            printf("parameter maxUncompressMemory error!\n");
-            return 1;
-        }
-        maxUncompressMemory=(size_t)_byteSize;
-        tempUncompressFileName=argv[5];
-    }else if (argc==4){
-        oldZipPath   =argv[1];
-        zipDiffPath  =argv[2];
-        outNewZipPath=argv[3];
-    }else{
-        printf("parameter: oldZip zipDiffPath outNewZip [maxUncompressMemory tempUncompressFileName]\n");
+    if (argc!=3){
+        std::cout << "parameter: srcApk dstApk\n";
         return 1;
     }
-    
     int exitCode=0;
+    const char* srcApk=argv[1];
+    const char* dstApk=argv[2];
     double time0=clock_s();
-    if (!(ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName)))
+    if (!ZipNormalized(srcApk,dstApk)){
+        std::cout << "ApkNormalized error!\n";
         exitCode=1;
+    }
     double time1=clock_s();
-    if (exitCode==0)
-        printf("  patch ok!\n");
-    printf("\nZipPatch time: %.3f s\n",(time1-time0));
+    std::cout<<"ApkNormalized time:"<<(time1-time0)<<" s\n";
     return exitCode;
 }
+
