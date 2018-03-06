@@ -37,7 +37,6 @@ extern "C" {
 typedef struct ZipDiffData{
     size_t      newZipFileCount;
     size_t      newZipVCESize;
-    size_t      newZipVCE_ESize;
     size_t      reCompressCount;
     size_t      samePairCount;
     size_t      oldZipVCESize;

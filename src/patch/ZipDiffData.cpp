@@ -77,7 +77,6 @@ bool ZipDiffData_open(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecom
         const TByte* curBuf=buf+kVersionTypeLen;
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipFileCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCE_ESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->reCompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipVCESize,size_t);

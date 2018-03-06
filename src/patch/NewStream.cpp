@@ -32,7 +32,6 @@ void NewStream_init(NewStream* self){
     UnZipper_init(&self->_newZipVCE);
 }
 void NewStream_close(NewStream* self){
-    //todo:
     bool ret=UnZipper_close(&self->_newZipVCE);
     assert(ret);
 }
@@ -75,7 +74,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     //write one end
     if (self->_curFileIndex<0){//vce ok
-        //todo:
+        check(UnZipper_updateVCE(&self->_newZipVCE));
     }else{
         check(Zipper_file_append_end(self->_out_newZip));
     }
@@ -116,7 +115,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         assert(false); return false; } }
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
-                    size_t newDataSize,size_t newZipVCESize,size_t newZipVCE_ESize,
+                    size_t newDataSize,size_t newZipVCESize,
                     const uint32_t* samePairList,size_t samePairCount,
                     const uint32_t* reCompressList,size_t reCompressCount){
     assert(self->_out_newZip==0);
@@ -134,8 +133,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_stream.write=_NewStream_write;
     self->stream=&self->_stream;
     
-    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)newZipVCESize,
-                              (ZipFilePos_t)newZipVCE_ESize,self->_fileCount));
+    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)newZipVCESize,self->_fileCount));
     
     self->_curFileIndex=-1;
     self->_curWriteToPosEnd=newZipVCESize;

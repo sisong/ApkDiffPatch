@@ -107,7 +107,7 @@ static bool _UnZipper_searchCentralDirectory(UnZipper* self,ZipFilePos_t endCent
 
 static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
                                              ZipFilePos_t* v2sign_pos,bool* isApkNormalized){
-    //todo:
+    //todo: searchApkV2Sign
     *v2sign_pos=centralDirectory_pos;
     return true;
 }
@@ -186,7 +186,7 @@ bool UnZipper_close(UnZipper* self){
     return fileClose(&self->_file);
 }
 
-static long _stream_read(void* _self,hpatch_StreamPos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
+static long _stream_read_file(void* _self,hpatch_StreamPos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
     if (file_pos!=(ZipFilePos_t)file_pos) return 0;
     UnZipper* self=(UnZipper*)_self;
     if (!UnZipper_fileData_read(self,(ZipFilePos_t)file_pos,buf,bufEnd))
@@ -195,41 +195,62 @@ static long _stream_read(void* _self,hpatch_StreamPos_t file_pos,unsigned char* 
         return (long)(bufEnd-buf);
 }
 
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
+
+static bool _UnZipper_openRead_begin(UnZipper* self){
+    assert(self->_buf==0);
+    self->_buf=(unsigned char*)malloc(kBufSize);
+    check(self->_buf!=0);
+    self->_isApkNormalized=false;
+    return true;
+}
+
+static bool _UnZipper_openRead_vce(UnZipper* self,ZipFilePos_t vceSize,int fileCount){
+    assert(self->_cache_vce==0);
+    self->_vce_size=vceSize;
+    self->_cache_vce=(TByte*)malloc(self->_vce_size+sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2);
+    size_t alignBuf=_hpatch_align_upper((self->_cache_vce+self->_vce_size),sizeof(ZipFilePos_t));
+    self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
+    self->_fileHeaderOffsets=(uint32_t*)(self->_fileDataOffsets+fileCount);
+    self->_fileCompressedSizes=(uint32_t*)(self->_fileHeaderOffsets+fileCount);
+    return true;
+}
+
+
+static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     hpatch_StreamPos_t fileLength=0;
     assert(self->_file==0);
     check(fileOpenForRead(zipFileName,&self->_file,&fileLength));
     self->_file_curPos=0;
     self->_fileLength=(ZipFilePos_t)fileLength;
     check(self->_fileLength==fileLength);
-    assert(self->_buf==0);
-    self->_buf=(unsigned char*)malloc(kBufSize);
     self->_stream.streamHandle=self;
     self->_stream.streamSize=fileLength;
-    self->_stream.read=_stream_read;
+    self->_stream.read=_stream_read_file;
     self->stream=&self->_stream;
-    
-    ZipFilePos_t endCentralDirectory_pos=0;
-    ZipFilePos_t centralDirectory_pos=0;
-    uint32_t     fileCount=0;
-    ZipFilePos_t v2sign_pos=0;
-    bool         isApkNormalized=false;
-    check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));
-    check(_UnZipper_searchCentralDirectory(self,endCentralDirectory_pos,&centralDirectory_pos,&fileCount));
-    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos,&isApkNormalized));
+    return true;
+}
 
-    self->_vce_size=self->_fileLength-v2sign_pos;
-    assert(self->_cache_vce==0);
-    self->_cache_vce=(TByte*)malloc(self->_vce_size+sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2);
+#define _UnZipper_sreachVCE() \
+    ZipFilePos_t endCentralDirectory_pos=0; \
+    ZipFilePos_t centralDirectory_pos=0;    \
+    uint32_t     fileCount=0;   \
+    ZipFilePos_t v2sign_pos=0;  \
+    check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));  \
+    check(_UnZipper_searchCentralDirectory(self,endCentralDirectory_pos,&centralDirectory_pos,&fileCount)); \
+    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos,&self->_isApkNormalized));
+
+
+bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
+    check(_UnZipper_openRead_begin(self));
+    check(_UnZipper_openRead_file(self,zipFileName));
+    _UnZipper_sreachVCE();
+    check(_UnZipper_openRead_vce(self,self->_fileLength-v2sign_pos,fileCount));
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
-    size_t alignBuf=_hpatch_align_upper((self->_cache_vce+self->_vce_size),sizeof(ZipFilePos_t));
-    self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
-    self->_fileHeaderOffsets=(uint32_t*)(self->_fileDataOffsets+fileCount);
-    self->_fileCompressedSizes=(uint32_t*)(self->_fileHeaderOffsets+fileCount);
     
     check(UnZipper_fileData_read(self,v2sign_pos,self->_cache_vce,self->_cache_vce+self->_vce_size));
-    bool isHeaderMatch=isApkNormalized;
+    
+    bool isHeaderMatch=self->_isApkNormalized;
     check(_UnZipper_vce_normalized(self,isHeaderMatch));
     
     return true;
@@ -245,26 +266,26 @@ static long _stream_read_vce(void* _self,hpatch_StreamPos_t file_pos,unsigned ch
         return 0;
     }
 }
-bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,ZipFilePos_t vce_ESize,int fileCount){
-    assert(self->_buf==0);
-    self->_buf=(unsigned char*)malloc(kBufSize);
+bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
+    check(_UnZipper_openRead_begin(self));
+    
     self->_stream.streamHandle=self;
     self->_stream.streamSize=vce_size;
     self->_stream.read=_stream_read_vce;
     self->stream=&self->_stream;
     
-    self->_vce_size=vce_size;
-    assert(self->_cache_vce==0);
-    self->_cache_vce=(TByte*)malloc(self->_vce_size+sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2);
-    ZipFilePos_t endCentralDirectory_pos=vce_size-vce_ESize;
-    self->_endCentralDirectory=self->_cache_vce+endCentralDirectory_pos;
-    
-    size_t alignBuf=_hpatch_align_upper((self->_cache_vce+self->_vce_size),sizeof(ZipFilePos_t));
-    self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
-    self->_fileHeaderOffsets=(uint32_t*)(self->_fileDataOffsets+fileCount);
-    self->_fileCompressedSizes=(uint32_t*)(self->_fileHeaderOffsets+fileCount);
-    
+    check(_UnZipper_openRead_vce(self,vce_size,fileCount));
     return true;
+}
+
+bool UnZipper_updateVCE(UnZipper* self){
+    _UnZipper_sreachVCE();
+    self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
+    self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
+    
+    bool isHeaderMatch=true;
+    check(_UnZipper_vce_normalized(self,isHeaderMatch));
+    return false;
 }
 
 static uint16_t  _file_compressType(const UnZipper* self,int fileIndex){

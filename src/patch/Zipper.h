@@ -50,6 +50,7 @@ typedef struct UnZipper{
     uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
     uint32_t*       _fileCompressedSizes;
     ZipFilePos_t*   _fileDataOffsets;
+    bool            _isApkNormalized;
     //mem
     unsigned char*  _buf; //file read buf
     unsigned char*  _cache_vce;
@@ -70,7 +71,8 @@ bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,
 bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream);
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream);
     
-bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,ZipFilePos_t vce_ESize,int fileCount);
+bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
+bool UnZipper_updateVCE(UnZipper* self);
 
     struct Zipper;
     struct _zlib_TCompress;
