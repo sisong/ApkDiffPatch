@@ -69,6 +69,8 @@ ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
 bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream);
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream);
+    
+bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,ZipFilePos_t vce_ESize,int fileCount);
 
     struct Zipper;
     struct _zlib_TCompress;

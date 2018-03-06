@@ -26,7 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-//apk-normalized是为了diff/patch过程兼容apk的v2版签名而提供;
+//apk_normalized是为了diff/patch过程兼容apk的v2版签名而提供;
 //该过程对zip\jar\apk包进行规范化处理:
 //   输入包文件,重新按固定压缩算法生成对齐的新包文件(扩展字段、注释、jar的签名和apk文件的v1签名会被保留,apk的v2签名等数据会被删除)
 // ps: 要同时支持apk的v1、v2签名,需要在规范化前执行过v1、v2签名;

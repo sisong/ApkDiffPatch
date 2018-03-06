@@ -114,14 +114,17 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
                          zipDiffData.refCount,input_ref), PATCH_OLDDATA_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
-    check(NewStream_open(&newStream,&out_newZip,&oldZip,
-                         diffInfo.newDataSize,zipDiffData.newZipVCESize,
-                         zipDiffData.samePairList,zipDiffData.samePairCount),PATCH_NEWDATA_ERROR);
+    check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount), PATCH_READ_ERROR)
+    check(NewStream_open(&newStream,&out_newZip,&oldZip,diffInfo.newDataSize,
+                         zipDiffData.newZipVCESize,zipDiffData.newZipVCE_ESize,
+                         zipDiffData.samePairList,zipDiffData.samePairCount,
+                         zipDiffData.reCompressList,zipDiffData.reCompressCount),PATCH_NEWDATA_ERROR);
     
     temp_cache =(TByte*)malloc(CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);
     check(patch_decompress_with_cache(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
                                       decompressPlugin,temp_cache,temp_cache+CACHE_SIZE),PATCH_ERROR);
+    check(newStream.isFilish,PATCH_NEWDATA_ERROR);
     
 clear:
     _isInClear=true;
