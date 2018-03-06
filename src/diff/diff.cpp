@@ -71,9 +71,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
     
-    check(getSamePairList(&newZip,&oldZip,samePairList));
-    getNewRefList(UnZipper_fileCount(&newZip),samePairList,newRefList);
-    //todo: ? check(getNewReCompressList(&newZip,samePairList,newReCompressList));
+    check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newReCompressList));
     
     //todo: get best oldZip refList
     oldZipFileCount=UnZipper_fileCount(&oldZip);

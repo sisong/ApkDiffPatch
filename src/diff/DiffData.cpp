@@ -26,7 +26,10 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "DiffData.h"
+#include <stdio.h>
+#include <vector>
 #include <map>
+#include "../patch/OldStream.h"
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -44,7 +47,10 @@ static bool isSameFileData(UnZipper* newZip,int newIndex,UnZipper* oldZip,int ol
     return 0==memcmp(buf.data(),buf.data()+newFileSize,newFileSize);
 }
 
-bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,std::vector<uint32_t>& out_samePairList){
+bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
+                     std::vector<uint32_t>& out_samePairList,
+                     std::vector<uint32_t>& out_newRefList,
+                     std::vector<uint32_t>& out_newReCompressList){
     int oldFileCount=UnZipper_fileCount(oldZip);
     typedef std::multimap<uint32_t,int> TMap;
     TMap crcMap;
@@ -57,29 +63,52 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,std::vector<uint32_t>& ou
     for (int i=0; i<newFileCount; ++i) {
         uint32_t crcNew=UnZipper_file_crc32(newZip,i);
         std::pair<TMap::const_iterator,TMap::const_iterator> range=crcMap.equal_range(crcNew);
+        bool findSame=false;
         for (;range.first!=range.second;++range.first) {
             int oldIndex=range.first->second;
             if (isSameFileData(newZip,i,oldZip,oldIndex)){
+                findSame=true;
                 out_samePairList.push_back(i);
                 out_samePairList.push_back(oldIndex);
                 break;
             }
+            printf("WARNING: crc32 equal but data not equal! fileIndex(%d,%d)\n",i,oldIndex);
+            //todo:print fileName
+        }
+        if (!findSame){
+            out_newRefList.push_back(i);
+            if (UnZipper_file_isCompressed(newZip,i))
+                out_newReCompressList.push_back(i);
         }
     }
     return true;
 }
 
-void getNewRefList(int newZip_fileCount,const std::vector<uint32_t>& samePairList,
-                   std::vector<uint32_t>& out_newRefList){
-    
-    //todo:
-    return;
-}
-
+struct t_auto_OldStream {
+    inline t_auto_OldStream(OldStream* stream):_stream(stream){}
+    inline ~t_auto_OldStream(){ OldStream_close(_stream); }
+    OldStream* _stream;
+};
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,std::vector<unsigned char>& out_data){
+    long outSize=0;
+    OldStream stream;
+    OldStream_init(&stream);
+    t_auto_OldStream _t_auto_OldStream(&stream);
     
-    //todo:
-    return false;
+    ZipFilePos_t decompressSumSize=OldStream_getDecompressSumSize(zip,refList.data(),refList.size());
+    std::vector<TByte> decompressData(decompressSumSize,0);
+    hpatch_TStreamOutput out_decompressStream;
+    hpatch_TStreamInput  in_decompressStream;
+    mem_as_hStreamOutput(&out_decompressStream,decompressData.data(),decompressData.data()+decompressSumSize);
+    mem_as_hStreamInput(&in_decompressStream,decompressData.data(),decompressData.data()+decompressSumSize);
+    check(OldStream_getDecompressData(zip,refList.data(),refList.size(),&out_decompressStream));
+    check(OldStream_open(&stream,zip,refList.data(),refList.size(),&in_decompressStream));
+    
+    outSize=stream.stream->streamSize;
+    assert(outSize==stream.stream->streamSize);
+    out_data.resize(outSize);
+    check(outSize==stream.stream->read(stream.stream->streamHandle,0,out_data.data(),out_data.data()+outSize));
+    return true;
 }
 

@@ -32,9 +32,9 @@
 #include "../patch/ZipDiffData.h"
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
-                     std::vector<uint32_t>& out_samePairList);
-void getNewRefList(int newZip_fileCount,const std::vector<uint32_t>& samePairList,
-                   std::vector<uint32_t>& out_newRefList);
+                     std::vector<uint32_t>& out_samePairList,
+                     std::vector<uint32_t>& out_newRefList,
+                     std::vector<uint32_t>& out_newReCompressList);
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
                        std::vector<unsigned char>& out_data);
