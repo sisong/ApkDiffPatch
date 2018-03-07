@@ -28,12 +28,6 @@
 #include "patch.h"
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h" //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/file_for_patch.h"
-
-#include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
-#define _CompressPlugin_zstd
-#define _IsNeedIncludeDefaultCompressHead 0
-#include "../../HDiffPatch/decompress_plugin_demo.h"
-
 #include "Zipper.h"
 #include "ZipDiffData.h"
 #include "OldStream.h"
@@ -65,9 +59,13 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     bool            isUsedTempFile=false;
     TByte*          temp_cache =0;
     ZipFilePos_t    decompressSumSize=0;
-    
-    hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin; //zstd
-    
+#ifdef _CompressPlugin_zstd
+    hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
+#endif
+#ifdef _CompressPlugin_zlib
+    hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
+#endif
+
     UnZipper_init(&oldZip);
     TFileStreamInput_init(&diffData);
     Zipper_init(&out_newZip);

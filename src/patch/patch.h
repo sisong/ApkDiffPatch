@@ -46,4 +46,14 @@ typedef enum TPatchResult {
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName);
 
+//zstd or zlib?
+#if (1)
+#   include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
+#   define _CompressPlugin_zstd
+#   define _IsNeedIncludeDefaultCompressHead 0
+#else
+#   define _CompressPlugin_zlib
+#endif
+#include "../../HDiffPatch/decompress_plugin_demo.h"
+
 #endif //ZipPatch_patch_h

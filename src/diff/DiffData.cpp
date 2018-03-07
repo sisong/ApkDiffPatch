@@ -97,7 +97,7 @@ bool getNormalizedCompressedSize(UnZipper* selfZip,int selfIndex,uint32_t* out_c
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
-                     std::vector<uint32_t>& out_newReCompressList){
+                     std::vector<uint32_t>* out_newReCompressList){
     int oldFileCount=UnZipper_fileCount(oldZip);
     typedef std::multimap<uint32_t,int> TMap;
     TMap crcMap;
@@ -124,10 +124,10 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
         }
         if (!findSame){
             out_newRefList.push_back(i);
-            if (UnZipper_file_isCompressed(newZip,i)){
+            if ((out_newReCompressList!=0)&&UnZipper_file_isCompressed(newZip,i)){
                 uint32_t compressedSize=0;
                 check(getNormalizedCompressedSize(newZip,i,&compressedSize));
-                out_newReCompressList.push_back(compressedSize);
+                out_newReCompressList->push_back(compressedSize);
             }
         }
     }
@@ -167,26 +167,27 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
                                   const std::vector<TByte>& hdiffzData,hdiff_TCompress* compressPlugin){
     std::vector<TByte> headData;
     {//head data
-        for (size_t i=0;i<data->reCompressCount;++i)
-            packUInt<uint32_t>(headData,data->reCompressList[i]);
+        for (size_t i=0;i<data->reCompressCount;++i){
+            packUInt(headData,(uint32_t)data->reCompressList[i]);
+        }
         uint32_t backValue=-1;
         for (size_t i=0;i<data->refCount;++i){
             uint32_t curValue=data->refList[i];
-            packUInt<uint32_t>(headData,curValue-(uint32_t)(backValue+1));
+            packUInt(headData,(uint32_t)(curValue-(uint32_t)(backValue+1)));
             backValue=curValue;
         }
         uint32_t backPairNew=-1;
         uint32_t backPairOld=-1;
         for (size_t i=0;i<data->samePairCount;++i){
             uint32_t curNewValue=data->samePairList[i*2+0];
-            packUInt<uint32_t>(headData,curNewValue-(uint32_t)(backPairNew+1));
+            packUInt(headData,(uint32_t)(curNewValue-(uint32_t)(backPairNew+1)));
             backPairNew=curNewValue;
             
             uint32_t curOldValue=data->samePairList[i*2+1];
             if (curOldValue>=(uint32_t)(backPairOld+1))
-                packUIntWithTag<uint32_t>(headData,curOldValue-(uint32_t)(backPairOld+1),0,1);
+                packUIntWithTag(headData,(uint32_t)(curOldValue-(uint32_t)(backPairOld+1)),0,1);
             else
-                packUIntWithTag<uint32_t>(headData,(uint32_t)(backPairOld+1)-curOldValue,1,1);
+                packUIntWithTag(headData,(uint32_t)((uint32_t)(backPairOld+1)-curOldValue),1,1);
             backPairOld=curOldValue;
         }
     }

@@ -32,15 +32,9 @@
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
-#include "DiffData.h"
 #include "../patch/patch.h"
-
-#include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
-#define _CompressPlugin_zstd
-#define _IsNeedIncludeDefaultCompressHead 0
-//#define _CompressPlugin_zlib
 #include "../../HDiffPatch/compress_plugin_demo.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
+#include "DiffData.h"
 
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
@@ -68,10 +62,17 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     bool            result=true;
     bool            _isInClear=false;
     int             oldZipFileCount=0;
-    
+    std::vector<uint32_t>* needReCompressList=0;
+#ifdef _CompressPlugin_zstd
     zstd_compress_level=22; //0..22
     hdiff_TCompress* compressPlugin=&zstdCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
+#endif
+#ifdef _CompressPlugin_zlib
+    zlib_compress_level=9; //0..9
+    hdiff_TCompress* compressPlugin=&zlibCompressPlugin;
+    hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
+#endif
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
 
     UnZipper_init(&oldZip);
@@ -81,8 +82,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
     
-    check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newReCompressList));
-    newReCompressList.clear(); //可选数据,提供用于优化ZipPatch写文件速度;
+    //needReCompressList=&newReCompressList //可选数据,用于优化ZipPatch减少fseek;
+    check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,needReCompressList));
     
     //todo: get best oldZip refList
     oldZipFileCount=UnZipper_fileCount(&oldZip);
@@ -96,8 +97,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(readZipStreamData(&newZip,newRefList,newData));
     check(readZipStreamData(&oldZip,oldRefList,oldData));
     check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,myBestMatchScore));
-    oldData.clear();
-    newData.clear();
+    { std::vector<TByte> _empty; oldData.swap(_empty); }
+    { std::vector<TByte> _empty; newData.swap(_empty); }
     
     check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newReCompressList,
                                samePairList,oldRefList,hdiffzData,compressPlugin));
