@@ -28,9 +28,18 @@
 #ifndef ZipDiff_DiffData_h
 #define ZipDiff_DiffData_h
 #include <vector>
+#include <string>
 #include "../patch/Zipper.h"
 #include "../patch/ZipDiffData.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
+
+bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
+static inline std::string zipFile_name(UnZipper* self,int fileIndex){
+    int nameLen=UnZipper_file_nameLen(self,fileIndex);
+    const char* nameBegin=UnZipper_file_nameBegin(self,fileIndex);
+    return std::string(nameBegin,nameBegin+nameLen);
+    
+}
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_samePairList,

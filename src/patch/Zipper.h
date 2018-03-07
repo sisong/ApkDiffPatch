@@ -60,7 +60,7 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
-const unsigned char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex);
+const char*         UnZipper_file_nameBegin(const UnZipper* self,int fileIndex);
 bool                UnZipper_file_isCompressed(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);

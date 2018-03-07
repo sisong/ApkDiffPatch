@@ -134,9 +134,9 @@ int UnZipper_file_nameLen(const UnZipper* self,int fileIndex){
     return readUInt16(headBuf+28);
 }
 
-const unsigned char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex){
+const char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex){
     const TByte* headBuf=fileHeaderBuf(self,fileIndex);
-    return headBuf+kMinFileHeaderSize;
+    return (char*)headBuf+kMinFileHeaderSize;
 }
 
 //缓存相关信息并规范化数据;

@@ -45,6 +45,7 @@
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
 bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath);
+bool checkZipIsSame(const char* oldZipPath,const char* newZipPath);
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -71,7 +72,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     zstd_compress_level=22; //0..22
     hdiff_TCompress* compressPlugin=&zstdCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
-    
+    std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
+
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
     TFileStreamOutput_init(&out_diffFile);
@@ -106,8 +108,11 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
                                                        0,out_diffData.data(),out_diffData.data()+out_diffData.size()));
     check(TFileStreamOutput_close(&out_diffFile));
     std::cout<<"  out ZipDiff file ok!\n";
+    check(UnZipper_close(&newZip));
+    check(UnZipper_close(&oldZip));
     
     check(testZipPatch(oldZipPath,outDiffFileName,temp_ZipPatchFileName));
+    check(checkZipIsSame(newZipPath,temp_ZipPatchFileName));
     
 clear:
     _isInClear=true;
@@ -123,25 +128,25 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
     double time0=clock_s();
     const size_t oldDataSize=oldData.size();
     const size_t newDataSize=newData.size();
-    std::cout<<"run HDiffZ:\n";
-    std::cout<<"oldDataSize : "<<oldDataSize<<"\nnewDataSize : "<<newDataSize<<"\n";
+    std::cout<<"\nrun HDiffZ:\n";
+    std::cout<<"  oldDataSize : "<<oldDataSize<<"\n  newDataSize : "<<newDataSize<<"\n";
     
     std::vector<TByte>& diffData=out_diffData;
     const TByte* newData0=newData.data();
     const TByte* oldData0=oldData.data();
     create_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
                            diffData,compressPlugin,myBestMatchScore);
-    std::cout<<"diffDataSize: "<<diffData.size()<<"\n";
     double time1=clock_s();
+    std::cout<<"  diffDataSize: "<<diffData.size()<<"\n";
+    std::cout<<"  diff  time: "<<(time1-time0)<<" s\n";
     if (!check_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
                                diffData.data(),diffData.data()+diffData.size(),decompressPlugin)){
-        std::cout<<"\n  patch check HDiffZ data error!!!\n";
+        std::cout<<"\n  HPatch check HDiffZ result error!!!\n";
         return false;
     }else{
         double time2=clock_s();
-        std::cout<<"  patch check HDiffZ data ok!\n";
-        std::cout<<"  diff  time:"<<(time1-time0)<<" s\n";
-        std::cout<<"  patch time:"<<(time2-time1)<<" s\n";
+        std::cout<<"  HPatch check HDiffZ result ok!\n";
+        std::cout<<"  patch time: "<<(time2-time1)<<" s\n";
         return true;
     }
 }
@@ -152,10 +157,43 @@ bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* out
     TPatchResult ret=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,0,0);
     double time1=clock_s();
     if (ret==PATCH_SUCCESS){
-        printf("\run ZipPatch ok!\n");
-        printf("ZipPatch time: %.3f s\n",(time1-time0));
+        std::cout<<"\nrun ZipPatch ok!\n";
+        std::cout<<"  patch time: "<<(time1-time0)<<" s\n";
         return true;
     }else{
         return false;
     }
 }
+
+
+bool checkZipIsSame(const char* oldZipPath,const char* newZipPath){
+    double time0=clock_s();
+    double time1;
+    UnZipper            oldZip;
+    UnZipper            newZip;
+    bool            result=true;
+    bool            _isInClear=false;
+    int             fileCount=0;
+    
+    UnZipper_init(&oldZip);
+    UnZipper_init(&newZip);
+    check(UnZipper_openRead(&oldZip,oldZipPath));
+    check(UnZipper_openRead(&newZip,newZipPath));
+    
+    fileCount=UnZipper_fileCount(&oldZip);
+    check(fileCount=UnZipper_fileCount(&newZip));
+    for (int i=0;i<fileCount; ++i) {
+        check(zipFile_name(&oldZip,i)==zipFile_name(&newZip,i));
+        check(UnZipper_file_crc32(&oldZip,i)==UnZipper_file_crc32(&newZip,i));
+        check(zipFileData_isSame(&oldZip,i,&newZip,i));
+    }
+    time1=clock_s();
+    std::cout<<"  check ZipPatch result ok!\n";
+    std::cout<<"  check time: "<<(time1-time0)<<" s\n";
+clear:
+    _isInClear=true;
+    check(UnZipper_close(&newZip));
+    check(UnZipper_close(&oldZip));
+    return result;
+}
+

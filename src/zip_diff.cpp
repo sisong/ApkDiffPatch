@@ -41,13 +41,14 @@ int main(int argc, const char * argv[]) {
     const char* newZipPath     =argv[2];
     const char* outDiffFileName=argv[3];
     std::string temp_ZipPatchFileName=std::string(outDiffFileName)+"_temp_forTestZipPatch.tmp";
+    std::cout<<"oldZip :\"" <<oldZipPath<< "\"\nnewZip :\""<<newZipPath<<"\"\noutDiff:\""<<outDiffFileName<<"\"\n";
     double time0=clock_s();
     if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,temp_ZipPatchFileName.c_str())){
         std::cout << "ZipDiff error!\n";
         exitCode=1;
     }
     double time1=clock_s();
-    std::cout<<"ZipDiff time:"<<(time1-time0)<<" s\n";
+    std::cout<<"\nZipDiff all time:"<<(time1-time0)<<" s\n";
     remove(temp_ZipPatchFileName.c_str());
     return exitCode;
 }

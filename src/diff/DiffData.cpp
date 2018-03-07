@@ -41,16 +41,16 @@ static const char* kVersionType="ZipDiff1";
     if (!(value)){ printf(#value" ERROR!\n");  \
         assert(false); return false; } }
 
-static bool isSameFileData(UnZipper* newZip,int newIndex,UnZipper* oldZip,int oldIndex){//safe check
-    uint32_t newFileSize=UnZipper_file_uncompressedSize(newZip,newIndex);
-    if (newFileSize!=UnZipper_file_uncompressedSize(oldZip,oldIndex)) return false;
-    std::vector<TByte> buf(newFileSize*2);
+bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int srcIndex){
+    uint32_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
+    if (selfFileSize!=UnZipper_file_uncompressedSize(srcZip,srcIndex)) return false;
+    std::vector<TByte> buf(selfFileSize*2);
     hpatch_TStreamOutput stream;
-    mem_as_hStreamOutput(&stream,buf.data(),buf.data()+newFileSize);
-    check(UnZipper_fileData_decompressTo(newZip,newIndex,&stream));
-    mem_as_hStreamOutput(&stream,buf.data()+newFileSize,buf.data()+newFileSize*2);
-    check(UnZipper_fileData_decompressTo(oldZip,oldIndex,&stream));
-    return 0==memcmp(buf.data(),buf.data()+newFileSize,newFileSize);
+    mem_as_hStreamOutput(&stream,buf.data(),buf.data()+selfFileSize);
+    check(UnZipper_fileData_decompressTo(selfZip,selfIndex,&stream));
+    mem_as_hStreamOutput(&stream,buf.data()+selfFileSize,buf.data()+selfFileSize*2);
+    check(UnZipper_fileData_decompressTo(srcZip,srcIndex,&stream));
+    return 0==memcmp(buf.data(),buf.data()+selfFileSize,selfFileSize);
 }
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
@@ -72,7 +72,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
         bool findSame=false;
         for (;range.first!=range.second;++range.first) {
             int oldIndex=range.first->second;
-            if (isSameFileData(newZip,i,oldZip,oldIndex)){
+            if (zipFileData_isSame(newZip,i,oldZip,oldIndex)){
                 findSame=true;
                 out_samePairList.push_back(i);
                 out_samePairList.push_back(oldIndex);
