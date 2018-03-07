@@ -54,13 +54,14 @@ int main(int argc, const char * argv[]) {
         printf("parameter: oldZip zipDiffPath outNewZip [maxUncompressMemory tempUncompressFileName]\n");
         return 1;
     }
+    printf("oldZip:\"%s\"\ndiff  :\"%s\"\noutZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
+    if (tempUncompressFileName!=0)
+        printf("maxUncompressMemory:%ld\ntempUncompressFileName:\"%s\"\n",maxUncompressMemory,tempUncompressFileName);
     
-    int exitCode=0;
     double time0=clock_s();
-    if (!(ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName)))
-        exitCode=1;
+    int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName);
     double time1=clock_s();
-    if (exitCode==0)
+    if (exitCode==PATCH_SUCCESS)
         printf("  patch ok!\n");
     printf("\nZipPatch time: %.3f s\n",(time1-time0));
     return exitCode;

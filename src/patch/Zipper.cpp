@@ -58,7 +58,7 @@ inline static void writeUInt32_to(TByte* out_buf4,uint32_t v){
     out_buf4[2]=(TByte)(v>>16); out_buf4[3]=(TByte)(v>>24);
 }
 
-#define kBufSize                    (32*1024)
+#define kBufSize                    (64*1024)
 
 //https://en.wikipedia.org/wiki/Zip_(file_format)
 #define kMaxEndGlobalComment        (1<<(2*8)) //2 byte
@@ -559,16 +559,20 @@ bool _zipper_file_update_compressedSize(Zipper* self,ZipFilePos_t curFileIndex,u
     
     uint32_t fileEntryOffset=self->_fileEntryOffsets[curFileIndex];
     uint32_t compressedSizeOffset=fileEntryOffset+18;
-    TByte buf[4];
-    writeUInt32_to(buf,compressedSize);
     
-    //todo: optimize, if in cache buf?
-    check(_writeFlush(self));
-    hpatch_StreamPos_t backFilePos=0;
-    check(fileTell64(self->_file,&backFilePos));
-    check(fileSeek64(self->_file,compressedSizeOffset,SEEK_SET));
-    check(fileWrite(self->_file,buf,buf+4));
-    check(fileSeek64(self->_file,backFilePos,SEEK_SET));
+    if (compressedSizeOffset>=self->_curFilePos-self->_curBufLen){//in cache
+        TByte* buf=self->_buf+compressedSizeOffset-(self->_curFilePos-self->_curBufLen);
+        writeUInt32_to(buf,compressedSize);
+    }else{
+        TByte buf[4];
+        writeUInt32_to(buf,compressedSize);
+        check(_writeFlush(self));
+        hpatch_StreamPos_t backFilePos=0;
+        check(fileTell64(self->_file,&backFilePos));
+        check(fileSeek64(self->_file,compressedSizeOffset,SEEK_SET));
+        check(fileWrite(self->_file,buf,buf+4));
+        check(fileSeek64(self->_file,backFilePos,SEEK_SET));
+    }
     return true;
 }
 

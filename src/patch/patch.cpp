@@ -45,7 +45,7 @@
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName){
-    #define CACHE_SIZE  (1<<22)
+    #define CACHE_SIZE  (1<<20)
     UnZipper            oldZip;
     TFileStreamInput    diffData;
     Zipper              out_newZip;
@@ -128,6 +128,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
 clear:
     _isInClear=true;
     check(Zipper_close(&out_newZip),PATCH_CLOSEFILE_ERROR);
+    NewStream_close(&newStream);
     OldStream_close(&oldStream);
     check(UnZipper_close(&oldZip),PATCH_CLOSEFILE_ERROR);
     ZipDiffData_close(&zipDiffData);

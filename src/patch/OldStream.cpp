@@ -127,7 +127,7 @@ static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
             }//else
         }//else
         
-        //todo: 二分法;
+        //todo: optimize, binary search?
         self->_curRangeIndex=-1;
         for (int i=0; i<self->_rangeCount; ++i) {
             if (readFromPos<ranges[i]){

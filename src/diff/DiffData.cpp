@@ -78,8 +78,8 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                 out_samePairList.push_back(oldIndex);
                 break;
             }
-            printf("WARNING: crc32 equal but data not equal! fileIndex(%d,%d)\n",i,oldIndex);
-            //todo:print fileName
+            printf("WARNING: crc32 equal but data not equal! file index: %d,%d\n",i,oldIndex);
+            printf("   name:\"%s\"\n        \"%s\"\n",zipFile_name(newZip,i).c_str(),zipFile_name(oldZip,oldIndex).c_str());
         }
         if (!findSame){
             out_newRefList.push_back(i);
