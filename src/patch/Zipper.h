@@ -30,7 +30,7 @@
 #include <stdio.h> //FILE
 #include <assert.h>
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
-//todo: support zip64
+//todo: support zip64?
 #ifdef __cplusplus
 extern "C" {
 #endif

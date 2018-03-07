@@ -41,6 +41,9 @@ static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 #define     kZlibVesion    "1.2.11" //fixed zlib version
 #define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
+const char* kApkNormalizedTag    ="\0\0ApkDiffPatch\0\0";
+#define     kApkNormalizedTagLen  16
+
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
 inline static uint16_t readUInt16(const TByte* buf){
@@ -105,8 +108,23 @@ static bool _UnZipper_searchCentralDirectory(UnZipper* self,ZipFilePos_t endCent
     return true;
 }
 
+static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t endCentralDirectory_pos,
+                                             bool* isApkNormalized){
+    if (endCentralDirectory_pos<kApkNormalizedTagLen){
+        *isApkNormalized=false;
+        return true;
+    }
+    
+    const int readLen=kApkNormalizedTagLen;
+    TByte buf[readLen];
+    check(readLen==self->stream->read(self->stream->streamHandle,
+                                      endCentralDirectory_pos-readLen,buf,buf+readLen));
+    *isApkNormalized=(0==memcmp(buf,kApkNormalizedTag,readLen));
+    return true;
+}
+
 static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
-                                             ZipFilePos_t* v2sign_pos,bool* isApkNormalized){
+                                      ZipFilePos_t* v2sign_pos){
     //todo: searchApkV2Sign
     *v2sign_pos=centralDirectory_pos;
     return true;
@@ -236,8 +254,9 @@ static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     uint32_t     fileCount=0;   \
     ZipFilePos_t v2sign_pos=0;  \
     check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));  \
+    check(_UnZipper_searchApkNormalizedTag(self,endCentralDirectory_pos,&self->_isApkNormalized)); \
     check(_UnZipper_searchCentralDirectory(self,endCentralDirectory_pos,&centralDirectory_pos,&fileCount)); \
-    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos,&self->_isApkNormalized));
+    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos));
 
 
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
@@ -639,6 +658,7 @@ bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
 
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(self->_fileEntryCount==self->_fileHeaderCount);
+    check(_write(self,(const TByte*)kApkNormalizedTag,kApkNormalizedTagLen));//tag
     const TByte* endBuf=srcZip->_endCentralDirectory;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
     
@@ -646,7 +666,9 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(_writeUInt16(self,self->_fileEntryCount));
     check(_writeUInt32(self,centralDirectory_size));
     check(_writeUInt32(self,self->_centralDirectory_pos));
-    check(_writeUInt16(self,0));//Zip文件注释长度;
+    uint16_t endCommentLen=readUInt16(srcZip->_endCentralDirectory+20); //Zip文件注释长度;
+    check(_writeUInt16(self,endCommentLen));
+    check(_write(self,srcZip->_endCentralDirectory+22,endCommentLen));//Zip文件注释;
     return  _writeFlush(self);  
 }
 
