@@ -75,6 +75,7 @@ bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
     
 bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
 bool UnZipper_updateVCE(UnZipper* self);
+bool UnZipper_isHaveApkV2Sign(UnZipper* self);
 
     struct Zipper;
     struct _zlib_TCompress;
@@ -120,8 +121,14 @@ const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
     
+bool Zipper_addApkNormalizedTag_before_apkV2Sign(Zipper* self);
+bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
+    
+uint32_t Zipper_compressData_maxCodeSize(uint32_t dataSize);
+uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigned char* out_code,uint32_t codeSize);
+
 #ifdef __cplusplus
 }
 #endif

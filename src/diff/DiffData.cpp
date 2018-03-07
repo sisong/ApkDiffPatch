@@ -53,6 +53,17 @@ bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int src
     return 0==memcmp(buf.data(),buf.data()+selfFileSize,selfFileSize);
 }
 
+bool getNormalizedCompressedSize(UnZipper* selfZip,int selfIndex,uint32_t* out_compressedSize){
+    uint32_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
+    uint32_t maxCodeSize=Zipper_compressData_maxCodeSize(selfFileSize);
+    std::vector<TByte> buf(selfFileSize+maxCodeSize);
+    hpatch_TStreamOutput stream;
+    mem_as_hStreamOutput(&stream,buf.data(),buf.data()+selfFileSize);
+    check(UnZipper_fileData_decompressTo(selfZip,selfIndex,&stream));
+    *out_compressedSize=Zipper_compressData(buf.data(),selfFileSize,buf.data()+selfFileSize,maxCodeSize);
+    return (*out_compressedSize)>0;
+}
+
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
@@ -83,8 +94,11 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
         }
         if (!findSame){
             out_newRefList.push_back(i);
-            if (UnZipper_file_isCompressed(newZip,i))
-                out_newReCompressList.push_back(i);
+            if (UnZipper_file_isCompressed(newZip,i)){
+                uint32_t compressedSize=0;
+                check(getNormalizedCompressedSize(newZip,i,&compressedSize));
+                out_newReCompressList.push_back(compressedSize);
+            }
         }
     }
     return true;

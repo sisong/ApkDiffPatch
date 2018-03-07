@@ -108,17 +108,12 @@ static bool _UnZipper_searchCentralDirectory(UnZipper* self,ZipFilePos_t endCent
     return true;
 }
 
-static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t endCentralDirectory_pos,
-                                             bool* isApkNormalized){
-    if (endCentralDirectory_pos<kApkNormalizedTagLen){
-        *isApkNormalized=false;
-        return true;
-    }
-    
+static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t v2Sign_pos,bool* isApkNormalized){
+    if (v2Sign_pos<kApkNormalizedTagLen)
+        { *isApkNormalized=false; return true; }
     const int readLen=kApkNormalizedTagLen;
     TByte buf[readLen];
-    check(readLen==self->stream->read(self->stream->streamHandle,
-                                      endCentralDirectory_pos-readLen,buf,buf+readLen));
+    check(readLen==self->stream->read(self->stream->streamHandle,v2Sign_pos-readLen,buf,buf+readLen));
     *isApkNormalized=(0==memcmp(buf,kApkNormalizedTag,readLen));
     return true;
 }
@@ -254,9 +249,9 @@ static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     uint32_t     fileCount=0;   \
     ZipFilePos_t v2sign_pos=0;  \
     check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));  \
-    check(_UnZipper_searchApkNormalizedTag(self,endCentralDirectory_pos,&self->_isApkNormalized)); \
     check(_UnZipper_searchCentralDirectory(self,endCentralDirectory_pos,&centralDirectory_pos,&fileCount)); \
-    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos));
+    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos)); \
+    check(_UnZipper_searchApkNormalizedTag(self,v2sign_pos,&self->_isApkNormalized));
 
 
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
@@ -305,6 +300,10 @@ bool UnZipper_updateVCE(UnZipper* self){
     bool isHeaderMatch=true;
     check(_UnZipper_vce_normalized(self,isHeaderMatch));
     return true;
+}
+
+bool UnZipper_isHaveApkV2Sign(UnZipper* self){
+    return self->_cache_vce < self->_centralDirectory;
 }
 
 static uint16_t  _file_compressType(const UnZipper* self,int fileIndex){
@@ -499,6 +498,28 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     return  true;
 }
 
+
+uint32_t Zipper_compressData_maxCodeSize(uint32_t dataSize){
+    return (uint32_t)_zlib_maxCompressedSize(&zlibCompressPlugin,dataSize);
+}
+
+uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigned char* out_code,uint32_t codeSize){
+    const int kCodeBufSize=1024;
+    TByte codeBuf[kCodeBufSize];
+    hdiff_TStreamOutput stream;
+    mem_as_hStreamOutput(&stream,out_code,out_code+codeSize);
+    _zlib_TCompress* compressHandle=_zlib_compress_open_by(compressPlugin,&stream,
+                                                           0,kCompressLevel,codeBuf,kCodeBufSize);
+    if (compressHandle==0) return 0;//error;
+    int outStream_isCanceled=0;//false
+    hpatch_StreamPos_t curWritedPos=0;
+    int is_data_end=true;
+    if (!_zlib_compress_stream_part(compressPlugin,compressHandle,data,data+dataSize,
+                                    is_data_end,&curWritedPos,&outStream_isCanceled)) return 0;//error
+    if (!_zlib_compress_close_by(compressPlugin,compressHandle)) return 0;//error
+    return (uint32_t)curWritedPos;
+}
+
 long Zipper_file_append_stream::_append_part_input(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
                                                    const unsigned char *part_data,
                                                    const unsigned char *part_data_end){
@@ -647,6 +668,15 @@ bool Zipper_file_append_data(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     return true;
 }
 
+bool Zipper_addApkNormalizedTag_before_apkV2Sign(Zipper* self){
+    return _write(self,(const TByte*)kApkNormalizedTag,kApkNormalizedTagLen);
+}
+bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip){
+    if (!UnZipper_isHaveApkV2Sign(srcZip))
+        return true;
+    return _write(self,srcZip->_cache_vce,srcZip->_centralDirectory-srcZip->_cache_vce);
+}
+
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
     ZipFilePos_t curFileIndex=self->_fileHeaderCount;
     check(curFileIndex < self->_fileEntryCount);
@@ -658,7 +688,6 @@ bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
 
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(self->_fileEntryCount==self->_fileHeaderCount);
-    check(_write(self,(const TByte*)kApkNormalizedTag,kApkNormalizedTagLen));//tag
     const TByte* endBuf=srcZip->_endCentralDirectory;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
     

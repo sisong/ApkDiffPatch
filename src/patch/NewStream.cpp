@@ -146,6 +146,8 @@ static bool _file_entry_end(NewStream* self){
     check(self->_curSamePairIndex==self->_samePairCount);
     check(self->_curReCompressIndex==self->_reCompressCount);
     
+    check(Zipper_addApkNormalizedTag_before_apkV2Sign(self->_out_newZip));
+    check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
     for (int i=0; i<self->_fileCount; ++i) {
         check(Zipper_fileHeader_append(self->_out_newZip,&self->_newZipVCE,i));
     }
