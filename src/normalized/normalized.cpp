@@ -58,7 +58,9 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
             check(Zipper_file_append_copy(&zipper,&unzipper,i));
         }
     }
+    
     check(Zipper_addApkNormalizedTag_before_apkV2Sign(&zipper));
+    //no run Zipper_copyApkV2Sign_before_fileHeader
     for (int i=0; i<fileCount; ++i) {
         check(Zipper_fileHeader_append(&zipper,&unzipper,i));
     }

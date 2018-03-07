@@ -168,32 +168,12 @@ bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* out
 
 bool checkZipIsSame(const char* oldZipPath,const char* newZipPath){
     double time0=clock_s();
-    double time1;
-    UnZipper            oldZip;
-    UnZipper            newZip;
-    bool            result=true;
-    bool            _isInClear=false;
-    int             fileCount=0;
-    
-    UnZipper_init(&oldZip);
-    UnZipper_init(&newZip);
-    check(UnZipper_openRead(&oldZip,oldZipPath));
-    check(UnZipper_openRead(&newZip,newZipPath));
-    
-    fileCount=UnZipper_fileCount(&oldZip);
-    check(fileCount=UnZipper_fileCount(&newZip));
-    for (int i=0;i<fileCount; ++i) {
-        check(zipFile_name(&oldZip,i)==zipFile_name(&newZip,i));
-        check(UnZipper_file_crc32(&oldZip,i)==UnZipper_file_crc32(&newZip,i));
-        check(zipFileData_isSame(&oldZip,i,&newZip,i));
+    bool result=getZipIsSame(oldZipPath,newZipPath);
+    double time1=clock_s();
+    if (result){
+        std::cout<<"  check ZipPatch result ok!\n";
+        std::cout<<"  check time: "<<(time1-time0)<<" s\n";
     }
-    time1=clock_s();
-    std::cout<<"  check ZipPatch result ok!\n";
-    std::cout<<"  check time: "<<(time1-time0)<<" s\n";
-clear:
-    _isInClear=true;
-    check(UnZipper_close(&newZip));
-    check(UnZipper_close(&oldZip));
     return result;
 }
 

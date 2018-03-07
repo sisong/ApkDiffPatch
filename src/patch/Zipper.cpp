@@ -173,8 +173,9 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isHeaderMatch){
         
         uint32_t fileEntryOffset=readUInt32(headBuf+42);
         writeUInt32_to(headBuf+42,0);//normalized 文件Entry开始位置偏移;
-        self->_fileDataOffsets[i]=isHeaderMatch? (fileEntryOffset+readUInt16(headBuf+28)+readUInt16(headBuf+30)): //unsafe
-                                            _fileData_offset_read(self,fileEntryOffset);//较慢;
+        self->_fileDataOffsets[i]=isHeaderMatch?
+                                (fileEntryOffset+30+readUInt16(headBuf+28)+readUInt16(headBuf+30)) //fast
+                                :_fileData_offset_read(self,fileEntryOffset);//较慢;
         
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
@@ -354,7 +355,7 @@ bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
     return true;
 }
 
-#define check_clear(v) { if (!(v)) { result=false; goto clear; } }
+#define check_clear(v) { if (!(v)) { result=false; assert(false); goto clear; } }
 
 bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                     const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
@@ -373,17 +374,17 @@ bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
     _zlib_TDecompress* decHandle=_zlib_decompress_open_by(decompressPlugin,&self->_stream,file_offset,
                                                           file_offset+file_compressedSize,0,
                                                           self->_buf,(kBufSize>>1));
-    check(decHandle!=0);
     TByte* dataBuf=self->_buf+(kBufSize>>1);
     ZipFilePos_t  curWritePos=0;
+    check_clear(decHandle!=0);
     while (curWritePos<file_data_size){
         long readLen=(kBufSize>>1);
         if ((ZipFilePos_t)readLen>(file_data_size-curWritePos)) readLen=(long)(file_data_size-curWritePos);
-        check(readLen==_zlib_decompress_part(decompressPlugin,decHandle,dataBuf,dataBuf+readLen));
-        check(readLen==outStream->write(outStream->streamHandle,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
+        check_clear(readLen==_zlib_decompress_part(decompressPlugin,decHandle,dataBuf,dataBuf+readLen));
+        check_clear(readLen==outStream->write(outStream->streamHandle,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
         curWritePos+=readLen;
     }
-    check(_zlib_is_decompress_finish(decompressPlugin,decHandle));
+    check_clear(_zlib_is_decompress_finish(decompressPlugin,decHandle));
 clear:
     _zlib_decompress_close_by(decompressPlugin,decHandle);
     return result;

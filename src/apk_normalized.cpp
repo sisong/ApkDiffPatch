@@ -37,22 +37,33 @@
 #include <iostream>
 #include "normalized/normalized.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
+#include "diff/DiffData.h"
 
 int main(int argc, const char * argv[]) {
     if (argc!=3){
-        std::cout << "parameter: srcApk dstApk\n";
+        std::cout << "parameter: srcApk out_newApk\n  input srcApk file can *.zip *.jar *.apk \n";
         return 1;
     }
-    int exitCode=0;
     const char* srcApk=argv[1];
     const char* dstApk=argv[2];
+    std::cout<<"src: \"" <<srcApk<< "\"\nout: \""<<dstApk<<"\"\n";
     double time0=clock_s();
     if (!ZipNormalized(srcApk,dstApk)){
-        std::cout << "ApkNormalized error!\n";
-        exitCode=1;
+        std::cout << "\nrun ApkNormalized ERROR!\n";
+        return 1;
     }
     double time1=clock_s();
-    std::cout<<"ApkNormalized time:"<<(time1-time0)<<" s\n";
-    return exitCode;
+    std::cout << "run ApkNormalized ok!\n";
+    std::cout<<"  ApkNormalized time: "<<(time1-time0)<<" s\n";
+    
+    //check
+    if (!getZipIsSame(srcApk,dstApk)){
+        std::cout << "ApkNormalized result file check ERROR!\n";
+        return 1;
+    }
+    double time2=clock_s();
+    std::cout<<"  check ApkNormalized result ok!\n";
+    std::cout<<"  check time: "<<(time2-time1)<<" s\n";
+    return 0;
 }
 

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D60C393D204FFC43008A292F /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D60C3939204FFC43008A292F /* patch.c */; };
+		D60C394120500030008A292F /* DiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D60C394020500030008A292F /* DiffData.cpp */; };
+		D60C3947205006B1008A292F /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D60C3945205006B1008A292F /* OldStream.cpp */; };
 		D671B763204E8248002D17A7 /* apk_normalized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B75F204E8248002D17A7 /* apk_normalized.cpp */; };
 		D671B764204E8248002D17A7 /* normalized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B761204E8248002D17A7 /* normalized.cpp */; };
 		D6888885204687F00042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888880204687F00042E2B3 /* Zipper.cpp */; };
@@ -26,6 +29,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D60C3939204FFC43008A292F /* patch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = patch.c; path = ../../HDiffPatch/libHDiffPatch/HPatch/patch.c; sourceTree = "<group>"; };
+		D60C393A204FFC43008A292F /* patch_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = patch_types.h; path = ../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h; sourceTree = "<group>"; };
+		D60C393B204FFC43008A292F /* decompress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decompress_plugin_demo.h; path = ../../HDiffPatch/decompress_plugin_demo.h; sourceTree = "<group>"; };
+		D60C393C204FFC43008A292F /* compress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compress_plugin_demo.h; path = ../../HDiffPatch/compress_plugin_demo.h; sourceTree = "<group>"; };
+		D60C393F20500030008A292F /* DiffData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DiffData.h; path = ../../src/diff/DiffData.h; sourceTree = "<group>"; };
+		D60C394020500030008A292F /* DiffData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DiffData.cpp; path = ../../src/diff/DiffData.cpp; sourceTree = "<group>"; };
+		D60C3945205006B1008A292F /* OldStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OldStream.cpp; sourceTree = "<group>"; };
+		D60C3946205006B1008A292F /* OldStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OldStream.h; sourceTree = "<group>"; };
 		D65119312041AF8400805001 /* ApkNormalized */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ApkNormalized; sourceTree = BUILT_PRODUCTS_DIR; };
 		D671B75F204E8248002D17A7 /* apk_normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = apk_normalized.cpp; path = ../../src/apk_normalized.cpp; sourceTree = "<group>"; };
 		D671B761204E8248002D17A7 /* normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = normalized.cpp; sourceTree = "<group>"; };
@@ -47,12 +58,34 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D60C3938204FFC08008A292F /* HPatch */ = {
+			isa = PBXGroup;
+			children = (
+				D60C393C204FFC43008A292F /* compress_plugin_demo.h */,
+				D60C393B204FFC43008A292F /* decompress_plugin_demo.h */,
+				D60C393A204FFC43008A292F /* patch_types.h */,
+				D60C3939204FFC43008A292F /* patch.c */,
+			);
+			name = HPatch;
+			sourceTree = "<group>";
+		};
+		D60C393E20500009008A292F /* diff */ = {
+			isa = PBXGroup;
+			children = (
+				D60C394020500030008A292F /* DiffData.cpp */,
+				D60C393F20500030008A292F /* DiffData.h */,
+			);
+			name = diff;
+			sourceTree = "<group>";
+		};
 		D65119282041AF8400805001 = {
 			isa = PBXGroup;
 			children = (
 				D671B75F204E8248002D17A7 /* apk_normalized.cpp */,
 				D671B760204E8248002D17A7 /* normalized */,
 				D688887D204687F00042E2B3 /* patch */,
+				D60C393E20500009008A292F /* diff */,
+				D60C3938204FFC08008A292F /* HPatch */,
 				D65119322041AF8400805001 /* Products */,
 				D6DA37C920468A58009AEF45 /* Frameworks */,
 			);
@@ -79,6 +112,8 @@
 		D688887D204687F00042E2B3 /* patch */ = {
 			isa = PBXGroup;
 			children = (
+				D60C3945205006B1008A292F /* OldStream.cpp */,
+				D60C3946205006B1008A292F /* OldStream.h */,
 				D688887E204687F00042E2B3 /* Zipper.h */,
 				D6888880204687F00042E2B3 /* Zipper.cpp */,
 			);
@@ -151,9 +186,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D60C393D204FFC43008A292F /* patch.c in Sources */,
 				D671B764204E8248002D17A7 /* normalized.cpp in Sources */,
 				D6888885204687F00042E2B3 /* Zipper.cpp in Sources */,
+				D60C394120500030008A292F /* DiffData.cpp in Sources */,
 				D671B763204E8248002D17A7 /* apk_normalized.cpp in Sources */,
+				D60C3947205006B1008A292F /* OldStream.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

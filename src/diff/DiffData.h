@@ -34,11 +34,12 @@
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
+bool getZipIsSame(const char* oldZipPath,const char* newZipPath);
+
 static inline std::string zipFile_name(UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);
     const char* nameBegin=UnZipper_file_nameBegin(self,fileIndex);
     return std::string(nameBegin,nameBegin+nameLen);
-    
 }
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,

@@ -41,6 +41,10 @@ static const char* kVersionType="ZipDiff1";
     if (!(value)){ printf(#value" ERROR!\n");  \
         assert(false); return false; } }
 
+#define  test_clear(value) { \
+    if (!(value)){ \
+        result=false; if (!_isInClear){ goto clear; } } }
+
 bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int srcIndex){
     uint32_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
     if (selfFileSize!=UnZipper_file_uncompressedSize(srcZip,srcIndex)) return false;
@@ -51,6 +55,32 @@ bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int src
     mem_as_hStreamOutput(&stream,buf.data()+selfFileSize,buf.data()+selfFileSize*2);
     check(UnZipper_fileData_decompressTo(srcZip,srcIndex,&stream));
     return 0==memcmp(buf.data(),buf.data()+selfFileSize,selfFileSize);
+}
+
+bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
+    UnZipper            oldZip;
+    UnZipper            newZip;
+    bool            result=true;
+    bool            _isInClear=false;
+    int             fileCount=0;
+    
+    UnZipper_init(&oldZip);
+    UnZipper_init(&newZip);
+    test_clear(UnZipper_openRead(&oldZip,oldZipPath));
+    test_clear(UnZipper_openRead(&newZip,newZipPath));
+    
+    fileCount=UnZipper_fileCount(&oldZip);
+    test_clear(fileCount=UnZipper_fileCount(&newZip));
+    for (int i=0;i<fileCount; ++i) {
+        test_clear(zipFile_name(&oldZip,i)==zipFile_name(&newZip,i));
+        test_clear(UnZipper_file_crc32(&oldZip,i)==UnZipper_file_crc32(&newZip,i));
+        test_clear(zipFileData_isSame(&oldZip,i,&newZip,i));
+    }
+clear:
+    _isInClear=true;
+    test_clear(UnZipper_close(&newZip));
+    test_clear(UnZipper_close(&oldZip));
+    return result;
 }
 
 bool getNormalizedCompressedSize(UnZipper* selfZip,int selfIndex,uint32_t* out_compressedSize){
