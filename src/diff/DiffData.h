@@ -30,6 +30,7 @@
 #include <vector>
 #include "../patch/Zipper.h"
 #include "../patch/ZipDiffData.h"
+#include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_samePairList,
@@ -38,5 +39,12 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
                        std::vector<unsigned char>& out_data);
+
+bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
+                          const std::vector<uint32_t>& newReCompressList,
+                          const std::vector<uint32_t>& samePairList,
+                          const std::vector<uint32_t>& oldRefList,
+                          const std::vector<TByte>&    hdiffzData,
+                          hdiff_TCompress*             compressPlugin);
 
 #endif //ZipDiff_DiffData_h

@@ -42,11 +42,13 @@ ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_
 
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                                  hpatch_TStreamOutput* output_refStream){
+    hpatch_StreamPos_t writeToPos=0;
     for (int i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
         if (UnZipper_file_isCompressed(oldZip,fileIndex)){
-            if (!UnZipper_fileData_decompressTo(oldZip,fileIndex,output_refStream))
+            if (!UnZipper_fileData_decompressTo(oldZip,fileIndex,output_refStream,writeToPos))
                 return false;
+            writeToPos+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
         }
     }
     return true;
@@ -146,13 +148,14 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount){
     uint32_t curDecompressSize=0;
     
     self->_rangeCount= 1 + refCount;
-    self->_buf=(unsigned char*)malloc((sizeof(uint32_t)*2+1)*self->_rangeCount);
+    self->_buf=(unsigned char*)malloc(sizeof(uint32_t)*self->_rangeCount*2+sizeof(uint32_t)+self->_rangeCount);
     check(self->_buf!=0);
-    self->_rangeEndList=(uint32_t*)self->_buf;
+    self->_rangeEndList=((uint32_t*)self->_buf)+1; //+1 for _rangeEndList[-1] safe
     self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
     self->_rangIsCompressed=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
     
     curSize=self->_oldZip->_vce_size;
+    self->_rangeEndList[-1]=0;
     self->_rangeEndList[0]=curSize;
     self->_rangeFileOffsets[0]=0;
     self->_rangIsCompressed[0]=0;

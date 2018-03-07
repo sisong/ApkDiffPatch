@@ -320,7 +320,8 @@ bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* 
     return fileRead(self->_file,buf,bufEnd);
 }
 
-bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream){
+bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
+                              const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
     TByte* buf=self->_buf;
     ZipFilePos_t fileSavedSize=UnZipper_file_compressedSize(self,fileIndex);
     ZipFilePos_t fileDataOffset=UnZipper_fileData_offset(self,fileIndex);
@@ -329,7 +330,7 @@ bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamO
         long readLen=kBufSize;
         if ((ZipFilePos_t)readLen>(fileSavedSize-curWritePos)) readLen=(long)(fileSavedSize-curWritePos);
         check(UnZipper_fileData_read(self,fileDataOffset+curWritePos,buf,buf+readLen));
-        check(readLen==outStream->write(outStream->streamHandle,curWritePos,buf,buf+readLen));
+        check(readLen==outStream->write(outStream->streamHandle,writeToPos+curWritePos,buf,buf+readLen));
         curWritePos+=readLen;
     }
     return true;
@@ -337,9 +338,10 @@ bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamO
 
 #define check_clear(v) { if (!(v)) { result=false; goto clear; } }
 
-bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream){
+bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
+                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
     if (!UnZipper_file_isCompressed(self,fileIndex)){
-        return UnZipper_fileData_copyTo(self,fileIndex,outStream);
+        return UnZipper_fileData_copyTo(self,fileIndex,outStream,writeToPos);
     }
     
     uint16_t compressType=_file_compressType(self,fileIndex);
@@ -360,7 +362,7 @@ bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TS
         long readLen=(kBufSize>>1);
         if ((ZipFilePos_t)readLen>(file_data_size-curWritePos)) readLen=(long)(file_data_size-curWritePos);
         check(readLen==_zlib_decompress_part(decompressPlugin,decHandle,dataBuf,dataBuf+readLen));
-        check(readLen==outStream->write(outStream->streamHandle,curWritePos,dataBuf,dataBuf+readLen));
+        check(readLen==outStream->write(outStream->streamHandle,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
         curWritePos+=readLen;
     }
     check(_zlib_is_decompress_finish(decompressPlugin,decHandle));

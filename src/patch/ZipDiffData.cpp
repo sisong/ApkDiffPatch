@@ -27,6 +27,7 @@
  */
 #include "ZipDiffData.h"
 
+static const char* kVersionType="ZipDiff1";
 #define kVersionTypeLen 8
 
 void ZipDiffData_init(ZipDiffData* self){
@@ -48,7 +49,7 @@ void ZipDiffData_close(ZipDiffData* self){
 bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin);
 
 #define unpackList(list,count,curBuf,bufEnd) { \
-    uint32_t backValue=0;       \
+    uint32_t backValue=-1;       \
     for (size_t i=0; i<count; ++i) {\
         uint32_t incValue=0;    \
         checkUnpackSize(&curBuf,bufEnd,&incValue,uint32_t); \
@@ -71,7 +72,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
             readLen=(int)diffData->base.streamSize;
         check(readLen==diffData->base.read(diffData->base.streamHandle,0,buf,buf+readLen));
         //check type+version
-        check(0==strncmp((const char*)buf,"ZipDiff1",kVersionTypeLen));
+        check(0==strncmp((const char*)buf,kVersionType,kVersionTypeLen));
         //unpack head info
         hpatch_StreamPos_t hdiffzSize=0;
         const TByte* curBuf=buf+kVersionTypeLen;
@@ -93,7 +94,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
     }
     {//head data
         //  memBuf used as:
-        //  [  zstd compressed headData  ]    [ uncompressed headData(reCompress list+packed list) ]
+        //  [  zstd compressed headData  ]    [ uncompressed headData(packed list) ]
         //  [              unpacked_list     ]
         size_t memLeft=(self->refCount+self->samePairCount*2)*sizeof(uint32_t);
         if (headDataCompressedSize>memLeft) memLeft=_hpatch_align_upper(headDataCompressedSize,sizeof(uint32_t));
@@ -113,8 +114,8 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         const TByte* const bufEnd=self->_buf+memLeft+headDataSize;
         unpackList(self->refList,self->refCount,curBuf,bufEnd);
     
-        uint32_t backPairNew=0;
-        hpatch_StreamPos_t backPairOld=0;
+        uint32_t backPairNew=-1;
+        hpatch_StreamPos_t backPairOld=-1;
         for (size_t i=0; i<self->samePairCount; ++i) {
             uint32_t curPairNew=0;
             checkUnpackSize(&curBuf,bufEnd,&curPairNew,uint32_t);
