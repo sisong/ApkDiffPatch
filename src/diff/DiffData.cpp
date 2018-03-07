@@ -168,9 +168,9 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     packUInt(out_data,data->refCount);
     packUInt(out_data,data->refSumSize);
     packUInt(out_data,data->oldCrc);
-    packUInt(out_data,hdiffzData.size());
     packUInt(out_data,headData.size());
     packUInt(out_data,headCode.size());
+    packUInt(out_data,hdiffzData.size());
     
     //code data
     headData.clear();

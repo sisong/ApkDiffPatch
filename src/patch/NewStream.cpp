@@ -91,8 +91,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     if (self->_curFileIndex<self->_fileCount){//open file for write
         ZipFilePos_t fileDataSize=UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex);
-        bool isCompress=UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex);
-        if (isCompress){
+        if ((self->_reCompressCount>0)&&UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex)){
             check(self->_curReCompressIndex<self->_reCompressCount);
             _update_compressedSize(self,self->_curFileIndex,self->_reCompressList[self->_curReCompressIndex]);
             ++self->_curReCompressIndex;
@@ -174,7 +173,7 @@ static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFi
         check(UnZipper_fileData_copyTo(self->_oldZip,oldFileIndex,outStream));
     }
     check(Zipper_file_append_end(self->_out_newZip));
-    return false;
+    return true;
 }
 
 

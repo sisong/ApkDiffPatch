@@ -28,6 +28,7 @@
 #ifndef ZipDiff_diff_h
 #define ZipDiff_diff_h
 
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName);
+bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
+             const char* temp_ZipPatchFileName);
 
 #endif //ZipDiff_diff_h

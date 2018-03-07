@@ -33,6 +33,7 @@
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
 #include "DiffData.h"
+#include "../patch/patch.h"
 
 #include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
 #define _CompressPlugin_zstd
@@ -43,15 +44,15 @@
 
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
+bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath);
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; if (!_isInClear){ goto clear; } } }
 
 
-
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName){
-    const int           myBestMatchScore=1;
+bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,const char* temp_ZipPatchFileName){
+    const int           myBestMatchScore=3;
     UnZipper            oldZip;
     UnZipper            newZip;
     TFileStreamOutput   out_diffFile;
@@ -79,14 +80,16 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(UnZipper_openRead(&newZip,newZipPath));
     
     check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newReCompressList));
+    newReCompressList.clear(); //可选数据,提供用于优化ZipPatch写文件速度;
     
     //todo: get best oldZip refList
     oldZipFileCount=UnZipper_fileCount(&oldZip);
     for (int i=0; i<oldZipFileCount; ++i) {
         oldRefList.push_back(i);
     }
-    std::cout<<"\nZipDiff same file count: "<<samePairList.size()/2<<"\n";
-    std::cout<<"\      ref old file count: "<<oldRefList.size()<<"\n";
+    std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
+    std::cout<<"    diff new file count: "<<newRefList.size()<<"\n";
+    std::cout<<"     ref old file count: "<<oldRefList.size()<<"\n";
     
     check(readZipStreamData(&newZip,newRefList,newData));
     check(readZipStreamData(&oldZip,oldRefList,oldData));
@@ -103,6 +106,9 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
                                                        0,out_diffData.data(),out_diffData.data()+out_diffData.size()));
     check(TFileStreamOutput_close(&out_diffFile));
     std::cout<<"  out ZipDiff file ok!\n";
+    
+    check(testZipPatch(oldZipPath,outDiffFileName,temp_ZipPatchFileName));
+    
 clear:
     _isInClear=true;
     check(TFileStreamOutput_close(&out_diffFile));
@@ -124,7 +130,7 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
     const TByte* newData0=newData.data();
     const TByte* oldData0=oldData.data();
     create_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
-                           diffData,compressPlugin);
+                           diffData,compressPlugin,myBestMatchScore);
     std::cout<<"diffDataSize: "<<diffData.size()<<"\n";
     double time1=clock_s();
     if (!check_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
@@ -137,5 +143,19 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
         std::cout<<"  diff  time:"<<(time1-time0)<<" s\n";
         std::cout<<"  patch time:"<<(time2-time1)<<" s\n";
         return true;
+    }
+}
+
+
+bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath){
+    double time0=clock_s();
+    TPatchResult ret=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,0,0);
+    double time1=clock_s();
+    if (ret==PATCH_SUCCESS){
+        printf("\run ZipPatch ok!\n");
+        printf("ZipPatch time: %.3f s\n",(time1-time0));
+        return true;
+    }else{
+        return false;
     }
 }

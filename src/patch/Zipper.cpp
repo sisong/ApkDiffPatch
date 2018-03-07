@@ -285,7 +285,7 @@ bool UnZipper_updateVCE(UnZipper* self){
     
     bool isHeaderMatch=true;
     check(_UnZipper_vce_normalized(self,isHeaderMatch));
-    return false;
+    return true;
 }
 
 static uint16_t  _file_compressType(const UnZipper* self,int fileIndex){

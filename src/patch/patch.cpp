@@ -90,7 +90,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     
     decompressSumSize=OldStream_getDecompressSumSize(&oldZip,zipDiffData.refList,zipDiffData.refCount);
     
-    isUsedTempFile=decompressSumSize > maxUncompressMemory;
+    isUsedTempFile=(decompressSumSize > maxUncompressMemory)&&(tempUncompressFileName!=0);
     if (isUsedTempFile){
         check(TFileStreamOutput_open(&output_refFile,tempUncompressFileName,decompressSumSize),PATCH_READ_ERROR);
         check(TFileStreamInput_open(&input_refFile,tempUncompressFileName),PATCH_READ_ERROR);

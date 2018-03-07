@@ -84,9 +84,9 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         checkUnpackSize(&curBuf,buf+readLen,&self->refCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->refSumSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldCrc,uint32_t);
-        check(hpatch_unpackUInt(&curBuf,buf+readLen,&hdiffzSize));
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataSize));
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataCompressedSize));
+        check(hpatch_unpackUInt(&curBuf,buf+readLen,&hdiffzSize));
         headDataPos=(curBuf-buf);
         
         check(headDataCompressedSize <= diffData->base.streamSize-headDataPos);
@@ -138,6 +138,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
     {//HDiffZ stream
         hpatch_StreamPos_t hdiffzPos=headDataPos+headDataCompressedSize;
         self->_hdiffzData=*diffData;
+        self->_hdiffzData.base.streamHandle=&self->_hdiffzData.base;
         TFileStreamInput_setOffset(&self->_hdiffzData,hdiffzPos);
         self->hdiffzData=&self->_hdiffzData.base;
     }
