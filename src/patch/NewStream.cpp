@@ -75,6 +75,9 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     //write one end
     if (self->_curFileIndex<0){//vce ok
         check(UnZipper_updateVCE(&self->_newZipVCE));
+        bool newIsStable=self->_newZipVCE._isApkNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
+        bool oldIsStable=self->_oldZip->_isApkNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
+        self->_isAlwaysReCompress=newIsStable&(!oldIsStable);
     }else{
         check(Zipper_file_append_end(self->_out_newZip));
     }
@@ -138,6 +141,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_curWriteToPosEnd=newZipVCESize;
     self->_curSamePairIndex=0;
     self->_curReCompressIndex=0;
+    self->_isAlwaysReCompress=false;
     return true;
 }
 
@@ -146,8 +150,12 @@ static bool _file_entry_end(NewStream* self){
     check(self->_curSamePairIndex==self->_samePairCount);
     check(self->_curReCompressIndex==self->_reCompressCount);
     
-    check(Zipper_addApkNormalizedTag_before_apkV2Sign(self->_out_newZip));
-    check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
+    if (self->_newZipVCE._isApkNormalized){
+        check(Zipper_addApkNormalizedTag_before_apkV2Sign(self->_out_newZip));
+    }
+    if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){
+        check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
+    }
     for (int i=0; i<self->_fileCount; ++i) {
         check(Zipper_fileHeader_append(self->_out_newZip,&self->_newZipVCE,i));
     }
@@ -156,14 +164,14 @@ static bool _file_entry_end(NewStream* self){
     return true;
 }
 
-static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
+bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
     uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
     check(UnZipper_file_uncompressedSize(&self->_newZipVCE,newFileIndex)==uncompressedSize);
     check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==UnZipper_file_crc32(self->_oldZip,oldFileIndex));
     uint32_t compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
     bool newIsCompress=UnZipper_file_isCompressed(&self->_newZipVCE,newFileIndex);
     bool oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
-    bool isNeedDecompress=(oldIsCompress)&&(!newIsCompress);
+    bool isNeedDecompress=self->_isAlwaysReCompress|((oldIsCompress)&(!newIsCompress));
     _update_compressedSize(self,newFileIndex,newIsCompress?compressedSize:uncompressedSize);
     uint32_t appendSize=isNeedDecompress?uncompressedSize:compressedSize;
     check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,appendSize,

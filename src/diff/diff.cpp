@@ -36,6 +36,7 @@
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "DiffData.h"
 
+bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
 bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath);
@@ -73,16 +74,17 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     hdiff_TCompress* compressPlugin=&zlibCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
 #endif
-    std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
-
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
     TFileStreamOutput_init(&out_diffFile);
     
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
+    check(checkZipInfo(&oldZip,&newZip));
     
-    //needReCompressList=&newReCompressList //可选数据,用于优化ZipPatch减少fseek;
+    std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
+
+    needReCompressList=&newReCompressList; //可选数据,用于优化ZipPatch减少fseek;
     check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,needReCompressList));
     
     //todo: get best oldZip refList
@@ -123,6 +125,22 @@ clear:
     return result;
 }
 
+bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
+    if (oldZip->_isApkNormalized)
+        printf("  NOTE: oldZip found ApkNormalized tag\n");
+    if (UnZipper_isHaveApkV2Sign(oldZip))
+        printf("  NOTE: oldZip found Apk Sign Block\n");
+    if (newZip->_isApkNormalized)
+        printf("  NOTE: newZip found ApkNormalized tag\n");
+    bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
+    if (newIsV2Sign)
+        printf("  NOTE: newZip found Apk Sign Block\n");
+    if (newIsV2Sign&(!newZip->_isApkNormalized)){
+        printf("  ERROR: newZip not found ApkNormalized tag, need ApkNormalized(newZip) before ZipDiff!\n");
+        return false;
+    }
+    return true;
+}
 
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore){

@@ -50,6 +50,7 @@ typedef struct NewStream{
     size_t                  _curSamePairIndex;
     size_t                  _curReCompressIndex;
     UnZipper                _newZipVCE;
+    bool                    _isAlwaysReCompress;
 } NewStream;
 
 void NewStream_init(NewStream* self);

@@ -41,7 +41,7 @@ static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 #define     kZlibVesion    "1.2.11" //fixed zlib version
 #define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
-const char* kApkNormalizedTag    ="\0\0ApkDiffPatch\0\0";
+const char* kApkNormalizedTag    ="Apk H Diff Patch";
 #define     kApkNormalizedTagLen  16
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
@@ -51,6 +51,10 @@ inline static uint16_t readUInt16(const TByte* buf){
 }
 inline static uint32_t readUInt32(const TByte* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
+}
+inline static hpatch_StreamPos_t readUInt64(const TByte* buf){
+    hpatch_StreamPos_t h=readUInt32(buf+4);
+    return readUInt32(buf) | (h<<32);
 }
 
 inline static void writeUInt16_to(TByte* out_buf2,uint32_t v){
@@ -120,8 +124,29 @@ static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t v2Sign_
 
 static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
                                       ZipFilePos_t* v2sign_pos){
-    //todo: searchApkV2Sign
-    *v2sign_pos=centralDirectory_pos;
+    *v2sign_pos=centralDirectory_pos; //default not found
+    
+    //tag
+    const int   APKSigningTagLen=16;
+    const char* APKSigningTag="APK Sig Block 42";
+    if (APKSigningTagLen>centralDirectory_pos) return true;
+    ZipFilePos_t APKSigningBlockTagPos=centralDirectory_pos-APKSigningTagLen;
+    TByte buf[APKSigningTagLen];
+    check(APKSigningTagLen==self->stream->read(self->stream->streamHandle,
+                                               APKSigningBlockTagPos,buf,buf+APKSigningTagLen));
+    if (0!=memcmp(buf,APKSigningTag,APKSigningTagLen)) return true;
+    //bottom size
+    if (8>APKSigningBlockTagPos) return false; //error
+    ZipFilePos_t blockSizeBottomPos=APKSigningBlockTagPos-8;
+    check(8==self->stream->read(self->stream->streamHandle,blockSizeBottomPos,buf,buf+8));
+    hpatch_StreamPos_t blockSize=readUInt64(buf);
+    //top
+    if (blockSize+8>centralDirectory_pos) return false; //error
+    ZipFilePos_t blockSizeTopPos=centralDirectory_pos-(ZipFilePos_t)blockSize-8;
+    check(8==self->stream->read(self->stream->streamHandle,blockSizeTopPos,buf,buf+8));
+    check(blockSize==readUInt64(buf)); //check top size
+    
+    *v2sign_pos=blockSizeTopPos;
     return true;
 }
 
@@ -651,12 +676,16 @@ bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t 
                                           part_data,part_data+partSize));
 }
 
-bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex){
-    size_t dataSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);
-    bool   dataIsCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    
+bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool isAlwaysReCompress){
+    size_t dataSize=isAlwaysReCompress?UnZipper_file_uncompressedSize(srcZip,srcFileIndex):
+                                       UnZipper_file_compressedSize(srcZip,srcFileIndex);
+    bool dataIsCompressed=isAlwaysReCompress?false:UnZipper_file_isCompressed(srcZip,srcFileIndex);
     check(Zipper_file_append_begin(self,srcZip,srcFileIndex,dataSize,dataIsCompressed));
-    check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,&self->_append_stream));
+    if (isAlwaysReCompress){
+        check(UnZipper_fileData_decompressTo(srcZip,srcFileIndex,&self->_append_stream));
+    }else{
+        check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,&self->_append_stream));
+    }
     assert(self->_append_stream.inputPos==dataSize);
     check(Zipper_file_append_end(self));
     return true;

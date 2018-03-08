@@ -45,22 +45,18 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
     fileCount=UnZipper_fileCount(&unzipper);
     check(Zipper_openWrite(&zipper,dstApk,fileCount));
     
+    if (unzipper._isApkNormalized)
+        printf("NOTE: src found ApkNormalized tag\n");
+    if (UnZipper_isHaveApkV2Sign(&unzipper))
+        printf("NOTE: out deleted Apk Sign Block (%ld byte)",unzipper._centralDirectory-unzipper._cache_vce);
+    
     for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isCompressed(&unzipper,i)) {
-            ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(&unzipper,i);
-            assert(uncompressedSize==(size_t)uncompressedSize);
-            check(Zipper_file_append_begin(&zipper,&unzipper,i,uncompressedSize,false));
-            const hpatch_TStreamOutput* stream=Zipper_file_append_part_as_stream(&zipper);
-            check(stream!=0);
-            check(UnZipper_fileData_decompressTo(&unzipper,i,stream));
-            check(Zipper_file_append_end(&zipper));
-        }else{
-            check(Zipper_file_append_copy(&zipper,&unzipper,i));
-        }
+        bool isAlwaysReCompress=true;
+        check(Zipper_file_append_copy(&zipper,&unzipper,i,isAlwaysReCompress));
     }
     
     check(Zipper_addApkNormalizedTag_before_apkV2Sign(&zipper));
-    //no run Zipper_copyApkV2Sign_before_fileHeader
+    //no run: check(Zipper_copyApkV2Sign_before_fileHeader(&zipper,&unzipper));
     for (int i=0; i<fileCount; ++i) {
         check(Zipper_fileHeader_append(&zipper,&unzipper,i));
     }
