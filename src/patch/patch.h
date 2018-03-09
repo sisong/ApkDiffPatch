@@ -51,9 +51,9 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
 #   include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
 #   define _CompressPlugin_zstd
 #   define _IsNeedIncludeDefaultCompressHead 0
-#else
-#   define _CompressPlugin_zlib
 #endif
+#define _CompressPlugin_zlib
+#include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
 #endif //ZipPatch_patch_h

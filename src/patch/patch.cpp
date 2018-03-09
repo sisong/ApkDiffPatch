@@ -59,12 +59,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     bool            isUsedTempFile=false;
     TByte*          temp_cache =0;
     ZipFilePos_t    decompressSumSize=0;
-#ifdef _CompressPlugin_zstd
-    hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
-#endif
-#ifdef _CompressPlugin_zlib
-    hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
-#endif
+    hpatch_TDecompress* decompressPlugin=0;
 
     UnZipper_init(&oldZip);
     TFileStreamInput_init(&diffData);
@@ -77,6 +72,17 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     
     check(TFileStreamInput_open(&diffData,zipDiffPath),PATCH_READ_ERROR);
     check(UnZipper_openRead(&oldZip,oldZipPath),PATCH_READ_ERROR);
+#ifdef _CompressPlugin_zstd
+    if (decompressPlugin==0){
+        if (ZipDiffData_isCanDecompress(&diffData,&zstdDecompressPlugin))
+            decompressPlugin=&zstdDecompressPlugin;
+    }
+#endif
+    if (decompressPlugin==0){
+        decompressPlugin=&zlibDecompressPlugin;
+        check(ZipDiffData_isCanDecompress(&diffData,decompressPlugin),PATCH_COMPRESSTYPE_ERROR);
+    }
+    
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
     check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.refList,
@@ -112,8 +118,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
     check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount), PATCH_READ_ERROR)
-    check(NewStream_open(&newStream,&out_newZip,&oldZip,
-                         diffInfo.newDataSize,zipDiffData.newZipVCESize,
+    check(NewStream_open(&newStream,&out_newZip,&oldZip,  diffInfo.newDataSize,
+                         zipDiffData.newZipIsNormalized!=0,zipDiffData.newZipVCESize,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
                          zipDiffData.reCompressList,zipDiffData.reCompressCount),PATCH_NEWDATA_ERROR);
     

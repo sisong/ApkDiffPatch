@@ -36,6 +36,7 @@ extern "C" {
 //解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{
     size_t      newZipFileCount;
+    size_t      newZipIsNormalized;
     size_t      newZipVCESize;
     size_t      reCompressCount;
     size_t      samePairCount;
@@ -53,6 +54,7 @@ typedef struct ZipDiffData{
 } ZipDiffData;
 
 void ZipDiffData_init(ZipDiffData* self);
+bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
 bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 

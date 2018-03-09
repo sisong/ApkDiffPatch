@@ -34,9 +34,6 @@
 #include "../../HDiffPatch/libHDiffPatch/HDiff/private_diff/pack_uint.h"
 using namespace hdiff_private;
 
-static const char* kVersionType="ZipDiff1";
-#define kVersionTypeLen 8
-
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
         assert(false); return false; } }
@@ -203,9 +200,20 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
             return false;//error
     }
     
-    pushBack(out_data,(const TByte*)kVersionType,(const TByte*)kVersionType+kVersionTypeLen);
+    {//type version
+        static const char* kVersionType="ZipDiff1&";
+        #define kVersionTypeLen 9
+        pushBack(out_data,(const TByte*)kVersionType,(const TByte*)kVersionType+kVersionTypeLen);
+    }
+    {//compressType
+        const char* compressType=compressPlugin->compressType(compressPlugin);
+        size_t compressTypeLen=strlen(compressType);
+        if (compressTypeLen>hpatch_kMaxCompressTypeLength) return false;
+        pushBack(out_data,(const TByte*)compressType,(const TByte*)compressType+compressTypeLen+1); //'\0'
+    }
     //head info
     packUInt(out_data,data->newZipFileCount);
+    packUInt(out_data,data->newZipIsNormalized);
     packUInt(out_data,data->newZipVCESize);
     packUInt(out_data,data->reCompressCount);
     packUInt(out_data,data->samePairCount);
@@ -231,9 +239,10 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
                           const std::vector<uint32_t>& oldRefList,
                           const std::vector<TByte>&    hdiffzData,
                           hdiff_TCompress* compressPlugin){
-    ZipDiffData         data;
+    ZipDiffData  data;
     memset(&data,0,sizeof(ZipDiffData));
     data.newZipFileCount=UnZipper_fileCount(newZip);
+    data.newZipIsNormalized=newZip->_isApkNormalized?1:0;
     data.newZipVCESize=newZip->_vce_size;
     data.reCompressList=(uint32_t*)newReCompressList.data();
     data.reCompressCount=newReCompressList.size();

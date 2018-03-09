@@ -74,7 +74,10 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     //write one end
     if (self->_curFileIndex<0){//vce ok
-        check(UnZipper_updateVCE(&self->_newZipVCE));
+        check(UnZipper_updateVCE(&self->_newZipVCE,self->_newZipIsNormalized));
+        if (self->_newZipVCE._isApkNormalized){
+            check(Zipper_addApkNormalizedTag_before_fileEntry(self->_out_newZip));
+        }
         bool newIsStable=self->_newZipVCE._isApkNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
         bool oldIsStable=self->_oldZip->_isApkNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
         self->_isAlwaysReCompress=newIsStable&(!oldIsStable);
@@ -117,13 +120,14 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         assert(false); return false; } }
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
-                    size_t newDataSize,size_t newZipVCESize,
+                    size_t newDataSize,bool newZipIsNormalized,size_t newZipVCESize,
                     const uint32_t* samePairList,size_t samePairCount,
                     const uint32_t* reCompressList,size_t reCompressCount){
     assert(self->_out_newZip==0);
     self->isFilish=false;
     self->_out_newZip=out_newZip;
     self->_oldZip=oldZip;
+    self->_newZipIsNormalized=newZipIsNormalized;
     self->_samePairList=samePairList;
     self->_samePairCount=samePairCount;
     self->_reCompressList=reCompressList;
@@ -150,9 +154,6 @@ static bool _file_entry_end(NewStream* self){
     check(self->_curSamePairIndex==self->_samePairCount);
     check(self->_curReCompressIndex==self->_reCompressCount);
     
-    if (self->_newZipVCE._isApkNormalized){
-        check(Zipper_addApkNormalizedTag_before_apkV2Sign(self->_out_newZip));
-    }
     if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){
         check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
     }

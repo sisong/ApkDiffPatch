@@ -74,8 +74,12 @@ bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
     
 bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
-bool UnZipper_updateVCE(UnZipper* self);
-bool UnZipper_isHaveApkV2Sign(UnZipper* self);
+bool UnZipper_updateVCE(UnZipper* self,bool isNormalized);
+static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
+bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
+static inline bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
+    return UnZipper_isHaveApkV2Sign(self) && UnZipper_file_isCompressed(self,fileIndex)
+            && UnZipper_file_isApkV1_or_jarSign(self,fileIndex); }
 
     struct Zipper;
     struct _zlib_TCompress;
@@ -113,15 +117,17 @@ typedef struct Zipper{
 void Zipper_init(Zipper* self);
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount);
 bool Zipper_close(Zipper* self);
-bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool isAlwaysReCompress=false);
+bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
+                             bool isAlwaysReCompress=false);
 bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                         const unsigned char* data,size_t dataSize,bool dataIsCompressed);
-bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,size_t dataSize,bool dataIsCompressed);
+bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
+                              size_t dataSize,bool dataIsCompressed);
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
     
-bool Zipper_addApkNormalizedTag_before_apkV2Sign(Zipper* self);
+bool Zipper_addApkNormalizedTag_before_fileEntry(Zipper* self);
 bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);

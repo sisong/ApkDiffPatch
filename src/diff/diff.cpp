@@ -32,6 +32,7 @@
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
+#include "../patch/OldStream.h"
 #include "../patch/patch.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "DiffData.h"
@@ -68,8 +69,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     zstd_compress_level=22; //0..22
     hdiff_TCompress* compressPlugin=&zstdCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
-#endif
-#ifdef _CompressPlugin_zlib
+#else
     zlib_compress_level=9; //0..9
     hdiff_TCompress* compressPlugin=&zlibCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
@@ -95,6 +95,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
     std::cout<<"    diff new file count: "<<newRefList.size()<<"\n";
     std::cout<<"     ref old file count: "<<oldRefList.size()<<"\n";
+    std::cout<<"     ref old decompress: "
+        <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte\n";
     
     check(readZipStreamData(&newZip,newRefList,newData));
     check(readZipStreamData(&oldZip,oldRefList,oldData));
@@ -128,13 +130,19 @@ clear:
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     if (oldZip->_isApkNormalized)
         printf("  NOTE: oldZip found ApkNormalized tag\n");
-    if (UnZipper_isHaveApkV2Sign(oldZip))
-        printf("  NOTE: oldZip found Apk Sign Block\n");
+    bool oldIsV2Sign=UnZipper_isHaveApkV2Sign(oldZip);
+    if (oldIsV2Sign)
+        printf("  NOTE: oldZip found ApkV2Sign\n");
     if (newZip->_isApkNormalized)
         printf("  NOTE: newZip found ApkNormalized tag\n");
     bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
     if (newIsV2Sign)
-        printf("  NOTE: newZip found Apk Sign Block\n");
+        printf("  NOTE: newZip found ApkV2Sign\n");
+    
+    if (oldIsV2Sign&(!newIsV2Sign)){
+        printf("\n  WARNING: newZip not found Apk Sign Block!\n\n");
+    }
+    
     if (newIsV2Sign&(!newZip->_isApkNormalized)){
         printf("  ERROR: newZip not found ApkNormalized tag, need ApkNormalized(newZip) before ZipDiff!\n");
         return false;

@@ -26,7 +26,9 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "normalized.h"
+#include <vector>
 #include "../patch/Zipper.h"
+#include "../diff/DiffData.h"
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -35,7 +37,10 @@
 bool ZipNormalized(const char* srcApk,const char* dstApk){
     bool result=true;
     bool _isInClear=false;
-    int fileCount=0;
+    int  fileCount=0;
+    bool isHaveApkV2Sign=false;
+    int  copyCompressedCount=0;
+    std::vector<int>   fileIndexs;
     UnZipper unzipper;
     Zipper   zipper;
     UnZipper_init(&unzipper);
@@ -45,22 +50,49 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
     fileCount=UnZipper_fileCount(&unzipper);
     check(Zipper_openWrite(&zipper,dstApk,fileCount));
     
+    //sort file
+    for (int i=0; i<fileCount; ++i) {
+        if (!UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
+            fileIndexs.push_back(i);
+    }
+    if ((int)fileIndexs.size()<fileCount)
+        printf("NOTE: src found ApkV1Sign or JarSign(%d file)\n",fileCount-(int)fileIndexs.size());
+    for (int i=0; i<fileCount; ++i) {
+        if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
+            fileIndexs.push_back(i);
+    }
+    isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
+    if (isHaveApkV2Sign)
+        printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)(unzipper._centralDirectory-unzipper._cache_vce));
     if (unzipper._isApkNormalized)
         printf("NOTE: src found ApkNormalized tag\n");
-    if (UnZipper_isHaveApkV2Sign(&unzipper))
-        printf("NOTE: out deleted Apk Sign Block (%ld byte)",unzipper._centralDirectory-unzipper._cache_vce);
+    check(Zipper_addApkNormalizedTag_before_fileEntry(&zipper));
+    printf("NOTE: out added ApkNormalized tag\n");
+    printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
+
     
-    for (int i=0; i<fileCount; ++i) {
-        bool isAlwaysReCompress=true;
-        check(Zipper_file_append_copy(&zipper,&unzipper,i,isAlwaysReCompress));
+    for (int i=0; i<(int)fileIndexs.size(); ++i) {
+        int fileIndex=fileIndexs[i];
+        std::string fileName=zipFile_name(&unzipper,fileIndex);
+        bool isCopyCompressed=UnZipper_file_isApkV2Compressed(&unzipper,fileIndex);
+        printf("\"%s\"",fileName.c_str());
+        if (isCopyCompressed){
+            printf("     \t\t(NotReCompress Copy old Compressed %d)",copyCompressedCount);
+            ++copyCompressedCount;
+        }
+        printf("\n");
+        
+        check(Zipper_file_append_copy(&zipper,&unzipper,fileIndex,!isCopyCompressed));
     }
+    printf("\n");
     
-    check(Zipper_addApkNormalizedTag_before_apkV2Sign(&zipper));
     //no run: check(Zipper_copyApkV2Sign_before_fileHeader(&zipper,&unzipper));
-    for (int i=0; i<fileCount; ++i) {
-        check(Zipper_fileHeader_append(&zipper,&unzipper,i));
+    for (int i=0; i<(int)fileIndexs.size(); ++i) {
+        int fileIndex=fileIndexs[i];
+        check(Zipper_fileHeader_append(&zipper,&unzipper,fileIndex));
     }
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
+    
 clear:
     _isInClear=true;
     check(UnZipper_close(&unzipper));

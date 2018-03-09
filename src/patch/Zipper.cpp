@@ -41,7 +41,7 @@ static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 #define     kZlibVesion    "1.2.11" //fixed zlib version
 #define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
-const char* kApkNormalizedTag    ="Apk H Diff Patch";
+const char* kApkNormalizedTag    ="Apk H DiffPatch\0";
 #define     kApkNormalizedTagLen  16
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
@@ -112,12 +112,12 @@ static bool _UnZipper_searchCentralDirectory(UnZipper* self,ZipFilePos_t endCent
     return true;
 }
 
-static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t v2Sign_pos,bool* isApkNormalized){
-    if (v2Sign_pos<kApkNormalizedTagLen)
+static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t bottom_pos,bool* isApkNormalized){
+    if (bottom_pos<kApkNormalizedTagLen)
         { *isApkNormalized=false; return true; }
     const int readLen=kApkNormalizedTagLen;
     TByte buf[readLen];
-    check(readLen==self->stream->read(self->stream->streamHandle,v2Sign_pos-readLen,buf,buf+readLen));
+    check(readLen==self->stream->read(self->stream->streamHandle,bottom_pos-readLen,buf,buf+readLen));
     *isApkNormalized=(0==memcmp(buf,kApkNormalizedTag,readLen));
     return true;
 }
@@ -175,6 +175,15 @@ int UnZipper_file_nameLen(const UnZipper* self,int fileIndex){
 const char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex){
     const TByte* headBuf=fileHeaderBuf(self,fileIndex);
     return (char*)headBuf+kMinFileHeaderSize;
+}
+
+bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
+    const char* kJarSignPath="META-INF/";
+    const size_t kJarSignPathLen=8+1;
+    if (UnZipper_file_nameLen(self,fileIndex)>=kJarSignPathLen)
+        return (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),kJarSignPath,kJarSignPathLen));
+    else
+        return false;
 }
 
 //缓存相关信息并规范化数据;
@@ -277,7 +286,7 @@ static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));  \
     check(_UnZipper_searchCentralDirectory(self,endCentralDirectory_pos,&centralDirectory_pos,&fileCount)); \
     check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos)); \
-    check(_UnZipper_searchApkNormalizedTag(self,v2sign_pos,&self->_isApkNormalized));
+    check(_UnZipper_searchApkNormalizedTag(self,kApkNormalizedTagLen,&self->_isApkNormalized));
 
 
 bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
@@ -318,19 +327,17 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
     return true;
 }
 
-bool UnZipper_updateVCE(UnZipper* self){
+bool UnZipper_updateVCE(UnZipper* self,bool isNormalized){
     _UnZipper_sreachVCE();
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
+    self->_isApkNormalized=isNormalized;
     
     bool isHeaderMatch=true;
     check(_UnZipper_vce_normalized(self,isHeaderMatch));
     return true;
 }
 
-bool UnZipper_isHaveApkV2Sign(UnZipper* self){
-    return self->_cache_vce < self->_centralDirectory;
-}
 
 static uint16_t  _file_compressType(const UnZipper* self,int fileIndex){
     return readUInt16(fileHeaderBuf(self,fileIndex)+10);
@@ -698,7 +705,7 @@ bool Zipper_file_append_data(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     return true;
 }
 
-bool Zipper_addApkNormalizedTag_before_apkV2Sign(Zipper* self){
+bool Zipper_addApkNormalizedTag_before_fileEntry(Zipper* self){
     return _write(self,(const TByte*)kApkNormalizedTag,kApkNormalizedTagLen);
 }
 bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip){
@@ -721,7 +728,8 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     const TByte* endBuf=srcZip->_endCentralDirectory;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
     
-    check(_write(self,endBuf+0,10-0));//固定魔法值--当前分卷Central Directory的记录数量;
+    check(_write(self,endBuf+0,8-0));//固定魔法值--Central Directory的开始分卷号;
+    check(_writeUInt16(self,self->_fileEntryCount));
     check(_writeUInt16(self,self->_fileEntryCount));
     check(_writeUInt32(self,centralDirectory_size));
     check(_writeUInt32(self,self->_centralDirectory_pos));

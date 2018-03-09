@@ -26,9 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "ZipDiffData.h"
-
-static const char* kVersionType="ZipDiff1";
-#define kVersionTypeLen 8
+#include <string.h>
 
 void ZipDiffData_init(ZipDiffData* self){
     memset(self,0,sizeof(ZipDiffData));
@@ -39,7 +37,11 @@ void ZipDiffData_close(ZipDiffData* self){
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
+        assert(false); return false; } }
+#define  check_clear(value) { \
+    if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; assert(false); if (!_isInClear){ goto clear; } } }
+
 #define checkUnpackSize(src_code,src_code_end,result,TUInt) { \
     hpatch_StreamPos_t v=0; \
     check(hpatch_unpackUInt(src_code,src_code_end,&v)); \
@@ -48,25 +50,54 @@ void ZipDiffData_close(ZipDiffData* self){
 
 bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin);
 
+
+static bool _openZipDiffData(TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin,
+                  hpatch_StreamPos_t* out_headInfoPos=0){
+    #define kVersionTypeLen 9
+    
+    TByte buf[kVersionTypeLen + hpatch_kMaxCompressTypeLength+1+1];
+    int readLen=sizeof(buf)-1;
+    buf[readLen]='\0';
+    if (readLen>diffData->base.streamSize)
+        readLen=(int)diffData->base.streamSize;
+    check(readLen==diffData->base.read(diffData->base.streamHandle,0,buf,buf+readLen));
+    //check type+version
+    check(0==strncmp((const char*)buf,"ZipDiff1&",kVersionTypeLen));
+    {//read compressType
+        check(decompressPlugin!=0);
+        const char* compressType=(const char*)buf+kVersionTypeLen;
+        size_t compressTypeLen=strlen(compressType);//safe
+        check(compressTypeLen<=hpatch_kMaxCompressTypeLength);
+        if (out_headInfoPos)
+            *out_headInfoPos=kVersionTypeLen+compressTypeLen+1;
+        hpatch_compressedDiffInfo compressedInfo={0,0,1};
+        memcpy(compressedInfo.compressType,compressType,compressTypeLen+1); //'\0'
+        return decompressPlugin->is_can_open(decompressPlugin,&compressedInfo);
+    }
+}
+
+bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin){
+    return _openZipDiffData(diffData,decompressPlugin);
+}
+
 bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin){
-    bool result=true;
-    bool _isInClear=false;
     hpatch_StreamPos_t  headDataSize=0;
     hpatch_StreamPos_t  headDataCompressedSize=0;
     size_t              headDataPos=0;
     {
-        //read head
-        TByte buf[kVersionTypeLen+hpatch_kMaxPackedUIntBytes*(9+3)];
+        hpatch_StreamPos_t  headInoPos=0;
+        check(_openZipDiffData(diffData,decompressPlugin,&headInoPos));
+        //read head info
+        TByte buf[hpatch_kMaxPackedUIntBytes*(10+3)];
         int readLen=sizeof(buf);
-        if (readLen>diffData->base.streamSize)
-            readLen=(int)diffData->base.streamSize;
-        check(readLen==diffData->base.read(diffData->base.streamHandle,0,buf,buf+readLen));
-        //check type+version
-        check(0==strncmp((const char*)buf,kVersionType,kVersionTypeLen));
+        if (headInoPos+readLen>diffData->base.streamSize)
+            readLen=(int)(diffData->base.streamSize-headInoPos);
+        check(readLen==diffData->base.read(diffData->base.streamHandle,headInoPos,buf,buf+readLen));
         //unpack head info
         hpatch_StreamPos_t hdiffzSize=0;
-        const TByte* curBuf=buf+kVersionTypeLen;
+        const TByte* curBuf=buf;
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipFileCount,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->newZipIsNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->reCompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
@@ -77,7 +108,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataSize));
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataCompressedSize));
         check(hpatch_unpackUInt(&curBuf,buf+readLen,&hdiffzSize));
-        headDataPos=(curBuf-buf);
+        headDataPos=(curBuf-buf)+headInoPos;
         
         check(headDataCompressedSize <= diffData->base.streamSize-headDataPos);
         check(hdiffzSize == diffData->base.streamSize-headDataPos-headDataCompressedSize);
@@ -143,9 +174,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         self->hdiffzData=&self->_hdiffzData.base;
     }
     
-clear:
-    _isInClear=true;
-    return result;
+    return true;
 }
 
 bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin){
@@ -154,8 +183,8 @@ bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpat
     hpatch_TStreamInput codeStream;
     mem_as_hStreamInput(&codeStream,code,code+codeLen);
     hpatch_decompressHandle dec=decompressPlugin->open(decompressPlugin,dstSize,&codeStream,0,codeStream.streamSize);
-    check(dec!=0);
-    check(dstSize==decompressPlugin->decompress_part(decompressPlugin,dec,dst,dst+dstSize));
+    check_clear(dec!=0);
+    check_clear(dstSize==decompressPlugin->decompress_part(decompressPlugin,dec,dst,dst+dstSize));
 clear:
     _isInClear=true;
     decompressPlugin->close(decompressPlugin,dec);
