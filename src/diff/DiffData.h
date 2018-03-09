@@ -35,6 +35,7 @@
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath);
+bool getZipIsNormalized_unsafe(UnZipper* zip); //只检查压缩数据是否标准化;
 
 static inline std::string zipFile_name(UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);

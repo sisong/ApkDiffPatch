@@ -64,10 +64,6 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
     if (isHaveApkV2Sign)
         printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)(unzipper._centralDirectory-unzipper._cache_vce));
-    if (unzipper._isApkNormalized)
-        printf("NOTE: src found ApkNormalized tag\n");
-    check(Zipper_addApkNormalizedTag_before_fileEntry(&zipper));
-    printf("NOTE: out added ApkNormalized tag\n");
     printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
 
     
@@ -77,7 +73,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
         bool isCopyCompressed=UnZipper_file_isApkV2Compressed(&unzipper,fileIndex);
         printf("\"%s\"",fileName.c_str());
         if (isCopyCompressed){
-            printf("     \t\t(NotReCompress Copy old Compressed %d)",copyCompressedCount);
+            printf("     \t\t(Copy old Compressed %d)",copyCompressedCount);
             ++copyCompressedCount;
         }
         printf("\n");

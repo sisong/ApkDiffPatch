@@ -75,11 +75,8 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     //write one end
     if (self->_curFileIndex<0){//vce ok
         check(UnZipper_updateVCE(&self->_newZipVCE,self->_newZipIsNormalized));
-        if (self->_newZipVCE._isApkNormalized){
-            check(Zipper_addApkNormalizedTag_before_fileEntry(self->_out_newZip));
-        }
-        bool newIsStable=self->_newZipVCE._isApkNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
-        bool oldIsStable=self->_oldZip->_isApkNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
+        bool newIsStable=self->_newZipVCE._isNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
+        bool oldIsStable=self->_oldZip->_isNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
         self->_isAlwaysReCompress=newIsStable&(!oldIsStable);
     }else{
         check(Zipper_file_append_end(self->_out_newZip));

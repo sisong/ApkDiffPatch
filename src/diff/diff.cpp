@@ -41,7 +41,7 @@ bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
 bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath);
-bool checkZipIsSame(const char* oldZipPath,const char* newZipPath);
+bool checkZipIsSame(const char* oldZipPath,const char* newZipPath,bool byteByByteCheckSame);
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -63,6 +63,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::vector<uint32_t> oldRefList;
     bool            result=true;
     bool            _isInClear=false;
+    bool            byteByByteCheckSame=false;
     int             oldZipFileCount=0;
     std::vector<uint32_t>* needReCompressList=0;
 #ifdef _CompressPlugin_zstd
@@ -80,6 +81,9 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
+    oldZip._isNormalized=getZipIsNormalized_unsafe(&oldZip); //safe
+    newZip._isNormalized=getZipIsNormalized_unsafe(&newZip); //by checkZipIsSame
+    byteByByteCheckSame=UnZipper_isHaveApkV2Sign(&newZip);
     check(checkZipInfo(&oldZip,&newZip));
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
@@ -87,7 +91,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     needReCompressList=&newReCompressList; //可选数据,用于优化ZipPatch减少fseek;
     check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,needReCompressList));
     
-    //todo: get best oldZip refList
+    //todo: get minSize best oldZip refList
     oldZipFileCount=UnZipper_fileCount(&oldZip);
     for (int i=0; i<oldZipFileCount; ++i) {
         oldRefList.push_back(i);
@@ -118,7 +122,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(UnZipper_close(&oldZip));
     
     check(testZipPatch(oldZipPath,outDiffFileName,temp_ZipPatchFileName));
-    check(checkZipIsSame(newZipPath,temp_ZipPatchFileName));
+    check(checkZipIsSame(newZipPath,temp_ZipPatchFileName,byteByByteCheckSame));
     
 clear:
     _isInClear=true;
@@ -129,23 +133,22 @@ clear:
 }
 
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
-    if (oldZip->_isApkNormalized)
-        printf("  NOTE: oldZip found ApkNormalized tag\n");
-    bool oldIsV2Sign=UnZipper_isHaveApkV2Sign(oldZip);
-    if (oldIsV2Sign)
+    if (oldZip->_isNormalized)
+        printf("  NOTE: oldZip Normalized\n");
+    if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
+        printf("  NOTE: oldZip found ApkV1Sign or JarSign\n");
+    if (UnZipper_isHaveApkV2Sign(oldZip))
         printf("  NOTE: oldZip found ApkV2Sign\n");
-    if (newZip->_isApkNormalized)
-        printf("  NOTE: newZip found ApkNormalized tag\n");
+    if (newZip->_isNormalized)
+        printf("  NOTE: newZip Normalized\n");
+    if (UnZipper_isHaveApkV1_or_jarSign(newZip))
+        printf("  NOTE: newZip found ApkV1Sign or JarSign\n");
     bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
     if (newIsV2Sign)
         printf("  NOTE: newZip found ApkV2Sign\n");
     
-    if (oldIsV2Sign&(!newIsV2Sign)){
-        printf("\n  WARNING: newZip not found Apk Sign Block!\n\n");
-    }
-    
-    if (newIsV2Sign&(!newZip->_isApkNormalized)){
-        printf("  ERROR: newZip not found ApkNormalized tag, need ApkNormalized(newZip) before ZipDiff!\n");
+    if (newIsV2Sign&(!newZip->_isNormalized)){
+        printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
         return false;
     }
     return true;
@@ -194,9 +197,39 @@ bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* out
 }
 
 
-bool checkZipIsSame(const char* oldZipPath,const char* newZipPath){
+static bool getFileIsSame(const char* xFileName,const char* yFileName){
+    TFileStreamInput x;
+    TFileStreamInput y;
+    bool            result=true;
+    bool            _isInClear=false;
+    std::vector<TByte> buf;
+    hpatch_StreamPos_t fileSize;
+    TFileStreamInput_init(&x);
+    TFileStreamInput_init(&y);
+    check(TFileStreamInput_open(&x,xFileName));
+    check(TFileStreamInput_open(&y,yFileName));
+    fileSize=x.base.streamSize;
+    check(fileSize==y.base.streamSize);
+    if (fileSize>0){
+        buf.resize(fileSize*2);
+        check(fileSize==x.base.read(x.base.streamHandle,0,buf.data(),buf.data()+fileSize));
+        check(fileSize==y.base.read(y.base.streamHandle,0,buf.data()+fileSize,buf.data()+fileSize*2));
+        check(0==memcmp(buf.data(),buf.data()+fileSize,fileSize));
+    }
+clear:
+    _isInClear=true;
+    TFileStreamInput_close(&x);
+    TFileStreamInput_close(&y);
+    return result;
+}
+
+bool checkZipIsSame(const char* oldZipPath,const char* newZipPath,bool byteByByteCheckSame){
     double time0=clock_s();
-    bool result=getZipIsSame(oldZipPath,newZipPath);
+    bool result;
+    if (byteByByteCheckSame)
+        result=getFileIsSame(oldZipPath,newZipPath);
+    else
+        result=getZipIsSame(oldZipPath,newZipPath);
     double time1=clock_s();
     if (result){
         std::cout<<"  check ZipPatch result ok!\n";

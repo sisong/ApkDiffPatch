@@ -101,6 +101,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->reCompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->oldZipIsNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->refCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->refSumSize,size_t);

@@ -40,6 +40,7 @@ typedef struct ZipDiffData{
     size_t      newZipVCESize;
     size_t      reCompressCount;
     size_t      samePairCount;
+    size_t      oldZipIsNormalized;
     size_t      oldZipVCESize;
     size_t      refCount;
     size_t      refSumSize;

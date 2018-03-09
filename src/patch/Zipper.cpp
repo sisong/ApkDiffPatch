@@ -41,9 +41,6 @@ static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 #define     kNormalizedZlibVersion  "1.2.11" //fixed zlib version
 #define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
-const char* kApkNormalizedTag    ="Apk H DiffPatch\0";
-#define     kApkNormalizedTagLen  16
-
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
 inline static uint16_t readUInt16(const TByte* buf){
@@ -112,16 +109,6 @@ static bool _UnZipper_searchCentralDirectory(UnZipper* self,ZipFilePos_t endCent
     return true;
 }
 
-static bool _UnZipper_searchApkNormalizedTag(UnZipper* self,ZipFilePos_t bottom_pos,bool* isApkNormalized){
-    if (bottom_pos<kApkNormalizedTagLen)
-        { *isApkNormalized=false; return true; }
-    const int readLen=kApkNormalizedTagLen;
-    TByte buf[readLen];
-    check(readLen==self->stream->read(self->stream->streamHandle,bottom_pos-readLen,buf,buf+readLen));
-    *isApkNormalized=(0==memcmp(buf,kApkNormalizedTag,readLen));
-    return true;
-}
-
 static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
                                       ZipFilePos_t* v2sign_pos){
     *v2sign_pos=centralDirectory_pos; //default not found
@@ -177,6 +164,15 @@ const char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex){
     return (char*)headBuf+kMinFileHeaderSize;
 }
 
+bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self){
+    int fCount=UnZipper_fileCount(self);
+    for (int i=fCount-1; i>=0; --i) {
+        if (UnZipper_file_isApkV1_or_jarSign(self,i))
+            return true;
+    }
+    return false;
+}
+
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
     const char* kJarSignPath="META-INF/";
     const size_t kJarSignPathLen=8+1;
@@ -192,6 +188,12 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
         return true;
     else
         return false;
+}
+
+
+bool UnZipper_fileData_offset_isNormalized(UnZipper* self,int fileIndex){
+    return (UnZipper_file_isCompressed(self,fileIndex))
+        || ((UnZipper_fileData_offset(self,fileIndex)%kZipAlignSize)==0);
 }
 
 //缓存相关信息并规范化数据;
@@ -257,7 +259,7 @@ static bool _UnZipper_openRead_begin(UnZipper* self){
     assert(self->_buf==0);
     self->_buf=(unsigned char*)malloc(kBufSize);
     check(self->_buf!=0);
-    self->_isApkNormalized=false;
+    self->_isNormalized=false;
     return true;
 }
 
@@ -294,11 +296,10 @@ static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     ZipFilePos_t v2sign_pos=0;  \
     check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));  \
     check(_UnZipper_searchCentralDirectory(self,endCentralDirectory_pos,&centralDirectory_pos,&fileCount)); \
-    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos)); \
-    check(_UnZipper_searchApkNormalizedTag(self,kApkNormalizedTagLen,&self->_isApkNormalized));
+    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos));
 
 
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
+bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isNormalized){
     check(_UnZipper_openRead_begin(self));
     check(_UnZipper_openRead_file(self,zipFileName));
     _UnZipper_sreachVCE();
@@ -308,7 +309,8 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName){
     
     check(UnZipper_fileData_read(self,v2sign_pos,self->_cache_vce,self->_cache_vce+self->_vce_size));
     
-    bool isHeaderMatch=self->_isApkNormalized;
+    self->_isNormalized=isNormalized;
+    bool isHeaderMatch=isNormalized;
     check(_UnZipper_vce_normalized(self,isHeaderMatch));
     
     return true;
@@ -340,7 +342,7 @@ bool UnZipper_updateVCE(UnZipper* self,bool isNormalized){
     _UnZipper_sreachVCE();
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
-    self->_isApkNormalized=isNormalized;
+    self->_isNormalized=isNormalized;
     
     bool isHeaderMatch=true;
     check(_UnZipper_vce_normalized(self,isHeaderMatch));
@@ -707,17 +709,10 @@ bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool
     }else{
         check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,&self->_append_stream));
     }
-    if (!dataIsCompressed)
-        assert(self->_append_stream.inputPos==UnZipper_file_compressedSize(srcZip,srcFileIndex));
-    else
-        assert(self->_append_stream.inputPos==UnZipper_file_uncompressedSize(srcZip,srcFileIndex));
     check(Zipper_file_append_end(self));
     return true;
 }
 
-bool Zipper_addApkNormalizedTag_before_fileEntry(Zipper* self){
-    return _write(self,(const TByte*)kApkNormalizedTag,kApkNormalizedTagLen);
-}
 bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip){
     if (!UnZipper_isHaveApkV2Sign(srcZip))
         return true;

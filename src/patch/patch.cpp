@@ -71,7 +71,6 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     TFileStreamOutput_init(&output_refFile);
     
     check(TFileStreamInput_open(&diffData,zipDiffPath),PATCH_READ_ERROR);
-    check(UnZipper_openRead(&oldZip,oldZipPath),PATCH_READ_ERROR);
 #ifdef _CompressPlugin_zstd
     if (decompressPlugin==0){
         if (ZipDiffData_isCanDecompress(&diffData,&zstdDecompressPlugin))
@@ -84,6 +83,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     }
     
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
+    check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsNormalized!=0),PATCH_READ_ERROR);
     check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.refList,
                                                   zipDiffData.refCount), PATCH_OLDDATA_ERROR);
