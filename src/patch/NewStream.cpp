@@ -96,6 +96,15 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     }
     
     if (self->_curFileIndex<self->_fileCount){//open file for write
+        if (UnZipper_file_isApkV2Compressed(&self->_newZipVCE,self->_curFileIndex)){
+            ZipFilePos_t fileDataSize=UnZipper_file_compressedSize(&self->_newZipVCE,self->_curFileIndex);
+            _update_compressedSize(self,self->_curFileIndex,fileDataSize);
+            check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,true,
+                       UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex),fileDataSize));
+            self->_curWriteToPosEnd+=fileDataSize;
+            return result;
+        }//else
+        
         ZipFilePos_t fileDataSize=UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex);
         if ((self->_reCompressCount>0)&&UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex)){
             check(self->_curReCompressIndex<self->_reCompressCount);
@@ -104,7 +113,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         }else{
             _update_compressedSize(self,self->_curFileIndex,fileDataSize);
         }
-        check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,fileDataSize,false));
+        check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,false,fileDataSize,0));
         self->_curWriteToPosEnd+=fileDataSize;
         return result;
     }
@@ -174,9 +183,9 @@ bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex
     bool oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
     bool isNeedDecompress=self->_isAlwaysReCompress|((oldIsCompress)&(!newIsCompress));
     _update_compressedSize(self,newFileIndex,newIsCompress?compressedSize:uncompressedSize);
-    uint32_t appendSize=isNeedDecompress?uncompressedSize:compressedSize;
-    check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,appendSize,
-                                   UnZipper_file_isCompressed(&self->_newZipVCE,newFileIndex)));
+    bool  appendDataIsCompressed=(!isNeedDecompress)&&oldIsCompress;
+    check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,newFileIndex,
+                                   appendDataIsCompressed,uncompressedSize,compressedSize));
     const hpatch_TStreamOutput* outStream=Zipper_file_append_part_as_stream(self->_out_newZip);
     if (isNeedDecompress){
         check(UnZipper_fileData_decompressTo(self->_oldZip,oldFileIndex,outStream));

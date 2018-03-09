@@ -97,6 +97,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::cout<<"     ref old file count: "<<oldRefList.size()<<"\n";
     std::cout<<"     ref old decompress: "
         <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte\n";
+    //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,i)<<"\n";
     
     check(readZipStreamData(&newZip,newRefList,newData));
     check(readZipStreamData(&oldZip,oldRefList,oldData));

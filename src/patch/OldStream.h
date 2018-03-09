@@ -40,7 +40,7 @@ typedef struct OldStream{
     
     uint32_t*                   _rangeEndList;
     uint32_t*                   _rangeFileOffsets;
-    unsigned char*              _rangIsCompressed;
+    unsigned char*              _rangIsInDecBuf;
     size_t                      _rangeCount;//==1+refCount
     int                         _curRangeIndex;
     //mem

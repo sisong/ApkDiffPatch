@@ -105,23 +105,29 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
     
     int newFileCount=UnZipper_fileCount(newZip);
     for (int i=0; i<newFileCount; ++i) {
-        uint32_t crcNew=UnZipper_file_crc32(newZip,i);
-        std::pair<TMap::const_iterator,TMap::const_iterator> range=crcMap.equal_range(crcNew);
         bool findSame=false;
-        for (;range.first!=range.second;++range.first) {
-            int oldIndex=range.first->second;
-            if (zipFileData_isSame(newZip,i,oldZip,oldIndex)){
-                findSame=true;
-                out_samePairList.push_back(i);
-                out_samePairList.push_back(oldIndex);
-                break;
+        if (!UnZipper_file_isApkV2Compressed(newZip,i)){
+            uint32_t crcNew=UnZipper_file_crc32(newZip,i);
+            std::pair<TMap::const_iterator,TMap::const_iterator> range=crcMap.equal_range(crcNew);
+            for (;range.first!=range.second;++range.first) {
+                int oldIndex=range.first->second;
+                if (zipFileData_isSame(newZip,i,oldZip,oldIndex)){
+                    if (UnZipper_file_isApkV2Compressed(oldZip,oldIndex)) continue;
+                    findSame=true;
+                    out_samePairList.push_back(i);
+                    out_samePairList.push_back(oldIndex);
+                    break;
+                }else{
+                    printf("WARNING: crc32 equal but data not equal! file index: %d,%d\n",i,oldIndex);
+                    printf("   name:\"%s\"\n        \"%s\"\n",zipFile_name(newZip,i).c_str(),
+                           zipFile_name(oldZip,oldIndex).c_str());
+                }
             }
-            printf("WARNING: crc32 equal but data not equal! file index: %d,%d\n",i,oldIndex);
-            printf("   name:\"%s\"\n        \"%s\"\n",zipFile_name(newZip,i).c_str(),zipFile_name(oldZip,oldIndex).c_str());
         }
         if (!findSame){
             out_newRefList.push_back(i);
-            if ((out_newReCompressList!=0)&&UnZipper_file_isCompressed(newZip,i)){
+            if ((out_newReCompressList!=0)&&UnZipper_file_isCompressed(newZip,i)
+                  &&(!UnZipper_file_isApkV2Compressed(newZip,i))){
                 uint32_t compressedSize=0;
                 check(getNormalizedCompressedSize(newZip,i,&compressedSize));
                 out_newReCompressList->push_back(compressedSize);

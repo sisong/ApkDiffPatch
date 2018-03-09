@@ -28,12 +28,16 @@
 #include "OldStream.h"
 #include "../../zlib1.2.11/zlib.h" //crc32 // http://zlib.net/  https://github.com/madler/zlib
 
+static inline bool _refIsNeedDecomBuf(const UnZipper* zip,int fileIndex){
+    return UnZipper_file_isCompressed(zip,fileIndex)
+            && (!UnZipper_file_isApkV2Compressed(zip,fileIndex));
+}
 
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
     ZipFilePos_t decompressSumSize=0;
     for (int i=0; i<refCount; ++i) {
         int fileIndex=(int)refList[i];
-        if (UnZipper_file_isCompressed(oldZip,fileIndex)){
+        if (_refIsNeedDecomBuf(oldZip,fileIndex)){
             decompressSumSize+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
         }
     }
@@ -45,7 +49,7 @@ bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t
     hpatch_StreamPos_t writeToPos=0;
     for (int i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
-        if (UnZipper_file_isCompressed(oldZip,fileIndex)){
+        if (_refIsNeedDecomBuf(oldZip,fileIndex)){
             if (!UnZipper_fileData_decompressTo(oldZip,fileIndex,output_refStream,writeToPos))
                 return false;
             writeToPos+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
@@ -93,7 +97,7 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
     if (curRangeIndex==0){
         memcpy(out_data,self->_oldZip->_cache_vce+readPos,out_data_end-out_data);
         return true;
-    }else if (self->_rangIsCompressed[curRangeIndex]){
+    }else if (self->_rangIsInDecBuf[curRangeIndex]){
         long readLen=(long)(out_data_end-out_data);
         return (self->_input_decompressStream->read(self->_input_decompressStream->streamHandle,
                                                     readPos,out_data,out_data_end) == readLen);
@@ -144,34 +148,36 @@ clear:
 bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount){
     bool result=true;
     assert(self->_buf==0);
-    uint32_t curSize=0;
-    uint32_t curDecompressSize=0;
+    uint32_t curSumSize=0;
+    uint32_t curDecompressPos=0;
     
     self->_rangeCount= 1 + refCount;
     self->_buf=(unsigned char*)malloc(sizeof(uint32_t)*self->_rangeCount*2+sizeof(uint32_t)+self->_rangeCount);
     check(self->_buf!=0);
     self->_rangeEndList=((uint32_t*)self->_buf)+1; //+1 for _rangeEndList[-1] safe
     self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
-    self->_rangIsCompressed=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
+    self->_rangIsInDecBuf=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
     
-    curSize=self->_oldZip->_vce_size;
+    curSumSize=self->_oldZip->_vce_size;
     self->_rangeEndList[-1]=0;
-    self->_rangeEndList[0]=curSize;
+    self->_rangeEndList[0]=curSumSize;
     self->_rangeFileOffsets[0]=0;
-    self->_rangIsCompressed[0]=0;
+    self->_rangIsInDecBuf[0]=0;
     for (int i=0; i<refCount; ++i) {
         int fileIndex=(int)refList[i];
-        bool isCompressed=UnZipper_file_isCompressed(self->_oldZip,fileIndex);
-        ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,fileIndex);
-        curSize+=uncompressedSize;
-        self->_rangeEndList[i+1]=curSize;
-        self->_rangIsCompressed[i+1]=isCompressed?1:0;
-        if (isCompressed) {
-            self->_rangeFileOffsets[i+1]=curDecompressSize;
-            curDecompressSize+=uncompressedSize;
+        bool isInDecBuf=_refIsNeedDecomBuf(self->_oldZip,fileIndex);
+        self->_rangIsInDecBuf[i+1]=isInDecBuf?1:0;
+        if (isInDecBuf){
+            self->_rangeFileOffsets[i+1]=curDecompressPos;
+            ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,fileIndex);
+            curDecompressPos+=uncompressedSize;
+            curSumSize+=uncompressedSize;
         }else{
             self->_rangeFileOffsets[i+1]=UnZipper_fileData_offset(self->_oldZip,fileIndex);
+            ZipFilePos_t compressedSize=UnZipper_file_compressedSize(self->_oldZip,fileIndex);
+            curSumSize+=compressedSize;
         }
+        self->_rangeEndList[i+1]=curSumSize;
     }
     self->_curRangeIndex=0;
 clear:

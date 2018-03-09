@@ -38,7 +38,7 @@ static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
 static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
 #define     kZipAlignSize  8
-#define     kZlibVesion    "1.2.11" //fixed zlib version
+#define     kNormalizedZlibVersion  "1.2.11" //fixed zlib version
 #define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
 const char* kApkNormalizedTag    ="Apk H DiffPatch\0";
@@ -180,8 +180,16 @@ const char* UnZipper_file_nameBegin(const UnZipper* self,int fileIndex){
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
     const char* kJarSignPath="META-INF/";
     const size_t kJarSignPathLen=8+1;
-    if (UnZipper_file_nameLen(self,fileIndex)>=kJarSignPathLen)
-        return (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),kJarSignPath,kJarSignPathLen));
+    return (UnZipper_file_nameLen(self,fileIndex)>=kJarSignPathLen)
+        && (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),kJarSignPath,kJarSignPathLen));
+}
+
+bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
+    bool result=UnZipper_isHaveApkV2Sign(self)
+                && UnZipper_file_isCompressed(self,fileIndex)
+                && UnZipper_file_isApkV1_or_jarSign(self,fileIndex);
+    if (result)
+        return true;
     else
         return false;
 }
@@ -203,7 +211,8 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isHeaderMatch){
         self->_fileHeaderOffsets[i]=curOffset;
         
         self->_fileCompressedSizes[i]=readUInt32(headBuf+20);
-        writeUInt32_to(headBuf+20,0);//normalized 压缩大小占位;
+        if (!UnZipper_file_isApkV2Compressed(self,i))
+            writeUInt32_to(headBuf+20,0);//normalized 压缩大小占位;
         
         uint32_t fileEntryOffset=readUInt32(headBuf+42);
         writeUInt32_to(headBuf+42,0);//normalized 文件Entry开始位置偏移;
@@ -434,6 +443,8 @@ bool Zipper_close(Zipper* self){
 }
 
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount){
+    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd version
+    
     assert(self->_file==0);
     check(fileOpenForCreateOrReWrite(zipFileName,&self->_file));
     TByte* buf=(TByte*)malloc(kBufSize*2+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1)
@@ -586,8 +597,11 @@ long Zipper_file_append_stream::_append_part_output(hpatch_TStreamOutputHandle h
 }
 
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                              size_t dataSize,bool dataIsCompressed){
-    assert(dataSize==(uint32_t)dataSize);
+                              bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize){
+    if (0==dataCompressedSize){
+        check(!dataIsCompressed);
+        dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
+    }
     Zipper_file_append_stream* append_state=&self->_append_stream;
     if (append_state->self!=0){
         assert(false);  //need call Zipper_file_append_end()
@@ -602,8 +616,8 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     ZipFilePos_t curFileIndex=self->_fileEntryCount;
     check(curFileIndex < self->_fileEntryMaxCount);
     self->_fileEntryCount=curFileIndex+1;
-    self->_fileCompressedSizes[curFileIndex]=(!isCompressed)?(uint32_t)dataSize:           //finally value
-                                            UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
+    self->_fileCompressedSizes[curFileIndex]=(isCompressed)?(uint32_t)dataCompressedSize: //maybe temp value
+                                            (uint32_t)dataUncompressedSize; //finally value
     check(_write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,false));//out file info
     
     append_state->self=self;
@@ -611,7 +625,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     append_state->outputPos=0;
     append_state->curFileIndex=curFileIndex;
     append_state->streamHandle=append_state;
-    append_state->streamSize=dataSize;
+    append_state->streamSize=dataIsCompressed?dataCompressedSize:dataUncompressedSize; //finally value
     append_state->write=Zipper_file_append_stream::_append_part_input;
     if (isCompressed&&(!dataIsCompressed)){//compress data
         append_state->compressOutStream.streamHandle=append_state;
@@ -684,23 +698,19 @@ bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t 
 }
 
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool isAlwaysReCompress){
-    size_t dataSize=isAlwaysReCompress?UnZipper_file_uncompressedSize(srcZip,srcFileIndex):
-                                       UnZipper_file_compressedSize(srcZip,srcFileIndex);
     bool dataIsCompressed=isAlwaysReCompress?false:UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    check(Zipper_file_append_begin(self,srcZip,srcFileIndex,dataSize,dataIsCompressed));
+    check(Zipper_file_append_begin(self,srcZip,srcFileIndex,dataIsCompressed,
+                                   UnZipper_file_uncompressedSize(srcZip,srcFileIndex),
+                                   UnZipper_file_compressedSize(srcZip,srcFileIndex)));
     if (isAlwaysReCompress){
         check(UnZipper_fileData_decompressTo(srcZip,srcFileIndex,&self->_append_stream));
     }else{
         check(UnZipper_fileData_copyTo(srcZip,srcFileIndex,&self->_append_stream));
     }
-    assert(self->_append_stream.inputPos==dataSize);
-    check(Zipper_file_append_end(self));
-    return true;
-}
-bool Zipper_file_append_data(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                             const unsigned char* data,size_t dataSize,bool dataIsCompressed){
-    check(Zipper_file_append_begin(self,srcZip,srcFileIndex,dataSize,dataIsCompressed));
-    check(Zipper_file_append_part(self,data,dataSize));
+    if (!dataIsCompressed)
+        assert(self->_append_stream.inputPos==UnZipper_file_compressedSize(srcZip,srcFileIndex));
+    else
+        assert(self->_append_stream.inputPos==UnZipper_file_uncompressedSize(srcZip,srcFileIndex));
     check(Zipper_file_append_end(self));
     return true;
 }

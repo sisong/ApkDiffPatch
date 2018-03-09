@@ -77,9 +77,7 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
 bool UnZipper_updateVCE(UnZipper* self,bool isNormalized);
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
-static inline bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
-    return UnZipper_isHaveApkV2Sign(self) && UnZipper_file_isCompressed(self,fileIndex)
-            && UnZipper_file_isApkV1_or_jarSign(self,fileIndex); }
+bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex);
 
     struct Zipper;
     struct _zlib_TCompress;
@@ -122,7 +120,7 @@ bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
 bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                         const unsigned char* data,size_t dataSize,bool dataIsCompressed);
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                              size_t dataSize,bool dataIsCompressed);
+                              bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
