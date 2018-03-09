@@ -26,7 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "OldStream.h"
-#include "../../zlib1.2.11/zlib.h" //crc32 // http://zlib.net/  https://github.com/madler/zlib
+#include "patch.h"
 
 static inline bool _refIsNeedDecomBuf(const UnZipper* zip,int fileIndex){
     return UnZipper_file_isCompressed(zip,fileIndex)

@@ -28,12 +28,9 @@
 #include "Zipper.h"
 #include <string.h>
 #include "../../HDiffPatch/file_for_patch.h"
-
-#include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
-#define _CompressPlugin_zlib
-#define _IsNeedIncludeDefaultCompressHead 0
+#include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
+#include "patch.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
 static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
 static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
