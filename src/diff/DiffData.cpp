@@ -169,7 +169,7 @@ struct t_auto_OldStream {
 };
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,std::vector<unsigned char>& out_data){
-    long outSize=0;
+    size_t outSize=0;
     OldStream stream;
     OldStream_init(&stream);
     t_auto_OldStream _t_auto_OldStream(&stream);
@@ -183,7 +183,7 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,std::v
     check(OldStream_getDecompressData(zip,refList.data(),refList.size(),&out_decompressStream));
     check(OldStream_open(&stream,zip,refList.data(),refList.size(),&in_decompressStream));
     
-    outSize=stream.stream->streamSize;
+    outSize=(size_t)stream.stream->streamSize;
     assert(outSize==stream.stream->streamSize);
     out_data.resize(outSize);
     check(outSize==stream.stream->read(stream.stream->streamHandle,0,out_data.data(),out_data.data()+outSize));

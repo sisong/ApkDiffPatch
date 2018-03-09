@@ -203,12 +203,13 @@ static bool getFileIsSame(const char* xFileName,const char* yFileName){
     bool            result=true;
     bool            _isInClear=false;
     std::vector<TByte> buf;
-    hpatch_StreamPos_t fileSize;
+    size_t          fileSize;
     TFileStreamInput_init(&x);
     TFileStreamInput_init(&y);
     check(TFileStreamInput_open(&x,xFileName));
     check(TFileStreamInput_open(&y,yFileName));
-    fileSize=x.base.streamSize;
+    fileSize=(size_t)x.base.streamSize;
+    assert(fileSize==x.base.streamSize);
     check(fileSize==y.base.streamSize);
     if (fileSize>0){
         buf.resize(fileSize*2);

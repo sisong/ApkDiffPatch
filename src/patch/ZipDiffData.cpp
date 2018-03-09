@@ -52,7 +52,7 @@ bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpat
 
 
 static bool _openZipDiffData(TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin,
-                  hpatch_StreamPos_t* out_headInfoPos=0){
+                  size_t* out_headInfoPos=0){
     #define kVersionTypeLen 9
     
     TByte buf[kVersionTypeLen + hpatch_kMaxCompressTypeLength+1+1];
@@ -72,7 +72,7 @@ static bool _openZipDiffData(TFileStreamInput* diffData,hpatch_TDecompress* deco
             *out_headInfoPos=kVersionTypeLen+compressTypeLen+1;
         hpatch_compressedDiffInfo compressedInfo={0,0,1};
         memcpy(compressedInfo.compressType,compressType,compressTypeLen+1); //'\0'
-        return decompressPlugin->is_can_open(decompressPlugin,&compressedInfo);
+        return 0!=decompressPlugin->is_can_open(decompressPlugin,&compressedInfo);
     }
 }
 
@@ -81,11 +81,11 @@ bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* 
 }
 
 bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin){
-    hpatch_StreamPos_t  headDataSize=0;
-    hpatch_StreamPos_t  headDataCompressedSize=0;
-    size_t              headDataPos=0;
+    size_t  headDataSize=0;
+    size_t  headDataCompressedSize=0;
+    size_t  headDataPos=0;
     {
-        hpatch_StreamPos_t  headInoPos=0;
+        size_t  headInoPos=0;
         check(_openZipDiffData(diffData,decompressPlugin,&headInoPos));
         //read head info
         TByte buf[hpatch_kMaxPackedUIntBytes*(10+3)];
@@ -94,7 +94,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
             readLen=(int)(diffData->base.streamSize-headInoPos);
         check(readLen==diffData->base.read(diffData->base.streamHandle,headInoPos,buf,buf+readLen));
         //unpack head info
-        hpatch_StreamPos_t hdiffzSize=0;
+        size_t hdiffzSize=0;
         const TByte* curBuf=buf;
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipFileCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipIsNormalized,size_t);
@@ -106,9 +106,9 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         checkUnpackSize(&curBuf,buf+readLen,&self->refCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->refSumSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldCrc,uint32_t);
-        check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataSize));
-        check(hpatch_unpackUInt(&curBuf,buf+readLen,&headDataCompressedSize));
-        check(hpatch_unpackUInt(&curBuf,buf+readLen,&hdiffzSize));
+        checkUnpackSize(&curBuf,buf+readLen,&headDataSize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&headDataCompressedSize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&hdiffzSize,size_t);
         headDataPos=(curBuf-buf)+headInoPos;
         
         check(headDataCompressedSize <= diffData->base.streamSize-headDataPos);
@@ -168,7 +168,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         check(curBuf==bufEnd);
     }
     {//HDiffZ stream
-        hpatch_StreamPos_t hdiffzPos=headDataPos+headDataCompressedSize;
+        size_t hdiffzPos=headDataPos+headDataCompressedSize;
         self->_hdiffzData=*diffData;
         self->_hdiffzData.base.streamHandle=&self->_hdiffzData.base;
         TFileStreamInput_setOffset(&self->_hdiffzData,hdiffzPos);

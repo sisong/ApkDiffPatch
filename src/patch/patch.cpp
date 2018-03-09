@@ -118,7 +118,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
     check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount), PATCH_READ_ERROR)
-    check(NewStream_open(&newStream,&out_newZip,&oldZip,  diffInfo.newDataSize,
+    check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsNormalized!=0,zipDiffData.newZipVCESize,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
                          zipDiffData.reCompressList,zipDiffData.reCompressCount),PATCH_NEWDATA_ERROR);

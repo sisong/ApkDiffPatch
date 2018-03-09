@@ -35,7 +35,7 @@ static inline bool _refIsNeedDecomBuf(const UnZipper* zip,int fileIndex){
 
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
     ZipFilePos_t decompressSumSize=0;
-    for (int i=0; i<refCount; ++i) {
+    for (size_t i=0; i<refCount; ++i) {
         int fileIndex=(int)refList[i];
         if (_refIsNeedDecomBuf(oldZip,fileIndex)){
             decompressSumSize+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
@@ -47,7 +47,7 @@ ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                                  hpatch_TStreamOutput* output_refStream){
     hpatch_StreamPos_t writeToPos=0;
-    for (int i=0;i<refCount;++i){
+    for (size_t i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
         if (_refIsNeedDecomBuf(oldZip,fileIndex)){
             if (!UnZipper_fileData_decompressTo(oldZip,fileIndex,output_refStream,writeToPos))
@@ -67,7 +67,7 @@ uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size
     unsigned char buf4[4];
     uLong crc=0;
     crc=crc32(crc,oldZip->_cache_vce,oldZip->_vce_size);
-    for (int i=0;i<refCount;++i){
+    for (size_t i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
         uint32_t fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
         writeUInt32_to(buf4,fileCrc);
@@ -121,7 +121,7 @@ static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
                 check(_OldStream_read_do(self,readFromPos,out_data,out_data_end));
                 break; //ok out while
             }else if (readFromPos<=ranges[curRangeIndex]){//hit left
-                long leftLen=ranges[curRangeIndex]-readFromPos;
+                long leftLen=(long)(ranges[curRangeIndex]-readFromPos);
                 if (leftLen>0)
                     check(_OldStream_read_do(self,readFromPos,out_data,out_data+leftLen));
                 ++self->_curRangeIndex;
@@ -133,9 +133,9 @@ static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
         
         //todo: optimize, binary search?
         self->_curRangeIndex=-1;
-        for (int i=0; i<self->_rangeCount; ++i) {
+        for (size_t i=0; i<self->_rangeCount; ++i) {
             if (readFromPos<ranges[i]){
-                self->_curRangeIndex=i;
+                self->_curRangeIndex=(int)i;
                 break;
             }
         }
@@ -163,7 +163,7 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount){
     self->_rangeEndList[0]=curSumSize;
     self->_rangeFileOffsets[0]=0;
     self->_rangIsInDecBuf[0]=0;
-    for (int i=0; i<refCount; ++i) {
+    for (size_t i=0; i<refCount; ++i) {
         int fileIndex=(int)refList[i];
         bool isInDecBuf=_refIsNeedDecomBuf(self->_oldZip,fileIndex);
         self->_rangIsInDecBuf[i+1]=isInDecBuf?1:0;

@@ -31,4 +31,4 @@
 //规范化zip包;
 bool ZipNormalized(const char* srcApk,const char* dstApk);
 
-#endif ZipNormalized_normalized_h
+#endif //ZipNormalized_normalized_h

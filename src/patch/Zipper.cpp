@@ -226,7 +226,7 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isHeaderMatch){
         int extraFieldLen=readUInt16(headBuf+30);
         int fileCommentLen=readUInt16(headBuf+32);
         curOffset+= kMinFileHeaderSize + fileNameLen+extraFieldLen+fileCommentLen;
-        check(curOffset <= centralDirectory_size);
+        check((size_t)curOffset <= centralDirectory_size);
     }
     return true;
 }
@@ -239,7 +239,7 @@ bool UnZipper_close(UnZipper* self){
     self->_fileLength=0;
     if (self->_buf) { free(self->_buf); self->_buf=0; }
     if (self->_cache_vce) { free(self->_cache_vce); self->_cache_vce=0; }
-    return fileClose(&self->_file);
+    return 0!=fileClose(&self->_file);
 }
 
 static long _stream_read_file(void* _self,hpatch_StreamPos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
@@ -376,7 +376,7 @@ bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* 
         check(fileSeek64(self->_file,file_pos,SEEK_SET));
     self->_file_curPos=file_pos+(ZipFilePos_t)(bufEnd-buf);
     assert(self->_file_curPos<=self->_fileLength);
-    return fileRead(self->_file,buf,bufEnd);
+    return 0!=fileRead(self->_file,buf,bufEnd);
 }
 
 bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
@@ -438,7 +438,7 @@ void Zipper_init(Zipper* self){
 bool Zipper_close(Zipper* self){
     self->_fileEntryCount=0;
     if (self->_buf) { free(self->_buf); self->_buf=0; }
-    return fileClose(&self->_file);
+    return 0!=fileClose(&self->_file);
 }
 
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount){
@@ -466,13 +466,13 @@ static bool _writeFlush(Zipper* self){
     size_t curBufLen=self->_curBufLen;
     if (curBufLen>0){
         self->_curBufLen=0;
-        return fileWrite(self->_file,self->_buf,self->_buf+curBufLen);
+        return 0!=fileWrite(self->_file,self->_buf,self->_buf+curBufLen);
     }else{
         return true;
     }
 }
 static bool _write(Zipper* self,const TByte* data,size_t len){
-    self->_curFilePos+=len;
+    self->_curFilePos+=(ZipFilePos_t)len;
     size_t curBufLen=self->_curBufLen;
     if (((curBufLen>0)||(len*2<=kBufSize)) && (curBufLen+len<=kBufSize)){//to buf
         memcpy(self->_buf+curBufLen,data,len);
@@ -481,7 +481,7 @@ static bool _write(Zipper* self,const TByte* data,size_t len){
     }else{
         if (curBufLen>0)
             check(_writeFlush(self));
-        return fileWrite(self->_file,data,data+len);
+        return 0!=fileWrite(self->_file,data,data+len);
     }
 }
 
@@ -612,7 +612,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
         return 0;       // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
     }
     
-    ZipFilePos_t curFileIndex=self->_fileEntryCount;
+    int curFileIndex=self->_fileEntryCount;
     check(curFileIndex < self->_fileEntryMaxCount);
     self->_fileEntryCount=curFileIndex+1;
     self->_fileCompressedSizes[curFileIndex]=(isCompressed)?(uint32_t)dataCompressedSize: //maybe temp value
@@ -638,7 +638,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     return true;
 }
 
-bool _zipper_file_update_compressedSize(Zipper* self,ZipFilePos_t curFileIndex,uint32_t compressedSize){
+bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,uint32_t compressedSize){
     if (curFileIndex>=self->_fileEntryCount){ assert(false); return false; }
     if (self->_fileCompressedSizes[curFileIndex]==compressedSize) return true;
     self->_fileCompressedSizes[curFileIndex]=compressedSize;
@@ -717,7 +717,7 @@ bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip){
 }
 
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
-    ZipFilePos_t curFileIndex=self->_fileHeaderCount;
+    int curFileIndex=self->_fileHeaderCount;
     check(curFileIndex < self->_fileEntryCount);
     self->_fileHeaderCount=curFileIndex+1;
     if (curFileIndex==0)

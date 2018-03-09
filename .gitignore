@@ -1,0 +1,5 @@
+*.suo
+builds/vc/Debug
+builds/vc/Release
+builds/vc/x64/
+*.filters
