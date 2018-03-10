@@ -39,16 +39,19 @@ typedef struct ZipDiffData{
     size_t      newZipIsNormalized;
     size_t      newZipAlignSize;
     size_t      newZipVCESize;
-    size_t      reCompressCount;
+    uint32_t*   samePairList;//[newFileIndex<->oldFileIndex,...]
     size_t      samePairCount;
+    uint32_t*   newRefNotDecompressList;
+    size_t      newRefNotDecompressCount;
+    uint32_t*   newReCompressedSizeList;//isCompressed && not in samePairList
+    size_t      newReCompressedSizeCount;
     size_t      oldZipIsNormalized;
     size_t      oldZipVCESize;
-    size_t      refCount;
-    size_t      refSumSize;
+    uint32_t*   oldRefList;  //used old data file
+    size_t      oldRefCount;
+    uint32_t*   oldRefNotDecompressList;
+    size_t      oldRefNotDecompressCount;
     uint32_t    oldCrc;
-    uint32_t*   reCompressList;//isCompressed && not in samePairList
-    uint32_t*   refList;  //used old data file
-    uint32_t*   samePairList;//newFileIndex<->oldFileIndex
     const hpatch_TStreamInput* hdiffzData;
 //private:
     TByte*              _buf;

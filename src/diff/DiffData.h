@@ -47,14 +47,14 @@ static inline std::string zipFile_name(UnZipper* self,int fileIndex){
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
-                     std::vector<uint32_t>* out_newReCompressList);
+                     std::vector<uint32_t>* out_newReCompressedSizeList);
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
                        std::vector<unsigned char>& out_data);
 
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
                           size_t newZipAlignSize,
-                          const std::vector<uint32_t>& newReCompressList,
+                          const std::vector<uint32_t>& newReCompressedSizeList,
                           const std::vector<uint32_t>& samePairList,
                           const std::vector<uint32_t>& oldRefList,
                           const std::vector<TByte>&    hdiffzData,

@@ -60,7 +60,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::vector<TByte>  out_diffData;
     std::vector<uint32_t> samePairList;
     std::vector<uint32_t> newRefList;
-    std::vector<uint32_t> newReCompressList;
+    std::vector<uint32_t> newReCompressedSizeList;
     std::vector<uint32_t> oldRefList;
     bool            result=true;
     bool            _isInClear=false;
@@ -94,7 +94,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
 
-    needReCompressList=&newReCompressList; //可选数据,用于优化ZipPatch减少fseek;
+    needReCompressList=&newReCompressedSizeList; //可选数据,用于优化ZipPatch减少fseek;
     check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,needReCompressList));
     
     //todo: get minSize best oldZip refList
@@ -116,7 +116,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
     check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
-                               newReCompressList,samePairList,oldRefList,hdiffzData,compressPlugin));
+                               newReCompressedSizeList,samePairList,oldRefList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
 
     check(TFileStreamOutput_open(&out_diffFile,outDiffFileName,out_diffData.size()));
