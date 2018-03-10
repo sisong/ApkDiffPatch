@@ -26,7 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "OldStream.h"
-#include "patch.h"
+#include "patch_types.h"
 
 static inline bool _refIsNeedDecomBuf(const UnZipper* zip,int fileIndex){
     return UnZipper_file_isCompressed(zip,fileIndex)

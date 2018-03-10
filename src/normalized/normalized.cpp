@@ -34,7 +34,7 @@
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; if (!_isInClear){ goto clear; } } }
 
-bool ZipNormalized(const char* srcApk,const char* dstApk){
+bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize){
     bool result=true;
     bool _isInClear=false;
     int  fileCount=0;
@@ -48,7 +48,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk){
     
     check(UnZipper_openRead(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openWrite(&zipper,dstApk,fileCount));
+    check(Zipper_openWrite(&zipper,dstApk,fileCount,ZipAlignSize));
     
     //sort file
     for (int i=0; i<fileCount; ++i) {

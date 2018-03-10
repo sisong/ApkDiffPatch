@@ -65,7 +65,7 @@ bool                UnZipper_file_isCompressed(const UnZipper* self,int fileInde
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
 uint32_t            UnZipper_file_crc32(const UnZipper* self,int fileIndex);
-    
+
 ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
 bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
@@ -79,7 +79,7 @@ static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self-
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
 bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex);
-bool UnZipper_fileData_offset_isNormalized(UnZipper* self,int fileIndex);
+ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex);
 
 
     struct Zipper;
@@ -98,13 +98,16 @@ bool UnZipper_fileData_offset_isNormalized(UnZipper* self,int fileIndex);
         static long _append_part_output(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
                                        const unsigned char* part_data,const unsigned char* part_data_end);
     };
-    
+
+#define     kDefaultZipAlignSize  8
+
 typedef struct Zipper{
 //private:
     FILE*           _file;
     ZipFilePos_t    _curFilePos;
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
+    size_t          _ZipAlignSize;
     int             _fileHeaderCount;
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
@@ -116,7 +119,7 @@ typedef struct Zipper{
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount);
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);

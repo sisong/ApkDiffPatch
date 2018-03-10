@@ -1,4 +1,4 @@
-//  patch.h
+//  patch_types.h
 //  ZipPatch
 /*
  The MIT License (MIT)
@@ -25,25 +25,21 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipPatch_patch_h
-#define ZipPatch_patch_h
-#include <string.h>
 
-typedef enum TPatchResult {
-    PATCH_SUCCESS=0,
-    PATCH_ERROR,
-    PATCH_READ_ERROR,
-    PATCH_WRITE_ERROR,
-    PATCH_ZIPDIFFINFO_ERROR,
-    PATCH_HDIFFINFO_ERROR,
-    PATCH_COMPRESSTYPE_ERROR,
-    PATCH_OLDDATA_ERROR,
-    PATCH_NEWDATA_ERROR,
-    PATCH_MEM_ERROR,
-    PATCH_CLOSEFILE_ERROR
-} TPatchResult;
+#ifndef ZipPatch_patch_type_h
+#define ZipPatch_patch_type_h
 
-TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
-                      size_t maxUncompressMemory,const char* tempUncompressFileName);
+#define _IsNeedIncludeDefaultCompressHead 0
+//used zstd?
+#ifdef _CompressPlugin_zstd
+#   include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
+#endif
+#define _CompressPlugin_zlib
+#include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 
-#endif //ZipPatch_patch_h
+inline static uint32_t readUInt32(const unsigned char* buf){
+    return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
+}
+
+#endif //ZipPatch_patch_type_h

@@ -29,12 +29,11 @@
 #include <string.h>
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
-#include "patch.h"
+#include "patch_types.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
 static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
-#define     kZipAlignSize  8
 #define     kNormalizedZlibVersion  "1.2.11" //fixed zlib version
 #define     kCompressLevel 7        //fixed Compress Level, for patch speed
 
@@ -42,9 +41,6 @@ static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
 inline static uint16_t readUInt16(const TByte* buf){
     return buf[0]|(buf[1]<<8);
-}
-inline static uint32_t readUInt32(const TByte* buf){
-    return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
 }
 inline static hpatch_StreamPos_t readUInt64(const TByte* buf){
     hpatch_StreamPos_t h=readUInt32(buf+4);
@@ -185,12 +181,6 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
         return true;
     else
         return false;
-}
-
-
-bool UnZipper_fileData_offset_isNormalized(UnZipper* self,int fileIndex){
-    return (UnZipper_file_isCompressed(self,fileIndex))
-        || ((UnZipper_fileData_offset(self,fileIndex)%kZipAlignSize)==0);
 }
 
 //缓存相关信息并规范化数据;
@@ -369,6 +359,11 @@ ZipFilePos_t UnZipper_fileData_offset(UnZipper* self,int fileIndex){
     return self->_fileDataOffsets[fileIndex];
 }
 
+ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex){
+    const TByte* headBuf=fileHeaderBuf(self,fileIndex);
+    return self->_fileDataOffsets[fileIndex]-30-readUInt16(headBuf+28)-readUInt16(headBuf+30);
+}
+
 bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
     //当前的实现不支持多线程;
     ZipFilePos_t curPos=self->_file_curPos;
@@ -441,8 +436,11 @@ bool Zipper_close(Zipper* self){
     return 0!=fileClose(&self->_file);
 }
 
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount){
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize){
     check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd version
+    assert(ZipAlignSize>0);
+    if (ZipAlignSize<=0) ZipAlignSize=1;
+    self->_ZipAlignSize=ZipAlignSize;
     
     assert(self->_file==0);
     check(fileOpenForCreateOrReWrite(zipFileName,&self->_file));
@@ -497,16 +495,23 @@ inline static bool _writeUInt16(Zipper* self,uint16_t v){
 }
 
 
-const TByte _alignSkipBuf[kZipAlignSize]={0};
-inline static size_t _getAlignSkipLen(size_t curPos){
-    return _hpatch_align_upper(curPos,kZipAlignSize)-curPos;
+inline static size_t _getAlignSkipLen(const Zipper* self,size_t curPos){
+    return _hpatch_align_upper(curPos,self->_ZipAlignSize)-curPos;
 }
 inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
-    assert(alignSkipLen<=kZipAlignSize);
-    return _write(self,_alignSkipBuf,alignSkipLen);
+    assert(alignSkipLen<self->_ZipAlignSize);
+    const size_t bufSize =16;
+    const TByte _alignSkipBuf[bufSize]={0};
+    while (alignSkipLen>0) {
+        size_t wlen=alignSkipLen;
+        if (wlen>bufSize) wlen=bufSize;
+        check(_write(self,_alignSkipBuf,wlen));
+        alignSkipLen-=wlen;
+    }
+    return true;
 }
 
-#define assert_align(self) assert((self->_curFilePos&(kZipAlignSize-1))==0);
+#define assert_align(self) assert((self->_curFilePos%self->_ZipAlignSize)==0);
 
 static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
     const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
@@ -514,9 +519,9 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     uint16_t extraFieldLen=readUInt16(headBuf+30);
     if (!isFullInfo){
-        if (!isCompressed){//进行对齐;
+        if (!isCompressed){//计算并进行对齐;
             size_t headInfoLen=30+fileNameLen+extraFieldLen;
-            size_t skipLen=_getAlignSkipLen(self->_curFilePos+headInfoLen);
+            size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);
             check(_writeAlignSkip(self,skipLen));
         }
         self->_fileEntryOffsets[fileIndex]=self->_curFilePos;

@@ -33,6 +33,7 @@
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
 #include "../patch/OldStream.h"
+#include "../patch/patch_types.h"
 #include "../patch/patch.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "DiffData.h"
@@ -65,6 +66,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     bool            _isInClear=false;
     bool            byteByByteCheckSame=false;
     int             oldZipFileCount=0;
+    size_t          newZipAlignSize=0;
     std::vector<uint32_t>* needReCompressList=0;
 #ifdef _CompressPlugin_zstd
     zstd_compress_level=22; //0..22
@@ -81,8 +83,12 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
-    oldZip._isNormalized=getZipIsNormalized_unsafe(&oldZip); //safe
-    newZip._isNormalized=getZipIsNormalized_unsafe(&newZip); //by checkZipIsSame
+    oldZip._isNormalized=getZipCompressedDataIsNormalized(&oldZip);
+    newZip._isNormalized=getZipCompressedDataIsNormalized(&newZip);
+    newZipAlignSize=getZipAlignSize_unsafe(&newZip);
+    if (UnZipper_isHaveApkV2Sign(&newZip))
+        newZip._isNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
+    newZipAlignSize=(newZipAlignSize>0)?newZipAlignSize:kDefaultZipAlignSize;
     byteByByteCheckSame=UnZipper_isHaveApkV2Sign(&newZip);
     check(checkZipInfo(&oldZip,&newZip));
     
@@ -109,8 +115,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
-    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newReCompressList,
-                               samePairList,oldRefList,hdiffzData,compressPlugin));
+    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
+                               newReCompressList,samePairList,oldRefList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
 
     check(TFileStreamOutput_open(&out_diffFile,outDiffFileName,out_diffData.size()));
