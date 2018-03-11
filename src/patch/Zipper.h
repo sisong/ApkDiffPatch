@@ -50,13 +50,15 @@ typedef struct UnZipper{
     uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
     uint32_t*       _fileCompressedSizes;
     ZipFilePos_t*   _fileDataOffsets;
-    bool            _isNormalized;
+    bool            _isDataNormalized;
+    bool            _isFileDataOffsetMatch;
     //mem
     unsigned char*  _buf; //file read buf
     unsigned char*  _cache_vce;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isNormalized=false);
+bool UnZipper_openRead(UnZipper* self,const char* zipFileName,
+                       bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
@@ -74,7 +76,7 @@ bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
     
 bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
-bool UnZipper_updateVCE(UnZipper* self,bool isNormalized);
+bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized);
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);

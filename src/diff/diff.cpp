@@ -84,12 +84,11 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
-    oldZip._isNormalized=getZipCompressedDataIsNormalized(&oldZip);
-    //todo: && 2个文件储存位置不矛盾！
-    newZip._isNormalized=getZipCompressedDataIsNormalized(&newZip);
+    oldZip._isDataNormalized=getZipCompressedDataIsNormalized(&oldZip);
+    newZip._isDataNormalized=getZipCompressedDataIsNormalized(&newZip);
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip))
-        newZip._isNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
+        newZip._isDataNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
     newZipAlignSize=(newZipAlignSize>0)?newZipAlignSize:kDefaultZipAlignSize;
     byteByByteCheckSame=UnZipper_isHaveApkV2Sign(&newZip);
     check(checkZipInfo(&oldZip,&newZip));
@@ -145,13 +144,13 @@ clear:
 }
 
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
-    if (oldZip->_isNormalized)
+    if (oldZip->_isDataNormalized)
         printf("  NOTE: oldZip Normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
         printf("  NOTE: oldZip found ApkV1Sign or JarSign\n");
     if (UnZipper_isHaveApkV2Sign(oldZip))
         printf("  NOTE: oldZip found ApkV2Sign\n");
-    if (newZip->_isNormalized)
+    if (newZip->_isDataNormalized)
         printf("  NOTE: newZip Normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(newZip))
         printf("  NOTE: newZip found ApkV1Sign or JarSign\n");
@@ -159,7 +158,7 @@ bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     if (newIsV2Sign)
         printf("  NOTE: newZip found ApkV2Sign\n");
     
-    if (newIsV2Sign&(!newZip->_isNormalized)){
+    if (newIsV2Sign&(!newZip->_isDataNormalized)){
         printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
         return false;
     }

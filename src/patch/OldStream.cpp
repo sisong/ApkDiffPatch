@@ -184,7 +184,7 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount,
         self->_rangeEndList[rangIndex]=curSumSize;
     }
     for (size_t i=0; i<refNotDecompressCount; ++i,++rangIndex) {
-        int fileIndex=(int)refList[i];
+        int fileIndex=(int)refNotDecompressList[i];
         ZipFilePos_t rangeSize=UnZipper_file_compressedSize(self->_oldZip,fileIndex);
         self->_rangIsInDecBuf[rangIndex]=0;
         self->_rangeFileOffsets[rangIndex]=UnZipper_fileData_offset(self->_oldZip,fileIndex);

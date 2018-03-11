@@ -84,7 +84,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     }
     
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
-    check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsNormalized!=0),PATCH_READ_ERROR);
+    check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
+                            zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_READ_ERROR);
     check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
         zipDiffData.oldRefNotDecompressList,zipDiffData.oldRefNotDecompressCount), PATCH_OLDDATA_ERROR);
@@ -122,7 +123,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,
                            (int)zipDiffData.newZipAlignSize), PATCH_READ_ERROR)
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
-                         zipDiffData.newZipIsNormalized!=0,zipDiffData.newZipVCESize,
+                         zipDiffData.newZipIsDataNormalized!=0,zipDiffData.newZipVCESize,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
                          zipDiffData.newRefNotDecompressList,zipDiffData.newRefNotDecompressCount,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWDATA_ERROR);

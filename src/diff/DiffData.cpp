@@ -130,7 +130,7 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
     std::vector<ZipFilePos_t> offsetList;
     for (int i=0; i<fileCount; ++i){
         if (UnZipper_file_isCompressed(zip,i)) continue;
-        ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置;
+        ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置?
                                        +UnZipper_file_compressedSize(zip,i-1)) : 0;
         ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
         if ((entryOffset-lastEndPos>=12)&&(i>0)){//可能上一个file有Data descriptor块;
@@ -302,13 +302,14 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     }
     //head info
     packUInt(out_data,data->newZipFileCount);
-    packUInt(out_data,data->newZipIsNormalized);
+    packUInt(out_data,data->newZipIsDataNormalized);
     packUInt(out_data,data->newZipAlignSize);
     packUInt(out_data,data->newZipVCESize);
     packUInt(out_data,data->samePairCount);
     packUInt(out_data,data->newRefNotDecompressCount);
     packUInt(out_data,data->newRefCompressedSizeCount);
-    packUInt(out_data,data->oldZipIsNormalized);
+    packUInt(out_data,data->oldZipIsDataNormalized);
+    packUInt(out_data,data->oldIsFileDataOffsetMatch);
     packUInt(out_data,data->oldZipVCESize);
     packUInt(out_data,data->oldRefCount);
     packUInt(out_data,data->oldRefNotDecompressCount);
@@ -337,7 +338,7 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
     ZipDiffData  data;
     memset(&data,0,sizeof(ZipDiffData));
     data.newZipFileCount=UnZipper_fileCount(newZip);
-    data.newZipIsNormalized=newZip->_isNormalized?1:0;
+    data.newZipIsDataNormalized=newZip->_isDataNormalized?1:0;
     data.newZipAlignSize=newZipAlignSize;
     data.newZipVCESize=newZip->_vce_size;
     data.samePairList=(uint32_t*)samePairList.data();
@@ -346,7 +347,8 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
     data.newRefNotDecompressCount=newRefNotDecompressList.size();
     data.newRefCompressedSizeList=(uint32_t*)newRefCompressedSizeList.data();
     data.newRefCompressedSizeCount=newRefCompressedSizeList.size();
-    data.oldZipIsNormalized=oldZip->_isNormalized?1:0;
+    data.oldZipIsDataNormalized=(UnZipper_isHaveApkV2Sign(oldZip)&&oldZip->_isDataNormalized)?1:0;
+    data.oldIsFileDataOffsetMatch=(UnZipper_isHaveApkV2Sign(oldZip)&&oldZip->_isFileDataOffsetMatch)?1:0;
     data.oldZipVCESize=oldZip->_vce_size;
     data.oldRefList=(uint32_t*)oldRefList.data();
     data.oldRefCount=oldRefList.size();

@@ -188,6 +188,8 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
     assert(self->_endCentralDirectory!=0);
     writeUInt32_to(self->_endCentralDirectory+16,
                    (uint32_t)(self->_centralDirectory-self->_cache_vce));//normalized CentralDirectory的开始位置偏移;
+    self->_isFileDataOffsetMatch=isFileDataOffsetMatch;
+    bool test_isFileDataOffsetMatch=true;
     
     assert(self->_centralDirectory!=0);
     TByte* buf=self->_centralDirectory;
@@ -204,9 +206,14 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
         
         uint32_t fileEntryOffset=readUInt32(headBuf+42);
         writeUInt32_to(headBuf+42,0);//normalized 文件Entry开始位置偏移;
-        self->_fileDataOffsets[i]=isFileDataOffsetMatch?
-                                (fileEntryOffset+30+readUInt16(headBuf+28)+readUInt16(headBuf+30)) //fast
-                                :_fileData_offset_read(self,fileEntryOffset);//seek&read;
+        ZipFilePos_t fastFileDataOffset=(fileEntryOffset+30+readUInt16(headBuf+28)+readUInt16(headBuf+30)); //fast
+        if (isFileDataOffsetMatch){
+            self->_fileDataOffsets[i]=fastFileDataOffset;
+        }else{
+            ZipFilePos_t fileDataOffset=_fileData_offset_read(self,fileEntryOffset);//seek&read;
+            self->_fileDataOffsets[i]=fileDataOffset;
+            test_isFileDataOffsetMatch&=(fileDataOffset==fastFileDataOffset);
+        }
         
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
@@ -217,6 +224,10 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
         curOffset+= kMinFileHeaderSize + fileNameLen+extraFieldLen+fileCommentLen;
         check((size_t)curOffset <= centralDirectory_size);
     }
+    
+    //update
+    self->_isFileDataOffsetMatch=test_isFileDataOffsetMatch;
+    
     return true;
 }
 
@@ -245,7 +256,7 @@ static bool _UnZipper_openRead_begin(UnZipper* self){
     assert(self->_buf==0);
     self->_buf=(unsigned char*)malloc(kBufSize);
     check(self->_buf!=0);
-    self->_isNormalized=false;
+    self->_isDataNormalized=false;
     return true;
 }
 
@@ -285,7 +296,7 @@ static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos));
 
 
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isNormalized){
+bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isDataNormalized,bool isFileDataOffsetMatch){
     check(_UnZipper_openRead_begin(self));
     check(_UnZipper_openRead_file(self,zipFileName));
     _UnZipper_sreachVCE();
@@ -295,10 +306,9 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isNormalized)
     
     check(UnZipper_fileData_read(self,v2sign_pos,self->_cache_vce,self->_cache_vce+self->_vce_size));
     
-    self->_isNormalized=isNormalized;
-    bool isFileDataOffsetMatch=isNormalized;
+    self->_isDataNormalized=isDataNormalized;
+    self->_isFileDataOffsetMatch=isFileDataOffsetMatch;
     check(_UnZipper_vce_normalized(self,isFileDataOffsetMatch));
-    
     return true;
 }
 
@@ -324,11 +334,11 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
     return true;
 }
 
-bool UnZipper_updateVCE(UnZipper* self,bool isNormalized){
+bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized){
     _UnZipper_sreachVCE();
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
-    self->_isNormalized=isNormalized;
+    self->_isDataNormalized=isDataNormalized;
     
     bool isFileDataOffsetMatch=true;
     check(_UnZipper_vce_normalized(self,isFileDataOffsetMatch));

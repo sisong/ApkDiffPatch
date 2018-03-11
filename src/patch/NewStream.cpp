@@ -53,6 +53,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     long result=(long)(data_end-data);
     hpatch_StreamPos_t writeToPos=_writeToPos;
     NewStream* self=(NewStream*)streamHandle;
+    check(!self->isFinish);
     assert(writeToPos<self->_curWriteToPosEnd);
     if (writeToPos+result>self->_curWriteToPosEnd){
         long leftLen=(long)(self->_curWriteToPosEnd-writeToPos);
@@ -74,9 +75,9 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     //write one end
     if (self->_curFileIndex<0){//vce ok
-        check(UnZipper_updateVCE(&self->_newZipVCE,self->_newZipIsNormalized));
-        bool newIsStable=self->_newZipVCE._isNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
-        bool oldIsStable=self->_oldZip->_isNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
+        check(UnZipper_updateVCE(&self->_newZipVCE,self->_newZipIsDataNormalized));
+        bool newIsStable=self->_newZipVCE._isDataNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
+        bool oldIsStable=self->_oldZip->_isDataNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
         self->_isAlwaysReCompress=newIsStable&(!oldIsStable);
     }else{
         check(Zipper_file_append_end(self->_out_newZip));
@@ -124,7 +125,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         assert(false); return false; } }
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
-                    size_t newDataSize,bool newZipIsNormalized,size_t newZipVCESize,
+                    size_t newDataSize,bool newZipIsDataNormalized,size_t newZipVCESize,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
                     const uint32_t* reCompressList,size_t reCompressCount){
@@ -132,7 +133,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->isFinish=false;
     self->_out_newZip=out_newZip;
     self->_oldZip=oldZip;
-    self->_newZipIsNormalized=newZipIsNormalized;
+    self->_newZipIsDataNormalized=newZipIsDataNormalized;
     self->_samePairList=samePairList;
     self->_samePairCount=samePairCount;
     self->_newRefNotDecompressList=newRefNotDecompressList;
