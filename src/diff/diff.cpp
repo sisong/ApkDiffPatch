@@ -60,14 +60,15 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::vector<TByte>  out_diffData;
     std::vector<uint32_t> samePairList;
     std::vector<uint32_t> newRefList;
-    std::vector<uint32_t> newReCompressedSizeList;
+    std::vector<uint32_t> newRefNotDecompressList;
+    std::vector<uint32_t> newRefCompressedSizeList;
     std::vector<uint32_t> oldRefList;
+    std::vector<uint32_t> oldRefNotDecompressList;
     bool            result=true;
     bool            _isInClear=false;
     bool            byteByByteCheckSame=false;
     int             oldZipFileCount=0;
     size_t          newZipAlignSize=0;
-    std::vector<uint32_t>* needReCompressList=0;
 #ifdef _CompressPlugin_zstd
     zstd_compress_level=22; //0..22
     hdiff_TCompress* compressPlugin=&zstdCompressPlugin;
@@ -84,6 +85,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
     oldZip._isNormalized=getZipCompressedDataIsNormalized(&oldZip);
+    //todo: && 2个文件储存位置不矛盾！
     newZip._isNormalized=getZipCompressedDataIsNormalized(&newZip);
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip))
@@ -94,29 +96,33 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
 
-    needReCompressList=&newReCompressedSizeList; //可选数据,用于优化ZipPatch减少fseek;
-    check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,needReCompressList));
+    check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
     
     //todo: get minSize best oldZip refList
     oldZipFileCount=UnZipper_fileCount(&oldZip);
     for (int i=0; i<oldZipFileCount; ++i) {
-        oldRefList.push_back(i);
+        if (UnZipper_file_isApkV2Compressed(&oldZip,i))
+            oldRefNotDecompressList.push_back(i);
+        else
+            oldRefList.push_back(i);
     }
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
-    std::cout<<"    diff new file count: "<<newRefList.size()<<"\n";
-    std::cout<<"     ref old file count: "<<oldRefList.size()<<"\n";
+    std::cout<<"    diff new file count: "<<newRefList.size()+newRefNotDecompressList.size()<<"\n";
+    std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("<<oldZipFileCount<<")\n";
     std::cout<<"     ref old decompress: "
         <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte\n";
-    //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,i)<<"\n";
-    
-    check(readZipStreamData(&newZip,newRefList,newData));
-    check(readZipStreamData(&oldZip,oldRefList,oldData));
+    //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefList[i])<<"\n";
+    //for (int i=0; i<(int)newRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefNotDecompressList[i])<<"\n";
+
+    check(readZipStreamData(&newZip,newRefList,newRefNotDecompressList,newData));
+    check(readZipStreamData(&oldZip,oldRefList,oldRefNotDecompressList,oldData));
     check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,myBestMatchScore));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
     check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
-                               newReCompressedSizeList,samePairList,oldRefList,hdiffzData,compressPlugin));
+                               samePairList,newRefNotDecompressList,newRefCompressedSizeList,
+                               oldRefList,oldRefNotDecompressList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
 
     check(TFileStreamOutput_open(&out_diffFile,outDiffFileName,out_diffData.size()));

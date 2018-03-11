@@ -93,25 +93,23 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     }
     
     if (self->_curFileIndex<self->_fileCount){//open file for write
-        if (UnZipper_file_isApkV2Compressed(&self->_newZipVCE,self->_curFileIndex)){
-            ZipFilePos_t fileDataSize=UnZipper_file_compressedSize(&self->_newZipVCE,self->_curFileIndex);
-            _update_compressedSize(self,self->_curFileIndex,fileDataSize);
-            check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,true,
-                       UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex),fileDataSize));
-            self->_curWriteToPosEnd+=fileDataSize;
-            return result;
-        }//else
-        
-        ZipFilePos_t fileDataSize=UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex);
-        if ((self->_reCompressCount>0)&&UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex)){
-            check(self->_curReCompressIndex<self->_reCompressCount);
-            _update_compressedSize(self,self->_curFileIndex,self->_reCompressList[self->_curReCompressIndex]);
-            ++self->_curReCompressIndex;
-        }else{
-            _update_compressedSize(self,self->_curFileIndex,fileDataSize);
+        ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex);
+        ZipFilePos_t compressedSize=uncompressedSize;
+        if (UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex)){
+            check(self->_curNewReCompressSizeIndex<self->_newReCompressSizeCount);
+            compressedSize=self->_newReCompressSizeList[self->_curNewReCompressSizeIndex];
+            ++self->_curNewReCompressSizeIndex;
         }
-        check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,false,fileDataSize,0));
-        self->_curWriteToPosEnd+=fileDataSize;
+        _update_compressedSize(self,self->_curFileIndex,compressedSize);
+        
+        bool isWriteCompressedData=(self->_curNewRefNotDecompressIndex<self->_newRefNotDecompressCount)
+                &&(self->_newRefNotDecompressList[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
+        if (isWriteCompressedData)
+            ++self->_curNewRefNotDecompressIndex;
+        
+        check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
+                                       isWriteCompressedData,uncompressedSize,compressedSize));
+        self->_curWriteToPosEnd+=isWriteCompressedData?compressedSize:uncompressedSize;
         return result;
     }
     
@@ -128,16 +126,19 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newDataSize,bool newZipIsNormalized,size_t newZipVCESize,
                     const uint32_t* samePairList,size_t samePairCount,
+                    uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
                     const uint32_t* reCompressList,size_t reCompressCount){
     assert(self->_out_newZip==0);
-    self->isFilish=false;
+    self->isFinish=false;
     self->_out_newZip=out_newZip;
     self->_oldZip=oldZip;
     self->_newZipIsNormalized=newZipIsNormalized;
     self->_samePairList=samePairList;
     self->_samePairCount=samePairCount;
-    self->_reCompressList=reCompressList;
-    self->_reCompressCount=reCompressCount;
+    self->_newRefNotDecompressList=newRefNotDecompressList;
+    self->_newRefNotDecompressCount=newRefNotDecompressCount;
+    self->_newReCompressSizeList=reCompressList;
+    self->_newReCompressSizeCount=reCompressCount;
     self->_fileCount=out_newZip->_fileEntryMaxCount;
     
     self->_stream.streamHandle=self;
@@ -150,15 +151,18 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_curFileIndex=-1;
     self->_curWriteToPosEnd=newZipVCESize;
     self->_curSamePairIndex=0;
-    self->_curReCompressIndex=0;
+    self->_curNewRefNotDecompressIndex=0;
+    self->_curNewReCompressSizeIndex=0;
     self->_isAlwaysReCompress=false;
     return true;
 }
 
 static bool _file_entry_end(NewStream* self){
+    check(!self->isFinish);
     check(self->_curFileIndex==self->_fileCount);
     check(self->_curSamePairIndex==self->_samePairCount);
-    check(self->_curReCompressIndex==self->_reCompressCount);
+    check(self->_curNewRefNotDecompressIndex==self->_newRefNotDecompressCount);
+    check(self->_curNewReCompressSizeIndex==self->_newReCompressSizeCount);
     
     if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){
         check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
@@ -167,7 +171,7 @@ static bool _file_entry_end(NewStream* self){
         check(Zipper_fileHeader_append(self->_out_newZip,&self->_newZipVCE,i));
     }
     check(Zipper_endCentralDirectory_append(self->_out_newZip,&self->_newZipVCE));
-    self->isFilish=true;
+    self->isFinish=true;
     return true;
 }
 

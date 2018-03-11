@@ -184,7 +184,7 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
 }
 
 //缓存相关信息并规范化数据;
-static bool _UnZipper_vce_normalized(UnZipper* self,bool isHeaderMatch){
+static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
     assert(self->_endCentralDirectory!=0);
     writeUInt32_to(self->_endCentralDirectory+16,
                    (uint32_t)(self->_centralDirectory-self->_cache_vce));//normalized CentralDirectory的开始位置偏移;
@@ -200,14 +200,13 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isHeaderMatch){
         self->_fileHeaderOffsets[i]=curOffset;
         
         self->_fileCompressedSizes[i]=readUInt32(headBuf+20);
-        if (!UnZipper_file_isApkV2Compressed(self,i))
-            writeUInt32_to(headBuf+20,0);//normalized 压缩大小占位;
+        writeUInt32_to(headBuf+20,0);//normalized 压缩大小占位;
         
         uint32_t fileEntryOffset=readUInt32(headBuf+42);
         writeUInt32_to(headBuf+42,0);//normalized 文件Entry开始位置偏移;
-        self->_fileDataOffsets[i]=isHeaderMatch?
+        self->_fileDataOffsets[i]=isFileDataOffsetMatch?
                                 (fileEntryOffset+30+readUInt16(headBuf+28)+readUInt16(headBuf+30)) //fast
-                                :_fileData_offset_read(self,fileEntryOffset);//较慢;
+                                :_fileData_offset_read(self,fileEntryOffset);//seek&read;
         
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
@@ -297,8 +296,8 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isNormalized)
     check(UnZipper_fileData_read(self,v2sign_pos,self->_cache_vce,self->_cache_vce+self->_vce_size));
     
     self->_isNormalized=isNormalized;
-    bool isHeaderMatch=isNormalized;
-    check(_UnZipper_vce_normalized(self,isHeaderMatch));
+    bool isFileDataOffsetMatch=isNormalized;
+    check(_UnZipper_vce_normalized(self,isFileDataOffsetMatch));
     
     return true;
 }
@@ -331,8 +330,8 @@ bool UnZipper_updateVCE(UnZipper* self,bool isNormalized){
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
     self->_isNormalized=isNormalized;
     
-    bool isHeaderMatch=true;
-    check(_UnZipper_vce_normalized(self,isHeaderMatch));
+    bool isFileDataOffsetMatch=true;
+    check(_UnZipper_vce_normalized(self,isFileDataOffsetMatch));
     return true;
 }
 

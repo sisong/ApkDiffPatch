@@ -34,22 +34,25 @@
 //利用samePairList、CHEqs数据对需要输出的数据进行加工生成newZip;
 typedef struct NewStream{
     const hpatch_TStreamOutput* stream;
-    bool                    isFilish;
+    bool                    isFinish;
 //private:
     Zipper*                 _out_newZip;
     UnZipper*               _oldZip;
     bool                    _newZipIsNormalized;
-    size_t                  _samePairCount;
     const uint32_t*         _samePairList;
-    const uint32_t*         _reCompressList;
-    size_t                  _reCompressCount;
+    size_t                  _samePairCount;
+    const uint32_t*         _newRefNotDecompressList;
+    size_t                  _newRefNotDecompressCount;
+    const uint32_t*         _newReCompressSizeList;
+    size_t                  _newReCompressSizeCount;
     hpatch_TStreamOutput    _stream;
     int                     _fileCount;
     
     int                     _curFileIndex;
     hpatch_StreamPos_t      _curWriteToPosEnd;
     size_t                  _curSamePairIndex;
-    size_t                  _curReCompressIndex;
+    size_t                  _curNewRefNotDecompressIndex;
+    size_t                  _curNewReCompressSizeIndex;
     UnZipper                _newZipVCE;
     bool                    _isAlwaysReCompress;
 } NewStream;
@@ -58,6 +61,7 @@ void NewStream_init(NewStream* self);
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newDataSize,bool newZipIsNormalized,size_t newZipVCESize,
                     const uint32_t* samePairList,size_t samePairCount,
+                    uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
                     const uint32_t* reCompressList,size_t reCompressCount);
 void NewStream_close(NewStream* self);
 

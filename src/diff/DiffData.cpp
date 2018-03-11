@@ -162,7 +162,8 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
-                     std::vector<uint32_t>* out_newReCompressedSizeList){
+                     std::vector<uint32_t>& out_newRefNotDecompressList,
+                     std::vector<uint32_t>& out_newRefCompressedSizeList){
     int oldFileCount=UnZipper_fileCount(oldZip);
     typedef std::multimap<uint32_t,int> TMap;
     TMap crcMap;
@@ -173,17 +174,21 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
     
     int newFileCount=UnZipper_fileCount(newZip);
     for (int i=0; i<newFileCount; ++i) {
-        bool findSame=false;
-        if (!UnZipper_file_isApkV2Compressed(newZip,i)){
+        if (UnZipper_file_isApkV2Compressed(newZip,i)){
+            out_newRefNotDecompressList.push_back(i);
+            out_newRefCompressedSizeList.push_back(UnZipper_file_compressedSize(newZip,i));
+        }else{
+            bool findSame=false;
+            int  oldSameIndex=-1;
             uint32_t crcNew=UnZipper_file_crc32(newZip,i);
             std::pair<TMap::const_iterator,TMap::const_iterator> range=crcMap.equal_range(crcNew);
             for (;range.first!=range.second;++range.first) {
                 int oldIndex=range.first->second;
                 if (zipFileData_isSame(newZip,i,oldZip,oldIndex)){
-                    if (UnZipper_file_isApkV2Compressed(oldZip,oldIndex)) continue;
+                    if (UnZipper_file_isApkV2Compressed(oldZip,oldIndex))
+                        continue;
                     findSame=true;
-                    out_samePairList.push_back(i);
-                    out_samePairList.push_back(oldIndex);
+                    oldSameIndex=oldIndex;
                     break;
                 }else{
                     printf("WARNING: crc32 equal but data not equal! file index: %d,%d\n",i,oldIndex);
@@ -191,14 +196,16 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                            zipFile_name(oldZip,oldIndex).c_str());
                 }
             }
-        }
-        if (!findSame){
-            out_newRefList.push_back(i);
-            if ((out_newReCompressedSizeList!=0)&&UnZipper_file_isCompressed(newZip,i)
-                  &&(!UnZipper_file_isApkV2Compressed(newZip,i))){
-                std::vector<TByte> code;
-                check(getNormalizedCompressedCode(newZip,i,code));
-                out_newReCompressedSizeList->push_back((uint32_t)code.size());
+            if (findSame){
+                out_samePairList.push_back(i);
+                out_samePairList.push_back(oldSameIndex);
+            }else{
+                out_newRefList.push_back(i);
+                if (UnZipper_file_isCompressed(newZip,i)){
+                    std::vector<TByte> code;
+                    check(getNormalizedCompressedCode(newZip,i,code));
+                    out_newRefCompressedSizeList.push_back((uint32_t)code.size());
+                }
             }
         }
     }
@@ -211,7 +218,8 @@ struct t_auto_OldStream {
     OldStream* _p;
 };
 
-bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,std::vector<unsigned char>& out_data){
+bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
+                       const std::vector<uint32_t>& refNotDecompressList,std::vector<unsigned char>& out_data){
     size_t outSize=0;
     OldStream stream;
     OldStream_init(&stream);
@@ -224,7 +232,8 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,std::v
     mem_as_hStreamOutput(&out_decompressStream,decompressData.data(),decompressData.data()+decompressSumSize);
     mem_as_hStreamInput(&in_decompressStream,decompressData.data(),decompressData.data()+decompressSumSize);
     check(OldStream_getDecompressData(zip,refList.data(),refList.size(),&out_decompressStream));
-    check(OldStream_open(&stream,zip,refList.data(),refList.size(),&in_decompressStream));
+    check(OldStream_open(&stream,zip,refList.data(),refList.size(),
+                         refNotDecompressList.data(),refNotDecompressList.size(),&in_decompressStream));
     
     outSize=(size_t)stream.stream->streamSize;
     assert(outSize==stream.stream->streamSize);
@@ -234,21 +243,21 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,std::v
 }
 
 
+static void pushIncList(std::vector<TByte>& out_data,const uint32_t* list,size_t count){
+    uint32_t backValue=-(uint32_t)1;
+    for (size_t i=0;i<count;++i){
+        uint32_t curValue=list[i];
+        packUInt(out_data,(uint32_t)(curValue-(uint32_t)(backValue+1)));
+        backValue=curValue;
+    }
+}
+
 static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData*  data,
                                   const std::vector<TByte>& hdiffzData,hdiff_TCompress* compressPlugin){
     std::vector<TByte> headData;
     {//head data
-        for (size_t i=0;i<data->newReCompressedSizeCount;++i){
-            packUInt(headData,(uint32_t)data->newReCompressedSizeList[i]);
-        }
-        uint32_t backValue=-1;
-        for (size_t i=0;i<data->oldRefCount;++i){
-            uint32_t curValue=data->oldRefList[i];
-            packUInt(headData,(uint32_t)(curValue-(uint32_t)(backValue+1)));
-            backValue=curValue;
-        }
-        uint32_t backPairNew=-1;
-        uint32_t backPairOld=-1;
+        uint32_t backPairNew=-(uint32_t)1;
+        uint32_t backPairOld=-(uint32_t)1;
         for (size_t i=0;i<data->samePairCount;++i){
             uint32_t curNewValue=data->samePairList[i*2+0];
             packUInt(headData,(uint32_t)(curNewValue-(uint32_t)(backPairNew+1)));
@@ -261,6 +270,12 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
                 packUIntWithTag(headData,(uint32_t)((uint32_t)(backPairOld+1)-curOldValue),1,1);
             backPairOld=curOldValue;
         }
+        pushIncList(headData,data->newRefNotDecompressList,data->newRefNotDecompressCount);
+        for (size_t i=0;i<data->newRefCompressedSizeCount;++i){
+            packUInt(headData,(uint32_t)data->newRefCompressedSizeList[i]);
+        }
+        pushIncList(headData,data->oldRefList,data->oldRefCount);
+        pushIncList(headData,data->oldRefNotDecompressList,data->oldRefNotDecompressCount);
     }
     std::vector<TByte> headCode;
     {
@@ -292,7 +307,7 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     packUInt(out_data,data->newZipVCESize);
     packUInt(out_data,data->samePairCount);
     packUInt(out_data,data->newRefNotDecompressCount);
-    packUInt(out_data,data->newReCompressedSizeCount);
+    packUInt(out_data,data->newRefCompressedSizeCount);
     packUInt(out_data,data->oldZipIsNormalized);
     packUInt(out_data,data->oldZipVCESize);
     packUInt(out_data,data->oldRefCount);
@@ -312,9 +327,11 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
 
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
                           size_t newZipAlignSize,
-                          const std::vector<uint32_t>& newReCompressedSizeList,
                           const std::vector<uint32_t>& samePairList,
+                          const std::vector<uint32_t>& newRefNotDecompressList,
+                          const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
+                          const std::vector<uint32_t>& oldRefNotDecompressList,
                           const std::vector<TByte>&    hdiffzData,
                           hdiff_TCompress* compressPlugin){
     ZipDiffData  data;
@@ -323,14 +340,19 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
     data.newZipIsNormalized=newZip->_isNormalized?1:0;
     data.newZipAlignSize=newZipAlignSize;
     data.newZipVCESize=newZip->_vce_size;
-    data.newReCompressedSizeList=(uint32_t*)newReCompressedSizeList.data();
-    data.newReCompressedSizeCount=newReCompressedSizeList.size();
     data.samePairList=(uint32_t*)samePairList.data();
     data.samePairCount=samePairList.size()/2;
+    data.newRefNotDecompressList=(uint32_t*)newRefNotDecompressList.data();
+    data.newRefNotDecompressCount=newRefNotDecompressList.size();
+    data.newRefCompressedSizeList=(uint32_t*)newRefCompressedSizeList.data();
+    data.newRefCompressedSizeCount=newRefCompressedSizeList.size();
     data.oldZipIsNormalized=oldZip->_isNormalized?1:0;
     data.oldZipVCESize=oldZip->_vce_size;
     data.oldRefList=(uint32_t*)oldRefList.data();
     data.oldRefCount=oldRefList.size();
-    data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size());
+    data.oldRefNotDecompressList=(uint32_t*)oldRefNotDecompressList.data();
+    data.oldRefNotDecompressCount=oldRefNotDecompressList.size();
+    data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size(),
+        oldRefNotDecompressList.data(),oldRefNotDecompressList.size());
     return _serializeZipDiffData(out_data,&data,hdiffzData,compressPlugin);
 }
