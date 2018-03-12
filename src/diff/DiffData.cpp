@@ -290,8 +290,8 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     }
     
     {//type version
-        static const char* kVersionType="ZipDiff1&";
-        #define kVersionTypeLen 9
+        #define kVersionTypeLen 7
+        static const char* kVersionType="ZiPat1&";
         pushBack(out_data,(const TByte*)kVersionType,(const TByte*)kVersionType+kVersionTypeLen);
     }
     {//compressType
