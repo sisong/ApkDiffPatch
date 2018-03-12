@@ -36,7 +36,6 @@
 #endif
 #define _CompressPlugin_zlib
 #include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
-#include "../../HDiffPatch/decompress_plugin_demo.h"
 
 inline static uint32_t readUInt32(const unsigned char* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);

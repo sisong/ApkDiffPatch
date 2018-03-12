@@ -32,11 +32,17 @@
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
-#include "../patch/OldStream.h"
 #include "../patch/patch_types.h"
-#include "../patch/Patcher.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
+#include "../../HDiffPatch/decompress_plugin_demo.h"
+#include "../patch/OldStream.h"
+#include "../patch/Patcher.h"
 #include "DiffData.h"
+
+#ifdef _CompressPlugin_zstd
+const hdiff_TStreamCompress* __not_used_for_compiler__zstd =&zstdStreamCompressPlugin;
+#endif
+const hdiff_TStreamCompress* __not_used_for_compiler__zlib =&zlibStreamCompressPlugin;
 
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
@@ -125,8 +131,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
 
     check(TFileStreamOutput_open(&out_diffFile,outDiffFileName,out_diffData.size()));
-    check(out_diffData.size()==out_diffFile.base.write(out_diffFile.base.streamHandle,
-                                                       0,out_diffData.data(),out_diffData.data()+out_diffData.size()));
+    check((long)out_diffData.size()==out_diffFile.base.write(out_diffFile.base.streamHandle,
+                                        0,out_diffData.data(),out_diffData.data()+out_diffData.size()));
     check(TFileStreamOutput_close(&out_diffFile));
     std::cout<<"  out ZipDiff file ok!\n";
     check(UnZipper_close(&newZip));
@@ -224,8 +230,8 @@ static bool getFileIsSame(const char* xFileName,const char* yFileName){
     check(fileSize==y.base.streamSize);
     if (fileSize>0){
         buf.resize(fileSize*2);
-        check(fileSize==x.base.read(x.base.streamHandle,0,buf.data(),buf.data()+fileSize));
-        check(fileSize==y.base.read(y.base.streamHandle,0,buf.data()+fileSize,buf.data()+fileSize*2));
+        check((long)fileSize==x.base.read(x.base.streamHandle,0,buf.data(),buf.data()+fileSize));
+        check((long)fileSize==y.base.read(y.base.streamHandle,0,buf.data()+fileSize,buf.data()+fileSize*2));
         check(0==memcmp(buf.data(),buf.data()+fileSize,fileSize));
     }
 clear:

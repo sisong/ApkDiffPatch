@@ -29,6 +29,7 @@
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h" //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/file_for_patch.h"
 #include "patch_types.h"
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 #include "Zipper.h"
 #include "ZipDiffData.h"
 #include "OldStream.h"

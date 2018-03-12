@@ -27,6 +27,7 @@
  */
 #include <iostream>
 #include <string>
+#include <stdio.h>
 #include "diff/Differ.h"
 #include "../HDiffPatch/_clock_for_demo.h"
 

@@ -238,7 +238,7 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
     outSize=(size_t)stream.stream->streamSize;
     assert(outSize==stream.stream->streamSize);
     out_data.resize(outSize);
-    check(outSize==stream.stream->read(stream.stream->streamHandle,0,out_data.data(),out_data.data()+outSize));
+    check(outSize==(size_t)stream.stream->read(stream.stream->streamHandle,0,out_data.data(),out_data.data()+outSize));
     return true;
 }
 

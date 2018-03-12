@@ -85,7 +85,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     ++self->_curFileIndex;
     
     while ((self->_curFileIndex<self->_fileCount)&&(self->_curSamePairIndex<self->_samePairCount)) {
-        uint32_t newFileIndex=self->_samePairList[self->_curSamePairIndex*2];
+        int newFileIndex=(int)self->_samePairList[self->_curSamePairIndex*2];
         if (self->_curFileIndex!=newFileIndex) break;
         uint32_t oldFileIndex=self->_samePairList[self->_curSamePairIndex*2+1];
         check(_copy_same_file(self,newFileIndex,oldFileIndex));
@@ -104,7 +104,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         _update_compressedSize(self,self->_curFileIndex,compressedSize);
         
         bool isWriteCompressedData=(self->_curNewRefNotDecompressIndex<self->_newRefNotDecompressCount)
-                &&(self->_newRefNotDecompressList[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
+                &&((int)self->_newRefNotDecompressList[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
         if (isWriteCompressedData)
             ++self->_curNewRefNotDecompressIndex;
         

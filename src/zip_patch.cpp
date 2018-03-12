@@ -26,6 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include "../HDiffPatch/_clock_for_demo.h"
 #include "patch/Patcher.h"
 

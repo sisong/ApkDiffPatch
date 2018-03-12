@@ -31,6 +31,7 @@
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 #include "patch_types.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
 static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
@@ -107,13 +108,13 @@ static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirecto
     *v2sign_pos=centralDirectory_pos; //default not found
     
     //tag
-    const int   APKSigningTagLen=16;
+    const size_t APKSigningTagLen=16;
     const char* APKSigningTag="APK Sig Block 42";
     if (APKSigningTagLen>centralDirectory_pos) return true;
     ZipFilePos_t APKSigningBlockTagPos=centralDirectory_pos-APKSigningTagLen;
     TByte buf[APKSigningTagLen];
-    check(APKSigningTagLen==self->stream->read(self->stream->streamHandle,
-                                               APKSigningBlockTagPos,buf,buf+APKSigningTagLen));
+    check((long)APKSigningTagLen==self->stream->read(self->stream->streamHandle,
+                                                     APKSigningBlockTagPos,buf,buf+APKSigningTagLen));
     if (0!=memcmp(buf,APKSigningTag,APKSigningTagLen)) return true;
     //bottom size
     if (8>APKSigningBlockTagPos) return false; //error
@@ -169,7 +170,7 @@ bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self){
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
     const char* kJarSignPath="META-INF/";
     const size_t kJarSignPathLen=8+1;
-    return (UnZipper_file_nameLen(self,fileIndex)>=kJarSignPathLen)
+    return (UnZipper_file_nameLen(self,fileIndex)>=(int)kJarSignPathLen)
         && (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),kJarSignPath,kJarSignPathLen));
 }
 
@@ -706,8 +707,8 @@ const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self){
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize){
     Zipper_file_append_stream* append_state=&self->_append_stream;
     if (append_state->self==0) { assert(false); return false; }
-    return (partSize==append_state->write(append_state->streamHandle,append_state->inputPos,
-                                          part_data,part_data+partSize));
+    return ((long)partSize==append_state->write(append_state->streamHandle,append_state->inputPos,
+                                                part_data,part_data+partSize));
 }
 
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool isAlwaysReCompress){

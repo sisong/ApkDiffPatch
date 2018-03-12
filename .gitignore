@@ -3,3 +3,7 @@ builds/vc/Debug
 builds/vc/Release
 builds/vc/x64/
 *.filters
+*.layout
+*.depend
+builds/codeblocks/bin/
+builds/codeblocks/obj/

@@ -26,6 +26,7 @@
  OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "OldStream.h"
+#include <stdlib.h>
 #include "patch_types.h"
 
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
@@ -151,7 +152,7 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount,
                   const uint32_t* refNotDecompressList,size_t refNotDecompressCount){
     bool result=true;
     assert(self->_buf==0);
-    int      rangIndex;
+    size_t   rangIndex;
     uint32_t curSumSize=0;
     uint32_t curDecompressPos=0;
     
