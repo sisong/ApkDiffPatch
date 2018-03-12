@@ -1,8 +1,9 @@
 **ApkDiffPatch**
 ================
 Version 0.9 alpha   
-Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support Jar signing(apk v1) and apk v2 signing.    
+Zip(Jar,Apk) file by file Diff & Patch C++ library.
 (used HDiffPatch, zlib, zstd)   
+   
 ---
 uses:
 
@@ -13,7 +14,7 @@ uses:
    
 *  **ZipPatch(oldZip,diffData,out newZip)**
   
-   ok , get the newZip; 
+   ok , get the newZip;    
    **ZipPatch()** min requires O(1) bytes of memory when using temp disk file.
    
 ---
