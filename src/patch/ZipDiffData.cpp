@@ -81,7 +81,7 @@ bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* 
 }
 
 #define _unpackIncList(list,count){ \
-    uint32_t backValue=-(uint32_t)1;      \
+    uint32_t backValue=~(uint32_t)0;      \
     for (size_t i=0; i<count; ++i) {\
         uint32_t incValue=0;    \
         checkUnpackSize(&curBuf,bufEnd,&incValue,uint32_t); \
@@ -150,8 +150,8 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         const TByte* curBuf=self->_buf+memLeft;
         const TByte* const bufEnd=self->_buf+memLeft+headDataSize;
         
-        uint32_t backPairNew=-(uint32_t)1;
-        hpatch_StreamPos_t backPairOld=-(hpatch_StreamPos_t)1;
+        uint32_t backPairNew=~(uint32_t)0;
+        hpatch_StreamPos_t backPairOld=~(hpatch_StreamPos_t)0;
         for (size_t i=0; i<self->samePairCount; ++i) {
             uint32_t curPairNew=0;
             checkUnpackSize(&curBuf,bufEnd,&curPairNew,uint32_t);

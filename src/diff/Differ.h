@@ -1,4 +1,4 @@
-//  diff.h
+//  Differ.h
 //  ZipDiff
 /*
  The MIT License (MIT)
@@ -25,10 +25,10 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipDiff_diff_h
-#define ZipDiff_diff_h
+#ifndef ZipDiff_Differ_h
+#define ZipDiff_Differ_h
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
              const char* temp_ZipPatchFileName);
 
-#endif //ZipDiff_diff_h
+#endif //ZipDiff_Differ_h

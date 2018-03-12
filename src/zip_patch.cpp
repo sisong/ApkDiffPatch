@@ -27,7 +27,7 @@
  */
 #include <stdio.h>
 #include "../HDiffPatch/_clock_for_demo.h"
-#include "patch/patch.h"
+#include "patch/Patcher.h"
 
 int main(int argc, const char * argv[]) {
     const char* oldZipPath=0;

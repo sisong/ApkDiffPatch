@@ -1,4 +1,4 @@
-//  patch.h
+//  Patcher.h
 //  ZipPatch
 /*
  The MIT License (MIT)
@@ -25,8 +25,8 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipPatch_patch_h
-#define ZipPatch_patch_h
+#ifndef ZipPatch_Patcher_h
+#define ZipPatch_Patcher_h
 #include <string.h>
 
 typedef enum TPatchResult {
@@ -46,4 +46,4 @@ typedef enum TPatchResult {
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName);
 
-#endif //ZipPatch_patch_h
+#endif //ZipPatch_Patcher_h

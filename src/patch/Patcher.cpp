@@ -1,4 +1,4 @@
-//  patch.cpp
+//  Patcher.cpp
 //  ZipPatch
 /*
  The MIT License (MIT)
@@ -25,7 +25,7 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#include "patch.h"
+#include "Patcher.h"
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h" //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/file_for_patch.h"
 #include "patch_types.h"

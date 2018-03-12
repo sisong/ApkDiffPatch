@@ -244,7 +244,7 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
 
 
 static void pushIncList(std::vector<TByte>& out_data,const uint32_t* list,size_t count){
-    uint32_t backValue=-(uint32_t)1;
+    uint32_t backValue=~(uint32_t)0;
     for (size_t i=0;i<count;++i){
         uint32_t curValue=list[i];
         packUInt(out_data,(uint32_t)(curValue-(uint32_t)(backValue+1)));
@@ -256,8 +256,8 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
                                   const std::vector<TByte>& hdiffzData,hdiff_TCompress* compressPlugin){
     std::vector<TByte> headData;
     {//head data
-        uint32_t backPairNew=-(uint32_t)1;
-        uint32_t backPairOld=-(uint32_t)1;
+        uint32_t backPairNew=~(uint32_t)0;
+        uint32_t backPairOld=~(uint32_t)0;
         for (size_t i=0;i<data->samePairCount;++i){
             uint32_t curNewValue=data->samePairList[i*2+0];
             packUInt(headData,(uint32_t)(curNewValue-(uint32_t)(backPairNew+1)));

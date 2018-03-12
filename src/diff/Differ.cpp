@@ -1,4 +1,4 @@
-//  diff.cpp
+//  Differ.cpp
 //  ZipDiff
 /*
  The MIT License (MIT)
@@ -25,7 +25,7 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#include "diff.h"
+#include "Differ.h"
 #include <iostream>
 #include <stdio.h>
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff.h"  //https://github.com/sisong/HDiffPatch
@@ -34,7 +34,7 @@
 #include "../../HDiffPatch/_clock_for_demo.h"
 #include "../patch/OldStream.h"
 #include "../patch/patch_types.h"
-#include "../patch/patch.h"
+#include "../patch/Patcher.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "DiffData.h"
 

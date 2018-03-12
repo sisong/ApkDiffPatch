@@ -25,10 +25,9 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-
 #include <iostream>
 #include <string>
-#include "diff/diff.h"
+#include "diff/Differ.h"
 #include "../HDiffPatch/_clock_for_demo.h"
 
 int main(int argc, const char * argv[]) {
