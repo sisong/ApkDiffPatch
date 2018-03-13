@@ -122,7 +122,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
-    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
+    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,kZlibCompressLevel,
                                samePairList,newRefNotDecompressList,newRefCompressedSizeList,
                                oldRefList,oldRefNotDecompressList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";

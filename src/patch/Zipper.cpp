@@ -35,8 +35,8 @@
 static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
 static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
-#define     kNormalizedZlibVersion  "1.2.11" //fixed zlib version
-#define     kCompressLevel 7        //fixed Compress Level, for patch speed
+#define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
+#define  kNormalizedZlib_MAX_MEM_LEVEL  9        //fiexd zlib MAX_MEM_LEVEL
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
@@ -446,11 +446,16 @@ bool Zipper_close(Zipper* self){
     return 0!=fileClose(&self->_file);
 }
 
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize){
-    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd version
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize,int compressLevel){
+    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
+    check(kNormalizedZlib_MAX_MEM_LEVEL==MAX_MEM_LEVEL); //fiexd zlib MAX_MEM_LEVEL
     assert(ZipAlignSize>0);
+    assert((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));
     if (ZipAlignSize<=0) ZipAlignSize=1;
     self->_ZipAlignSize=ZipAlignSize;
+    if (compressLevel<Z_BEST_SPEED) compressLevel=Z_BEST_SPEED;
+    else if (compressLevel>Z_BEST_COMPRESSION) compressLevel=Z_BEST_COMPRESSION;
+    self->_compressLevel=compressLevel;
     
     assert(self->_file==0);
     check(fileOpenForCreateOrReWrite(zipFileName,&self->_file));
@@ -561,7 +566,8 @@ size_t Zipper_compressData_maxCodeSize(size_t dataSize){
     return _zlib_maxCompressedSize(&zlibCompressPlugin,dataSize);
 }
 
-size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,size_t codeSize){
+size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
+                           size_t codeSize,int kCompressLevel){
     const int kCodeBufSize=1024;
     TByte codeBuf[kCodeBufSize];
     hdiff_TStreamOutput stream;
@@ -646,7 +652,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
         append_state->compressOutStream.streamSize=self->_fileCompressedSizes[curFileIndex];
         append_state->compressOutStream.write=Zipper_file_append_stream::_append_part_output;
         append_state->compressHandle=_zlib_compress_open_by(compressPlugin,&append_state->compressOutStream,
-                                                            0,kCompressLevel,self->_codeBuf,kBufSize);
+                                                            0,self->_compressLevel,self->_codeBuf,kBufSize);
     }else{
         append_state->compressHandle=0; //copy data
     }

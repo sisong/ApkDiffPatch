@@ -45,6 +45,7 @@ typedef struct ZipDiffData{
     size_t      newRefNotDecompressCount;
     uint32_t*   newRefCompressedSizeList;//isCompressed && not in samePairList
     size_t      newRefCompressedSizeCount;
+    size_t      compressLevel;
     size_t      oldZipIsDataNormalized;
     size_t      oldIsFileDataOffsetMatch;
     size_t      oldZipVCESize;

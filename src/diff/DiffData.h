@@ -33,6 +33,9 @@
 #include "../patch/ZipDiffData.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 
+#define  kZlibCompressLevel    7 //for patch speed;
+#define  kDefaultZipAlignSize  8 //for app speed;
+
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath);
 bool getZipCompressedDataIsNormalized(UnZipper* zip); //只检查压缩数据是否标准化;
@@ -56,7 +59,7 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
                        std::vector<unsigned char>& out_data);
 
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
-                          size_t newZipAlignSize,
+                          size_t newZipAlignSize,size_t compressLevel,
                           const std::vector<uint32_t>& samePairList,
                           const std::vector<uint32_t>& newRefNotDecompressList,
                           const std::vector<uint32_t>& newRefCompressedSizeList,
