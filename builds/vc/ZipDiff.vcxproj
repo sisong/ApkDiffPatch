@@ -31,6 +31,7 @@
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
     <ClCompile Include="..\..\src\diff\DiffData.cpp" />
     <ClCompile Include="..\..\src\diff\Differ.cpp" />
+    <ClCompile Include="..\..\src\diff\OldRef.cpp" />
     <ClCompile Include="..\..\src\normalized\normalized.cpp" />
     <ClCompile Include="..\..\src\patch\NewStream.cpp" />
     <ClCompile Include="..\..\src\patch\OldStream.cpp" />

@@ -46,7 +46,7 @@ bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
     for (int i=0; i<oldZipFileCount; ++i) {
         bool isCompressed=UnZipper_file_isCompressed(oldZip,i);
         bool isInSame=false;
-        while ((iOldSame<oldSameList.size())&&(i==oldSameList[iOldSame])){
+        while ((iOldSame<oldSameList.size())&&(i==(int)oldSameList[iOldSame])){
             isInSame=true;
             ++iOldSame;
         }
