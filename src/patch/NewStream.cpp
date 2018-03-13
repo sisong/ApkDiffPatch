@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -176,7 +176,7 @@ static bool _file_entry_end(NewStream* self){
     return true;
 }
 
-bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
+static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
     uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
     check(UnZipper_file_uncompressedSize(&self->_newZipVCE,newFileIndex)==uncompressedSize);
     check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==UnZipper_file_crc32(self->_oldZip,oldFileIndex));

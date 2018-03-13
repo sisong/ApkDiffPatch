@@ -2,7 +2,7 @@
 //  ZipDiff
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -37,6 +37,7 @@
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 #include "../patch/OldStream.h"
 #include "../patch/Patcher.h"
+#include "OldRef.h"
 #include "DiffData.h"
 
 #ifdef _CompressPlugin_zstd
@@ -73,7 +74,6 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     bool            result=true;
     bool            _isInClear=false;
     bool            byteByByteCheckSame=false;
-    int             oldZipFileCount=0;
     size_t          newZipAlignSize=0;
 #ifdef _CompressPlugin_zstd
     zstd_compress_level=22; //0..22
@@ -102,22 +102,18 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
 
     check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
-    
-    //todo: get minSize best oldZip refList
-    oldZipFileCount=UnZipper_fileCount(&oldZip);
-    for (int i=0; i<oldZipFileCount; ++i) {
-        if (UnZipper_file_isApkV2Compressed(&oldZip,i))
-            oldRefNotDecompressList.push_back(i);
-        else
-            oldRefList.push_back(i);
-    }
+    check(getOldRefList(&newZip,newRefList,newRefNotDecompressList,
+                        &oldZip,oldRefList,oldRefNotDecompressList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
     std::cout<<"    diff new file count: "<<newRefList.size()+newRefNotDecompressList.size()<<"\n";
-    std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("<<oldZipFileCount<<")\n";
+    std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("
+        <<UnZipper_fileCount(&oldZip)<<")\n";
     std::cout<<"     ref old decompress: "
         <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte\n";
     //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefList[i])<<"\n";
     //for (int i=0; i<(int)newRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefNotDecompressList[i])<<"\n";
+    //for (int i=0; i<(int)oldRefList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefList[i])<<"\n";
+    //for (int i=0; i<(int)oldRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefNotDecompressList[i])<<"\n";
 
     check(readZipStreamData(&newZip,newRefList,newRefNotDecompressList,newData));
     check(readZipStreamData(&oldZip,oldRefList,oldRefNotDecompressList,oldData));

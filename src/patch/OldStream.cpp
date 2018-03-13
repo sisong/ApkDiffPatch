@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -93,8 +93,7 @@ void OldStream_close(OldStream* self){
 
 
 static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
-                                 unsigned char* out_data,unsigned char* out_data_end){
-    size_t curRangeIndex=self->_curRangeIndex;
+                                 unsigned char* out_data,unsigned char* out_data_end,int curRangeIndex){
     hpatch_StreamPos_t readPos=readFromPos - self->_rangeEndList[curRangeIndex-1]
                                 + self->_rangeFileOffsets[curRangeIndex];
     if (curRangeIndex==0){
@@ -109,41 +108,44 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
     }
 }
 
+static int findRangeIndex(const uint32_t* ranges,size_t rangeCount,uint32_t pos){
+    //optimize, binary search?
+    for (size_t i=0; i<rangeCount; ++i) {
+        if (pos>=ranges[i]) continue;
+        return (int)i;
+    }
+    return -1;
+}
+
 static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
                             const hpatch_StreamPos_t _readFromPos,
                             unsigned char* out_data,unsigned char* out_data_end){
     OldStream* self=(OldStream*)streamHandle;
     const uint32_t* ranges=self->_rangeEndList;
+    int curRangeIndex=self->_curRangeIndex;
     long  result=(long)(out_data_end-out_data);
-    hpatch_StreamPos_t readFromPos=_readFromPos;
+    size_t readFromPos=(size_t)_readFromPos;
     while (out_data<out_data_end) {
-        size_t curRangeIndex=self->_curRangeIndex;
         long readLen=(long)(out_data_end-out_data);
         if (ranges[curRangeIndex-1]<=readFromPos){ //-1 safe
             if (readFromPos+readLen<=ranges[curRangeIndex]){//hit all
-                check(_OldStream_read_do(self,readFromPos,out_data,out_data_end));
+                check(_OldStream_read_do(self,readFromPos,out_data,out_data_end,curRangeIndex));
                 break; //ok out while
             }else if (readFromPos<=ranges[curRangeIndex]){//hit left
                 long leftLen=(long)(ranges[curRangeIndex]-readFromPos);
                 if (leftLen>0)
-                    check(_OldStream_read_do(self,readFromPos,out_data,out_data+leftLen));
-                ++self->_curRangeIndex;
+                    check(_OldStream_read_do(self,readFromPos,out_data,out_data+leftLen,curRangeIndex));
+                ++curRangeIndex;
                 readFromPos+=leftLen;
                 out_data+=leftLen;
                 continue; //next
             }//else
         }//else
         
-        //todo: optimize, binary search?
-        self->_curRangeIndex=-1;
-        for (size_t i=0; i<self->_rangeCount; ++i) {
-            if (readFromPos<ranges[i]){
-                self->_curRangeIndex=(int)i;
-                break;
-            }
-        }
-        check(self->_curRangeIndex>=0);
+        curRangeIndex=findRangeIndex(ranges,self->_rangeCount,(uint32_t)readFromPos);
+        check(curRangeIndex>=0);
     }
+    self->_curRangeIndex=curRangeIndex;
 clear:
     return result;
 }

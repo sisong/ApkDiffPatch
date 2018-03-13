@@ -10,6 +10,7 @@
 		D6126B8D20468CF000183A42 /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6126B8E20468CF000183A42 /* libzlib.a */; };
 		D62AA00F2054035600A61D43 /* libHDiffPatch.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D62AA0102054035600A61D43 /* libHDiffPatch.a */; };
 		D62AA0152056649900A61D43 /* Patcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D62AA0142056649900A61D43 /* Patcher.cpp */; };
+		D62AA0182057621F00A61D43 /* OldRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D62AA0172057621F00A61D43 /* OldRef.cpp */; };
 		D671B6592047DD30002D17A7 /* Differ.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B6582047DD30002D17A7 /* Differ.cpp */; };
 		D671B7182047EA57002D17A7 /* libzstd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D671B7192047EA57002D17A7 /* libzstd.a */; };
 		D671B72A204E7649002D17A7 /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B720204E7649002D17A7 /* OldStream.cpp */; };
@@ -38,6 +39,8 @@
 		D62AA0102054035600A61D43 /* libHDiffPatch.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libHDiffPatch.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D62AA0132056649900A61D43 /* Patcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Patcher.h; sourceTree = "<group>"; };
 		D62AA0142056649900A61D43 /* Patcher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Patcher.cpp; sourceTree = "<group>"; };
+		D62AA0162057621F00A61D43 /* OldRef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OldRef.h; sourceTree = "<group>"; };
+		D62AA0172057621F00A61D43 /* OldRef.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = OldRef.cpp; sourceTree = "<group>"; };
 		D651191B2041ADA900805001 /* ZipDiff */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipDiff; sourceTree = BUILT_PRODUCTS_DIR; };
 		D671B6572047DD30002D17A7 /* Differ.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Differ.h; sourceTree = "<group>"; };
 		D671B6582047DD30002D17A7 /* Differ.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Differ.cpp; sourceTree = "<group>"; };
@@ -124,6 +127,8 @@
 				D671B6572047DD30002D17A7 /* Differ.h */,
 				D671B76C204EA161002D17A7 /* DiffData.h */,
 				D671B76D204EA161002D17A7 /* DiffData.cpp */,
+				D62AA0162057621F00A61D43 /* OldRef.h */,
+				D62AA0172057621F00A61D43 /* OldRef.cpp */,
 			);
 			name = diff;
 			path = ../../src/diff;
@@ -191,6 +196,7 @@
 				D671B72A204E7649002D17A7 /* OldStream.cpp in Sources */,
 				D62AA0152056649900A61D43 /* Patcher.cpp in Sources */,
 				D671B76E204EA161002D17A7 /* DiffData.cpp in Sources */,
+				D62AA0182057621F00A61D43 /* OldRef.cpp in Sources */,
 				D671B72C204E7649002D17A7 /* NewStream.cpp in Sources */,
 				D671B76B204E8346002D17A7 /* zip_diff.cpp in Sources */,
 				D671B72B204E7649002D17A7 /* ZipDiffData.cpp in Sources */,

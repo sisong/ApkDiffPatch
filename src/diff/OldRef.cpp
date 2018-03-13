@@ -1,4 +1,4 @@
-//  Differ.h
+//  OldRef.cpp
 //  ZipDiff
 /*
  The MIT License (MIT)
@@ -25,10 +25,19 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipDiff_Differ_h
-#define ZipDiff_Differ_h
+#include "OldRef.h"
 
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             const char* temp_ZipPatchFileName);
-
-#endif //ZipDiff_Differ_h
+bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& newRefList,
+                   const std::vector<uint32_t>& newRefNotDecompressList,
+                   UnZipper* oldZip,std::vector<uint32_t>& out_oldRefList,
+                   std::vector<uint32_t>& out_oldRefNotDecompressList){
+    //todo: get minSize best oldZip refList
+    int oldZipFileCount=UnZipper_fileCount(oldZip);
+    for (int i=0; i<oldZipFileCount; ++i) {
+        if (UnZipper_file_isApkV2Compressed(oldZip,i))
+            out_oldRefNotDecompressList.push_back(i);
+        else
+            out_oldRefList.push_back(i);
+    }
+    return true;
+}
