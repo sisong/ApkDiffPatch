@@ -81,9 +81,15 @@ clear:
     return result;
 }
 
+
+size_t getNormalizedCompressedSize(const std::vector<TByte>& data){
+    std::vector<TByte> buf(Zipper_compressData_maxCodeSize(data.size()));
+    return Zipper_compressData(data.data(),data.size(),buf.data(),buf.size());
+}
+
 static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,std::vector<TByte>& out_compressedCode){
-    uint32_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
-    uint32_t maxCodeSize=Zipper_compressData_maxCodeSize(selfFileSize);
+    size_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
+    size_t maxCodeSize=Zipper_compressData_maxCodeSize(selfFileSize);
     std::vector<TByte>& buf(out_compressedCode);
     buf.resize(selfFileSize+maxCodeSize);
     hpatch_TStreamOutput stream;

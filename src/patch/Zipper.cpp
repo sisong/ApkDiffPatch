@@ -557,11 +557,11 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
 }
 
 
-uint32_t Zipper_compressData_maxCodeSize(uint32_t dataSize){
-    return (uint32_t)_zlib_maxCompressedSize(&zlibCompressPlugin,dataSize);
+size_t Zipper_compressData_maxCodeSize(size_t dataSize){
+    return _zlib_maxCompressedSize(&zlibCompressPlugin,dataSize);
 }
 
-uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigned char* out_code,uint32_t codeSize){
+size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,size_t codeSize){
     const int kCodeBufSize=1024;
     TByte codeBuf[kCodeBufSize];
     hdiff_TStreamOutput stream;
@@ -575,7 +575,7 @@ uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigne
     if (!_zlib_compress_stream_part(compressPlugin,compressHandle,data,data+dataSize,
                                     is_data_end,&curWritedPos,&outStream_isCanceled)) return 0;//error
     if (!_zlib_compress_close_by(compressPlugin,compressHandle)) return 0;//error
-    return (uint32_t)curWritedPos;
+    return (size_t)curWritedPos;
 }
 
 long Zipper_file_append_stream::_append_part_input(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,

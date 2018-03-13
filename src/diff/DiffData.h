@@ -37,6 +37,7 @@ bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcInd
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath);
 bool getZipCompressedDataIsNormalized(UnZipper* zip); //只检查压缩数据是否标准化;
 size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示未对齐;
+size_t getNormalizedCompressedSize(const std::vector<TByte>& data);
 
 static inline std::string zipFile_name(UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);

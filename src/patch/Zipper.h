@@ -137,8 +137,8 @@ bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     
-uint32_t Zipper_compressData_maxCodeSize(uint32_t dataSize);
-uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigned char* out_code,uint32_t codeSize);
+size_t Zipper_compressData_maxCodeSize(size_t dataSize);
+size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,size_t codeSize);
 
 #ifdef __cplusplus
 }
