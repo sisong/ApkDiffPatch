@@ -29,13 +29,22 @@
 #include <stdlib.h>
 #include "patch_types.h"
 
+
+int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
+    int result=0;
+    for (size_t i=0; i<refCount; ++i){
+        if (UnZipper_file_isCompressed(oldZip,(int)refList[i]))
+            ++result;
+    }
+    return result;
+}
+
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
     ZipFilePos_t decompressSumSize=0;
     for (size_t i=0; i<refCount; ++i) {
         int fileIndex=(int)refList[i];
-        if (UnZipper_file_isCompressed(oldZip,fileIndex)){
+        if (UnZipper_file_isCompressed(oldZip,fileIndex))
             decompressSumSize+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
-        }
     }
     return decompressSumSize;
 }

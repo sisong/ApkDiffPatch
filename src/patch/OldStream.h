@@ -47,6 +47,7 @@ typedef struct OldStream{
     unsigned char*              _buf;
 } OldStream;
 
+int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                                  hpatch_TStreamOutput* output_refStream);

@@ -56,7 +56,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize){
             fileIndexs.push_back(i);
     }
     if ((int)fileIndexs.size()<fileCount)
-        printf("NOTE: src found ApkV1Sign or JarSign(%d file)\n",fileCount-(int)fileIndexs.size());
+        printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",fileCount-(int)fileIndexs.size());
     for (int i=0; i<fileCount; ++i) {
         if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
             fileIndexs.push_back(i);

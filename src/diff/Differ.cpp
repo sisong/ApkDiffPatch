@@ -102,7 +102,6 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
 
     check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
-    std::cout<<"get best OldRefList ...\n";
     check(getOldRefList(&newZip,samePairList,newRefList,newRefNotDecompressList,
                         &oldZip,oldRefList,oldRefNotDecompressList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
@@ -110,7 +109,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("
         <<UnZipper_fileCount(&oldZip)<<")\n";
     std::cout<<"     ref old decompress: "
-        <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte\n";
+        <<OldStream_getDecompressFileCount(&oldZip,oldRefList.data(),oldRefList.size())<<" file ("
+        <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte!)\n";
     //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefList[i])<<"\n";
     //for (int i=0; i<(int)newRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefNotDecompressList[i])<<"\n";
     //for (int i=0; i<(int)oldRefList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefList[i])<<"\n";
@@ -150,13 +150,13 @@ bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     if (oldZip->_isDataNormalized)
         printf("  NOTE: oldZip Normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
-        printf("  NOTE: oldZip found ApkV1Sign or JarSign\n");
+        printf("  NOTE: oldZip found JarSign(ApkV1Sign)\n");
     if (UnZipper_isHaveApkV2Sign(oldZip))
         printf("  NOTE: oldZip found ApkV2Sign\n");
     if (newZip->_isDataNormalized)
         printf("  NOTE: newZip Normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(newZip))
-        printf("  NOTE: newZip found ApkV1Sign or JarSign\n");
+        printf("  NOTE: newZip found JarSign(ApkV1Sign)\n");
     bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
     if (newIsV2Sign)
         printf("  NOTE: newZip found ApkV2Sign\n");
