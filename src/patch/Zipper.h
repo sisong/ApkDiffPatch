@@ -124,8 +124,6 @@ bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
-bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                        const unsigned char* data,size_t dataSize,bool dataIsCompressed);
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);

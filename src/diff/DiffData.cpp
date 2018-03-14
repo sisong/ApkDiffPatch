@@ -46,6 +46,7 @@ using namespace hdiff_private;
 bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int srcIndex){
     uint32_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
     if (selfFileSize!=UnZipper_file_uncompressedSize(srcZip,srcIndex)) return false;
+    if (selfFileSize==0) return true;
     std::vector<TByte> buf(selfFileSize*2);
     hpatch_TStreamOutput stream;
     mem_as_hStreamOutput(&stream,buf.data(),buf.data()+selfFileSize);
@@ -138,6 +139,7 @@ static bool _isAligned(const std::vector<ZipFilePos_t>& offsetList,ZipFilePos_t 
     return true;
 }
 size_t getZipAlignSize_unsafe(UnZipper* zip){
+    //note: 该函数对没有Normalized的zip允许获取AlignSize失败;
     int fileCount=UnZipper_fileCount(zip);
     ZipFilePos_t maxSkipLen=0;
     ZipFilePos_t minOffset=1024*4; //set search max AlignSize
@@ -147,9 +149,10 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
                         &&(UnZipper_file_compressedSize(zip,i)>0);
         if (!isNeedAlign)
             continue;
+        ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
         ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置?
                                        +UnZipper_file_compressedSize(zip,i-1)) : 0;
-        ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
+        if (entryOffset<lastEndPos) return 0; //顺序有误;
         if ((entryOffset-lastEndPos>=12)&&(i>0)){//可能上一个file有Data descriptor块;
             //尝试修正lastEndPos;
             uint32_t crc=UnZipper_file_crc32(zip,i-1);
@@ -194,6 +197,10 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
         if (UnZipper_file_isApkV2Compressed(newZip,i)){
             out_newRefNotDecompressList.push_back(i);
             out_newRefCompressedSizeList.push_back(UnZipper_file_compressedSize(newZip,i));
+        }else if ((0==UnZipper_file_uncompressedSize(newZip,i))
+                  &&(!UnZipper_file_isCompressed(newZip,i))){ //empty entry
+            check(0==UnZipper_file_compressedSize(newZip,i));
+            //not need: out_newRefList.push_back(i);
         }else{
             bool findSame=false;
             int  oldSameIndex=-1;

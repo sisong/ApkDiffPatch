@@ -54,6 +54,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     hpatch_StreamPos_t writeToPos=_writeToPos;
     NewStream* self=(NewStream*)streamHandle;
     check(!self->isFinish);
+    assert(result>0);
     assert(writeToPos<self->_curWriteToPosEnd);
     if (writeToPos+result>self->_curWriteToPosEnd){
         long leftLen=(long)(self->_curWriteToPosEnd-writeToPos);
@@ -84,13 +85,22 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     }
     ++self->_curFileIndex;
     
-    while ((self->_curFileIndex<self->_fileCount)&&(self->_curSamePairIndex<self->_samePairCount)) {
-        int newFileIndex=(int)self->_samePairList[self->_curSamePairIndex*2];
-        if (self->_curFileIndex!=newFileIndex) break;
-        uint32_t oldFileIndex=self->_samePairList[self->_curSamePairIndex*2+1];
-        check(_copy_same_file(self,newFileIndex,oldFileIndex));
-        ++self->_curSamePairIndex;
-        ++self->_curFileIndex;
+    while (self->_curFileIndex<self->_fileCount) {
+        if ((self->_curSamePairIndex<self->_samePairCount)
+            &&(self->_curFileIndex==(int)self->_samePairList[self->_curSamePairIndex*2])){
+            const uint32_t* pairNewiOldi=self->_samePairList+self->_curSamePairIndex*2;
+            check(_copy_same_file(self,pairNewiOldi[0],pairNewiOldi[1]));
+            ++self->_curSamePairIndex;
+            ++self->_curFileIndex;
+        }else if ((0==UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex))
+                  &&(!UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex))){
+            _update_compressedSize(self,self->_curFileIndex,0);
+            check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,false,0,0));
+            check(Zipper_file_append_end(self->_out_newZip));
+            ++self->_curFileIndex;
+        }else{
+            break;
+        }
     }
     
     if (self->_curFileIndex<self->_fileCount){//open file for write

@@ -44,20 +44,20 @@ bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
     std::vector<uint32_t> decompressList;
     size_t iOldSame=0;
     for (int i=0; i<oldZipFileCount; ++i) {
-        bool isCompressed=UnZipper_file_isCompressed(oldZip,i);
         bool isInSame=false;
         while ((iOldSame<oldSameList.size())&&(i==(int)oldSameList[iOldSame])){
             isInSame=true;
             ++iOldSame;
         }
-        if(!isCompressed)//反正不用解压,不用判断其是否有参考意义了;
-            out_oldRefList.push_back(i);
-        if (isInSame)
-            continue; //跳过和newZip中相同的文件,但某些情况可能会使得结果变大;
-        
-        if (UnZipper_file_isApkV2Compressed(oldZip,i))
+        if (UnZipper_file_isApkV2Compressed(oldZip,i)){
             out_oldRefNotDecompressList.push_back(i);
-        else if (isCompressed)
+            continue;
+        }
+        if (UnZipper_file_uncompressedSize(oldZip,i)<=0)
+            continue;
+        if(!UnZipper_file_isCompressed(oldZip,i))
+            out_oldRefList.push_back(i);//反正不用解压,不用判断其是否有参考意义了;
+        else if (!isInSame) //跳过和newZip中相同的文件,但某些情况可能会使得结果变大;
             decompressList.push_back(i);
     }
     assert(iOldSame==oldSameList.size());

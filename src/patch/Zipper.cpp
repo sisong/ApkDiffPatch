@@ -535,7 +535,7 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     uint32_t compressedSize=self->_fileCompressedSizes[fileIndex];
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     uint16_t extraFieldLen=readUInt16(headBuf+30);
-    bool isNeedAlign=(!isFullInfo)&&(!isCompressed)&&(compressedSize>0);
+    bool isNeedAlign=(!isFullInfo)&&(!isCompressed)&&(compressedSize>0); //note:compressedSize error 0,unalign? apkv2 safe
     if (isNeedAlign){//计算并进行对齐;
         size_t headInfoLen=30+fileNameLen+extraFieldLen;
         size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);

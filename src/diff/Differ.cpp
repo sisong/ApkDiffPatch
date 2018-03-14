@@ -195,7 +195,7 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
     }else{
         double time2=clock_s();
         std::cout<<"  HPatch check HDiffZ result ok!\n";
-        std::cout<<"  patch time: "<<(time2-time1)<<" s\n";
+        std::cout<<"  hpatch time: "<<(time2-time1)<<" s\n";
         return true;
     }
 }
