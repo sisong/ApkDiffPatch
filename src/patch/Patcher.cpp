@@ -132,7 +132,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     temp_cache =(TByte*)malloc(CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);
     check(patch_decompress_with_cache(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
-                                      decompressPlugin,temp_cache,temp_cache+CACHE_SIZE),PATCH_ERROR);
+                                      decompressPlugin,temp_cache,temp_cache+CACHE_SIZE),PATCH_HPATCH_ERROR);
     check(newStream.isFinish,PATCH_NEWDATA_ERROR);
     
 clear:

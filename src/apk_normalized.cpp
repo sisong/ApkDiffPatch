@@ -46,7 +46,7 @@ int main(int argc, const char * argv[]) {
     const char* dstApk=argv[2];
     std::cout<<"src: \"" <<srcApk<< "\"\nout: \""<<dstApk<<"\"\n";
     double time0=clock_s();
-    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize)){
+    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize,kDefaultZlibCompressLevel)){
         std::cout << "\nrun ApkNormalized ERROR!\n";
         return 1;
     }

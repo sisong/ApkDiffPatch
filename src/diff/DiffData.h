@@ -33,14 +33,13 @@
 #include "../patch/ZipDiffData.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 
-#define  kZlibCompressLevel    7 //for patch speed;
-#define  kDefaultZipAlignSize  8 //for app speed;
+#define  kDefaultZlibCompressLevel  6 //for patch speed;
+#define  kDefaultZipAlignSize       8 //for app speed;
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath);
-bool getZipCompressedDataIsNormalized(UnZipper* zip); //只检查压缩数据是否标准化;
+bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel); //只检查压缩数据是否标准化;
 size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示未对齐;
-size_t getNormalizedCompressedSize(const std::vector<TByte>& data);
 
 static inline std::string zipFile_name(UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);
@@ -48,7 +47,7 @@ static inline std::string zipFile_name(UnZipper* self,int fileIndex){
     return std::string(nameBegin,nameBegin+nameLen);
 }
 
-bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
+bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
                      std::vector<uint32_t>& out_newRefNotDecompressList,

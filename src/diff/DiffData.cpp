@@ -81,14 +81,8 @@ clear:
     return result;
 }
 
-
-size_t getNormalizedCompressedSize(const std::vector<TByte>& data){
-    std::vector<TByte> buf(Zipper_compressData_maxCodeSize(data.size()));
-    return Zipper_compressData(data.data(),data.size(),buf.data(),
-                               buf.size(),kZlibCompressLevel);
-}
-
-static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,std::vector<TByte>& out_compressedCode){
+static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,
+                                        std::vector<TByte>& out_compressedCode,int zlibCompressLevel){
     size_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
     size_t maxCodeSize=Zipper_compressData_maxCodeSize(selfFileSize);
     std::vector<TByte>& buf(out_compressedCode);
@@ -97,12 +91,13 @@ static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,std::vec
     mem_as_hStreamOutput(&stream,buf.data(),buf.data()+selfFileSize);
     check(UnZipper_fileData_decompressTo(selfZip,selfIndex,&stream));
     size_t compressedSize=Zipper_compressData(buf.data(),selfFileSize,buf.data()+selfFileSize,
-                                              maxCodeSize,kZlibCompressLevel);
+                                              maxCodeSize,zlibCompressLevel);
     buf.resize(compressedSize);
     return compressedSize>0;
 }
 
-bool getZipCompressedDataIsNormalized(UnZipper* zip){
+
+static bool _getZipIsCompressedBy(UnZipper* zip,int zlibCompressLevel){
     std::vector<TByte> oldCompressedCode;
     std::vector<TByte> newCompressedCode;
     int fileCount=UnZipper_fileCount(zip);
@@ -110,7 +105,7 @@ bool getZipCompressedDataIsNormalized(UnZipper* zip){
         if (UnZipper_file_isCompressed(zip,i)){
             if (UnZipper_file_isApkV2Compressed(zip,i)) continue;
             size_t compressedSize=UnZipper_file_compressedSize(zip,i);
-            check(getNormalizedCompressedCode(zip,i,newCompressedCode));
+            check(getNormalizedCompressedCode(zip,i,newCompressedCode,zlibCompressLevel));
             if (compressedSize!=newCompressedCode.size()) return false;
             
             ZipFilePos_t pos=UnZipper_fileData_offset(zip,i);
@@ -121,6 +116,17 @@ bool getZipCompressedDataIsNormalized(UnZipper* zip){
         }
     }
     return true;
+}
+
+bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel){
+    if (_getZipIsCompressedBy(zip,kDefaultZlibCompressLevel))
+        { *out_zlibCompressLevel=kDefaultZlibCompressLevel; return true; }
+    for (int i=Z_BEST_SPEED;i<=Z_BEST_COMPRESSION;++i){
+        if (i==kDefaultZlibCompressLevel) continue;
+        if (_getZipIsCompressedBy(zip,i))
+            { *out_zlibCompressLevel=i; return true; }
+    }
+    return false;
 }
 
 
@@ -137,7 +143,10 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
     ZipFilePos_t minOffset=1024*4; //set search max AlignSize
     std::vector<ZipFilePos_t> offsetList;
     for (int i=0; i<fileCount; ++i){
-        if (UnZipper_file_isCompressed(zip,i)) continue;
+        bool isNeedAlign=(!UnZipper_file_isCompressed(zip,i))
+                        &&(UnZipper_file_compressedSize(zip,i)>0);
+        if (!isNeedAlign)
+            continue;
         ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置?
                                        +UnZipper_file_compressedSize(zip,i-1)) : 0;
         ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
@@ -167,7 +176,7 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
     return 0;
 }
 
-bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
+bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
                      std::vector<uint32_t>& out_newRefNotDecompressList,
@@ -211,7 +220,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                 out_newRefList.push_back(i);
                 if (UnZipper_file_isCompressed(newZip,i)){
                     std::vector<TByte> code;
-                    check(getNormalizedCompressedCode(newZip,i,code));
+                    check(getNormalizedCompressedCode(newZip,i,code,zlibCompressLevel));
                     out_newRefCompressedSizeList.push_back((uint32_t)code.size());
                 }
             }
