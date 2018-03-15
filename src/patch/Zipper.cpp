@@ -535,8 +535,8 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     uint32_t compressedSize=self->_fileCompressedSizes[fileIndex];
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     uint16_t extraFieldLen=readUInt16(headBuf+30);
-    bool isNeedAlign=(!isFullInfo)&&(!isCompressed)&&(compressedSize>0); //note:compressedSize error 0,unalign? apkv2 safe
-    if (isNeedAlign){//计算并进行对齐;
+    bool isNeedAlign=(!isFullInfo)&&(!isCompressed); //dir or 0 size file need align too, same AndroidSDK#zipalign
+    if (isNeedAlign){
         size_t headInfoLen=30+fileNameLen+extraFieldLen;
         size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);
         check(_writeAlignSkip(self,skipLen));

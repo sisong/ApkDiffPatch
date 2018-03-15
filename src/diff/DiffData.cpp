@@ -145,8 +145,7 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
     ZipFilePos_t minOffset=1024*4; //set search max AlignSize
     std::vector<ZipFilePos_t> offsetList;
     for (int i=0; i<fileCount; ++i){
-        bool isNeedAlign=(!UnZipper_file_isCompressed(zip,i))
-                        &&(UnZipper_file_compressedSize(zip,i)>0);
+        bool isNeedAlign= (!UnZipper_file_isCompressed(zip,i));
         if (!isNeedAlign)
             continue;
         ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
