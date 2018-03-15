@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -31,16 +31,19 @@
 
 typedef enum TPatchResult {
     PATCH_SUCCESS=0,
-    PATCH_ERROR,
-    PATCH_READ_ERROR,
-    PATCH_WRITE_ERROR,
-    PATCH_ZIPDIFFINFO_ERROR,
+    PATCH_OPENREAD_ERROR,
+    PATCH_OPENWRITE_ERROR,
+    PATCH_CLOSEFILE_ERROR,
+    PATCH_MEM_ERROR,
+    PATCH_HPATCH_ERROR,
     PATCH_HDIFFINFO_ERROR,
     PATCH_COMPRESSTYPE_ERROR,
+    PATCH_ZIPPATCH_ERROR,
+    PATCH_ZIPDIFFINFO_ERROR,
     PATCH_OLDDATA_ERROR,
-    PATCH_NEWDATA_ERROR,
-    PATCH_MEM_ERROR,
-    PATCH_CLOSEFILE_ERROR
+    PATCH_OLDDECOMPRESS_ERROR,
+    PATCH_OLDSTREAM_ERROR,
+    PATCH_NEWSTREAM_ERROR
 } TPatchResult;
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,

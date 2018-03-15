@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -32,11 +32,11 @@
 #include "patch_types.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
-static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
-static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
+hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
+hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
-#define     kNormalizedZlibVersion  "1.2.11" //fixed zlib version
-#define     kCompressLevel 7        //fixed Compress Level, for patch speed
+#define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
+#define  kNormalizedZlib_MAX_MEM_LEVEL  9        //fiexd zlib MAX_MEM_LEVEL
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
@@ -446,11 +446,16 @@ bool Zipper_close(Zipper* self){
     return 0!=fileClose(&self->_file);
 }
 
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize){
-    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd version
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize,int compressLevel){
+    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
+    check(kNormalizedZlib_MAX_MEM_LEVEL==MAX_MEM_LEVEL); //fiexd zlib MAX_MEM_LEVEL
     assert(ZipAlignSize>0);
+    assert((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));
     if (ZipAlignSize<=0) ZipAlignSize=1;
     self->_ZipAlignSize=ZipAlignSize;
+    if (compressLevel<Z_BEST_SPEED) compressLevel=Z_BEST_SPEED;
+    else if (compressLevel>Z_BEST_COMPRESSION) compressLevel=Z_BEST_COMPRESSION;
+    self->_compressLevel=compressLevel;
     
     assert(self->_file==0);
     check(fileOpenForCreateOrReWrite(zipFileName,&self->_file));
@@ -506,7 +511,8 @@ inline static bool _writeUInt16(Zipper* self,uint16_t v){
 
 
 inline static size_t _getAlignSkipLen(const Zipper* self,size_t curPos){
-    return _hpatch_align_upper(curPos,self->_ZipAlignSize)-curPos;
+    size_t align=self->_ZipAlignSize;
+    return align-1-(curPos+align-1)%align;
 }
 inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
     assert(alignSkipLen<self->_ZipAlignSize);
@@ -526,21 +532,23 @@ inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
 static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
     const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
     bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
+    uint32_t compressedSize=self->_fileCompressedSizes[fileIndex];
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     uint16_t extraFieldLen=readUInt16(headBuf+30);
+    bool isNeedAlign=(!isFullInfo)&&(!isCompressed)&&(compressedSize>0); //note:compressedSize error 0,unalign? apkv2 safe
+    if (isNeedAlign){//计算并进行对齐;
+        size_t headInfoLen=30+fileNameLen+extraFieldLen;
+        size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);
+        check(_writeAlignSkip(self,skipLen));
+    }
     if (!isFullInfo){
-        if (!isCompressed){//计算并进行对齐;
-            size_t headInfoLen=30+fileNameLen+extraFieldLen;
-            size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);
-            check(_writeAlignSkip(self,skipLen));
-        }
         self->_fileEntryOffsets[fileIndex]=self->_curFilePos;
     }
     check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
     if (isFullInfo)
         check(_write(self,headBuf+4,2));//压缩版本;
     check(_write(self,headBuf+6,20-6));//解压缩版本--CRC-32校验;//其中 标志 中已经去掉了Data descriptor标识;
-    check(_writeUInt32(self,self->_fileCompressedSizes[fileIndex]));//压缩后大小;
+    check(_writeUInt32(self,compressedSize));//压缩后大小;
     check(_write(self,headBuf+24,30-24));//压缩前大小--文件名称长度;
     check(_writeUInt16(self,extraFieldLen));//扩展字段长度;
     
@@ -552,16 +560,17 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
         check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件在文件中的偏移;
     }
     check(_write(self,headBuf+46,fileNameLen+extraFieldLen+fileCommentLen));//文件名称 + 扩展字段 [+文件注释];
-    if ((!isCompressed)&(!isFullInfo)) assert_align(self);//对齐检查;
+    if (isNeedAlign) assert_align(self);//对齐检查;
     return  true;
 }
 
 
-uint32_t Zipper_compressData_maxCodeSize(uint32_t dataSize){
-    return (uint32_t)_zlib_maxCompressedSize(&zlibCompressPlugin,dataSize);
+size_t Zipper_compressData_maxCodeSize(size_t dataSize){
+    return _zlib_maxCompressedSize(&zlibCompressPlugin,dataSize);
 }
 
-uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigned char* out_code,uint32_t codeSize){
+size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
+                           size_t codeSize,int kCompressLevel){
     const int kCodeBufSize=1024;
     TByte codeBuf[kCodeBufSize];
     hdiff_TStreamOutput stream;
@@ -575,7 +584,7 @@ uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigne
     if (!_zlib_compress_stream_part(compressPlugin,compressHandle,data,data+dataSize,
                                     is_data_end,&curWritedPos,&outStream_isCanceled)) return 0;//error
     if (!_zlib_compress_close_by(compressPlugin,compressHandle)) return 0;//error
-    return (uint32_t)curWritedPos;
+    return (size_t)curWritedPos;
 }
 
 long Zipper_file_append_stream::_append_part_input(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
@@ -646,7 +655,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
         append_state->compressOutStream.streamSize=self->_fileCompressedSizes[curFileIndex];
         append_state->compressOutStream.write=Zipper_file_append_stream::_append_part_output;
         append_state->compressHandle=_zlib_compress_open_by(compressPlugin,&append_state->compressOutStream,
-                                                            0,kCompressLevel,self->_codeBuf,kBufSize);
+                                                            0,self->_compressLevel,self->_codeBuf,kBufSize);
     }else{
         append_state->compressHandle=0; //copy data
     }

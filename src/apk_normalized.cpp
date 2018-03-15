@@ -2,7 +2,7 @@
 //  ApkNormalized
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -46,22 +46,22 @@ int main(int argc, const char * argv[]) {
     const char* dstApk=argv[2];
     std::cout<<"src: \"" <<srcApk<< "\"\nout: \""<<dstApk<<"\"\n";
     double time0=clock_s();
-    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize)){
+    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize,kDefaultZlibCompressLevel)){
         std::cout << "\nrun ApkNormalized ERROR!\n";
         return 1;
     }
-    double time1=clock_s();
     std::cout << "run ApkNormalized ok!\n";
-    std::cout<<"  ApkNormalized time: "<<(time1-time0)<<" s\n";
     
     //check
     if (!getZipIsSame(srcApk,dstApk)){
         std::cout << "ApkNormalized result file check ERROR!\n";
         return 1;
     }
-    double time2=clock_s();
     std::cout<<"  check ApkNormalized result ok!\n";
-    std::cout<<"  check time: "<<(time2-time1)<<" s\n";
+    
+    double time1=clock_s();
+    std::cout<<"ApkNormalized time: "<<(time1-time0)<<" s\n";
+    
     return 0;
 }
 

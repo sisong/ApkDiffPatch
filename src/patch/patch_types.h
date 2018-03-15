@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -30,10 +30,7 @@
 #define ZipPatch_patch_type_h
 
 #define _IsNeedIncludeDefaultCompressHead 0
-//used zstd?
-#ifdef _CompressPlugin_zstd
-#   include "../../zstd/lib/zstd.h" // https://github.com/facebook/zstd
-#endif
+
 #define _CompressPlugin_zlib
 #include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
 

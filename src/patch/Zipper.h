@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2018 HouSisong
+  Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -101,8 +101,6 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex);
                                        const unsigned char* part_data,const unsigned char* part_data_end);
     };
 
-#define     kDefaultZipAlignSize  8
-
 typedef struct Zipper{
 //private:
     FILE*           _file;
@@ -110,6 +108,7 @@ typedef struct Zipper{
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
+    int             _compressLevel;
     int             _fileHeaderCount;
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
@@ -121,12 +120,10 @@ typedef struct Zipper{
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize);
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize,int compressLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
-bool Zipper_file_append(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                        const unsigned char* data,size_t dataSize,bool dataIsCompressed);
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
@@ -137,8 +134,9 @@ bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     
-uint32_t Zipper_compressData_maxCodeSize(uint32_t dataSize);
-uint32_t Zipper_compressData(const unsigned char* data,uint32_t dataSize,unsigned char* out_code,uint32_t codeSize);
+size_t Zipper_compressData_maxCodeSize(size_t dataSize);
+size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
+                           size_t codeSize,int kCompressLevel);
 
 #ifdef __cplusplus
 }

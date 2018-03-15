@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -28,12 +28,15 @@
 #include "Patcher.h"
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h" //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/file_for_patch.h"
-#include "patch_types.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
 #include "Zipper.h"
 #include "ZipDiffData.h"
 #include "OldStream.h"
 #include "NewStream.h"
+#include "patch_types.h"
+
+#define _CompressPlugin_lzma //default support lzma
+#include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 
 #define  check(value,error) { \
     if (!(value)){ printf(#value" "#error"!\n");  \
@@ -41,7 +44,7 @@
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName){
-    #define CACHE_SIZE  (1<<20)
+    #define HPATCH_CACHE_SIZE  (1<<18)
     UnZipper            oldZip;
     TFileStreamInput    diffData;
     Zipper              out_newZip;
@@ -72,11 +75,11 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     TFileStreamInput_init(&input_refFile);
     TFileStreamOutput_init(&output_refFile);
     
-    check(TFileStreamInput_open(&diffData,zipDiffPath),PATCH_READ_ERROR);
-#ifdef _CompressPlugin_zstd
+    check(TFileStreamInput_open(&diffData,zipDiffPath),PATCH_OPENREAD_ERROR);
+#ifdef _CompressPlugin_lzma
     if (decompressPlugin==0){
-        if (ZipDiffData_isCanDecompress(&diffData,&zstdDecompressPlugin))
-            decompressPlugin=&zstdDecompressPlugin;
+        if (ZipDiffData_isCanDecompress(&diffData,&lzmaDecompressPlugin))
+            decompressPlugin=&lzmaDecompressPlugin;
     }
 #endif
     if (decompressPlugin==0){
@@ -86,7 +89,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
     check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
-                            zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_READ_ERROR);
+                            zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
     check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
         zipDiffData.oldRefNotDecompressList,zipDiffData.oldRefNotDecompressCount), PATCH_OLDDATA_ERROR);
@@ -99,8 +102,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     
     isUsedTempFile=(decompressSumSize > maxUncompressMemory)&&(tempUncompressFileName!=0);
     if (isUsedTempFile){
-        check(TFileStreamOutput_open(&output_refFile,tempUncompressFileName,decompressSumSize),PATCH_READ_ERROR);
-        check(TFileStreamInput_open(&input_refFile,tempUncompressFileName),PATCH_READ_ERROR);
+        check(TFileStreamOutput_open(&output_refFile,tempUncompressFileName,decompressSumSize),PATCH_OPENWRITE_ERROR);
+        check(TFileStreamInput_open(&input_refFile,tempUncompressFileName),PATCH_OPENREAD_ERROR);
         input_refFile.base.streamSize=decompressSumSize;
         output_ref=&output_refFile.base;
         input_ref=&input_refFile.base;
@@ -114,26 +117,26 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     }
     
     check(OldStream_getDecompressData(&oldZip,zipDiffData.oldRefList,
-                                      zipDiffData.oldRefCount,output_ref), PATCH_OLDDATA_ERROR);
+                                      zipDiffData.oldRefCount,output_ref),PATCH_OLDDECOMPRESS_ERROR);
     check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(OldStream_open(&oldStream,&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
                          zipDiffData.oldRefNotDecompressList,zipDiffData.oldRefNotDecompressCount,
-                         input_ref), PATCH_OLDDATA_ERROR);
+                         input_ref), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
     check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,
-                           (int)zipDiffData.newZipAlignSize), PATCH_READ_ERROR)
+                           (int)zipDiffData.newZipAlignSize,(int)zipDiffData.compressLevel),PATCH_OPENWRITE_ERROR)
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsDataNormalized!=0,zipDiffData.newZipVCESize,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
                          zipDiffData.newRefNotDecompressList,zipDiffData.newRefNotDecompressCount,
-                         zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWDATA_ERROR);
+                         zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWSTREAM_ERROR);
     
-    temp_cache =(TByte*)malloc(CACHE_SIZE);
+    temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);
     check(patch_decompress_with_cache(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
-                                      decompressPlugin,temp_cache,temp_cache+CACHE_SIZE),PATCH_ERROR);
-    check(newStream.isFinish,PATCH_NEWDATA_ERROR);
+                                      decompressPlugin,temp_cache,temp_cache+HPATCH_CACHE_SIZE),PATCH_HPATCH_ERROR);
+    check(newStream.isFinish,PATCH_ZIPPATCH_ERROR);
     
 clear:
     _isInClear=true;

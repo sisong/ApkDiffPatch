@@ -2,7 +2,7 @@
 //  ApkNormalized
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -34,7 +34,7 @@
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; if (!_isInClear){ goto clear; } } }
 
-bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize){
+bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel){
     bool result=true;
     bool _isInClear=false;
     int  fileCount=0;
@@ -48,7 +48,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize){
     
     check(UnZipper_openRead(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openWrite(&zipper,dstApk,fileCount,ZipAlignSize));
+    check(Zipper_openWrite(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel));
     
     //sort file
     for (int i=0; i<fileCount; ++i) {
@@ -56,7 +56,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize){
             fileIndexs.push_back(i);
     }
     if ((int)fileIndexs.size()<fileCount)
-        printf("NOTE: src found ApkV1Sign or JarSign(%d file)\n",fileCount-(int)fileIndexs.size());
+        printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",fileCount-(int)fileIndexs.size());
     for (int i=0; i<fileCount; ++i) {
         if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
             fileIndexs.push_back(i);

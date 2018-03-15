@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -98,7 +98,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         size_t  headInoPos=0;
         check(_openZipDiffData(diffData,decompressPlugin,&headInoPos));
         //read head info
-        TByte buf[hpatch_kMaxPackedUIntBytes*(13+3)];
+        TByte buf[hpatch_kMaxPackedUIntBytes*(14+3)];
         int readLen=sizeof(buf);
         if (headInoPos+readLen>diffData->base.streamSize)
             readLen=(int)(diffData->base.streamSize-headInoPos);
@@ -113,6 +113,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newRefNotDecompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newRefCompressedSizeCount,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->compressLevel,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipIsDataNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldIsFileDataOffsetMatch,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipVCESize,size_t);

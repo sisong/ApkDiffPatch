@@ -2,7 +2,7 @@
 //  ZipDiff
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -32,17 +32,28 @@
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
-#include "../patch/patch_types.h"
-#include "../../HDiffPatch/compress_plugin_demo.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
 #include "../patch/OldStream.h"
 #include "../patch/Patcher.h"
+#include "OldRef.h"
 #include "DiffData.h"
+#include "DiffData.h"
+#include "../patch/patch_types.h"
+#define _CompressPlugin_lzma //default use lzma
+#include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
+#include "../../lzma/C/LzmaEnc.h" // http://www.7-zip.org/sdk.html
+#include "../../HDiffPatch/compress_plugin_demo.h"
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 
-#ifdef _CompressPlugin_zstd
-const hdiff_TStreamCompress* __not_used_for_compiler__zstd =&zstdStreamCompressPlugin;
+//* for close some compiler warning :(
+#ifdef _CompressPlugin_lzma
+hdiff_TCompress*       __not_used_for_compiler__null0 =&lzmaCompressPlugin;
+hpatch_TDecompress*    __not_used_for_compiler__null1 =&lzmaDecompressPlugin;
+hdiff_TStreamCompress* __not_used_for_compiler__null2 =&lzmaStreamCompressPlugin;
 #endif
-const hdiff_TStreamCompress* __not_used_for_compiler__zlib =&zlibStreamCompressPlugin;
+hdiff_TCompress*       __not_used_for_compiler__null3 =&zlibCompressPlugin;
+hpatch_TDecompress*    __not_used_for_compiler__null4 =&zlibDecompressPlugin;
+hdiff_TStreamCompress* __not_used_for_compiler__null5 =&zlibStreamCompressPlugin;
+//*/
 
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
@@ -73,12 +84,15 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     bool            result=true;
     bool            _isInClear=false;
     bool            byteByByteCheckSame=false;
-    int             oldZipFileCount=0;
     size_t          newZipAlignSize=0;
-#ifdef _CompressPlugin_zstd
-    zstd_compress_level=22; //0..22
-    hdiff_TCompress* compressPlugin=&zstdCompressPlugin;
-    hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
+    int             oldZipNormalized_compressLevel=kDefaultZlibCompressLevel;
+    int             newZipNormalized_compressLevel=kDefaultZlibCompressLevel;
+    bool            newCompressedDataIsNormalized=false;
+#ifdef _CompressPlugin_lzma
+    //lzma_compress_level: hdiffpatch default
+    //lzma_dictSize: hdiffpatch default
+    hdiff_TCompress* compressPlugin=&lzmaCompressPlugin;
+    hpatch_TDecompress* decompressPlugin=&lzmaDecompressPlugin;
 #else
     zlib_compress_level=9; //0..9
     hdiff_TCompress* compressPlugin=&zlibCompressPlugin;
@@ -90,8 +104,11 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
-    oldZip._isDataNormalized=getZipCompressedDataIsNormalized(&oldZip);
-    newZip._isDataNormalized=getZipCompressedDataIsNormalized(&newZip);
+    newCompressedDataIsNormalized=getZipCompressedDataIsNormalized(&newZip,&newZipNormalized_compressLevel);
+    newZip._isDataNormalized=newCompressedDataIsNormalized;
+    oldZip._isDataNormalized=getZipCompressedDataIsNormalized(&oldZip,&oldZipNormalized_compressLevel);
+    if (UnZipper_isHaveApkV2Sign(&newZip))
+        oldZip._isDataNormalized&=(oldZipNormalized_compressLevel==newZipNormalized_compressLevel);
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip))
         newZip._isDataNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
@@ -100,24 +117,21 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(checkZipInfo(&oldZip,&newZip));
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
-
-    check(getSamePairList(&newZip,&oldZip,samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
-    
-    //todo: get minSize best oldZip refList
-    oldZipFileCount=UnZipper_fileCount(&oldZip);
-    for (int i=0; i<oldZipFileCount; ++i) {
-        if (UnZipper_file_isApkV2Compressed(&oldZip,i))
-            oldRefNotDecompressList.push_back(i);
-        else
-            oldRefList.push_back(i);
-    }
+    check(getSamePairList(&newZip,&oldZip,newCompressedDataIsNormalized,newZipNormalized_compressLevel,
+                          samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
+    check(getOldRefList(&newZip,samePairList,newRefList,newRefNotDecompressList,
+                        &oldZip,oldRefList,oldRefNotDecompressList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
     std::cout<<"    diff new file count: "<<newRefList.size()+newRefNotDecompressList.size()<<"\n";
-    std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("<<oldZipFileCount<<")\n";
+    std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("
+        <<UnZipper_fileCount(&oldZip)<<")\n";
     std::cout<<"     ref old decompress: "
-        <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte\n";
+        <<OldStream_getDecompressFileCount(&oldZip,oldRefList.data(),oldRefList.size())<<" file ("
+        <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte!)\n";
     //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefList[i])<<"\n";
     //for (int i=0; i<(int)newRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefNotDecompressList[i])<<"\n";
+    //for (int i=0; i<(int)oldRefList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefList[i])<<"\n";
+    //for (int i=0; i<(int)oldRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefNotDecompressList[i])<<"\n";
 
     check(readZipStreamData(&newZip,newRefList,newRefNotDecompressList,newData));
     check(readZipStreamData(&oldZip,oldRefList,oldRefNotDecompressList,oldData));
@@ -125,7 +139,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
-    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
+    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,newZipNormalized_compressLevel,
                                samePairList,newRefNotDecompressList,newRefCompressedSizeList,
                                oldRefList,oldRefNotDecompressList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
@@ -153,20 +167,20 @@ bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     if (oldZip->_isDataNormalized)
         printf("  NOTE: oldZip Normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
-        printf("  NOTE: oldZip found ApkV1Sign or JarSign\n");
+        printf("  NOTE: oldZip found JarSign(ApkV1Sign)\n");
     if (UnZipper_isHaveApkV2Sign(oldZip))
         printf("  NOTE: oldZip found ApkV2Sign\n");
     if (newZip->_isDataNormalized)
         printf("  NOTE: newZip Normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(newZip))
-        printf("  NOTE: newZip found ApkV1Sign or JarSign\n");
+        printf("  NOTE: newZip found JarSign(ApkV1Sign)\n");
     bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
     if (newIsV2Sign)
         printf("  NOTE: newZip found ApkV2Sign\n");
     
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
         printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
-        return false;
+        //return false;
     }
     return true;
 }
@@ -194,7 +208,7 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
     }else{
         double time2=clock_s();
         std::cout<<"  HPatch check HDiffZ result ok!\n";
-        std::cout<<"  patch time: "<<(time2-time1)<<" s\n";
+        std::cout<<"  hpatch time: "<<(time2-time1)<<" s\n";
         return true;
     }
 }
@@ -242,16 +256,13 @@ clear:
 }
 
 bool checkZipIsSame(const char* oldZipPath,const char* newZipPath,bool byteByByteCheckSame){
-    double time0=clock_s();
     bool result;
     if (byteByByteCheckSame)
         result=getFileIsSame(oldZipPath,newZipPath);
     else
         result=getZipIsSame(oldZipPath,newZipPath);
-    double time1=clock_s();
     if (result){
         std::cout<<"  check ZipPatch result ok!\n";
-        std::cout<<"  check time: "<<(time1-time0)<<" s\n";
     }
     return result;
 }

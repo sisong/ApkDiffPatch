@@ -2,7 +2,7 @@
 //  ZipPatch
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -47,6 +47,7 @@ typedef struct OldStream{
     unsigned char*              _buf;
 } OldStream;
 
+int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                                  hpatch_TStreamOutput* output_refStream);

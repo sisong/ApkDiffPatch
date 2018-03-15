@@ -1,4 +1,4 @@
-//  Differ.h
+//  OldRef.h
 //  ZipDiff
 /*
  The MIT License (MIT)
@@ -25,10 +25,15 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef ZipDiff_Differ_h
-#define ZipDiff_Differ_h
+#ifndef ZipDiff_OldRef_h
+#define ZipDiff_OldRef_h
+#include <vector>
+#include "../patch/Zipper.h"
 
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             const char* temp_ZipPatchFileName);
+bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
+                   const std::vector<uint32_t>& newRefList,
+                   const std::vector<uint32_t>& newRefNotDecompressList,
+                   UnZipper* oldZip,std::vector<uint32_t>& out_oldRefList,
+                   std::vector<uint32_t>& out_oldRefNotDecompressList);
 
-#endif //ZipDiff_Differ_h
+#endif //ZipDiff_OldRef_h

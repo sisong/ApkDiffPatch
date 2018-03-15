@@ -2,7 +2,7 @@
 //  ApkNormalized
 /*
  The MIT License (MIT)
- Copyright (c) 2016-2018 HouSisong
+ Copyright (c) 2018 HouSisong
  
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -29,6 +29,6 @@
 #define ZipNormalized_normalized_h
 
 //规范化zip包;
-bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize);
+bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel);
 
 #endif //ZipNormalized_normalized_h
