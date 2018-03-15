@@ -29,13 +29,6 @@
 #ifndef ZipPatch_patch_type_h
 #define ZipPatch_patch_type_h
 
-//use lzma ?
-#ifdef  _CompressPlugin_lzma
-#define _IsNeedIncludeDefaultCompressHead 0
-#   include "../../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
-#   include "../../../lzma/C/LzmaEnc.h" // http://www.7-zip.org/sdk.html
-#endif
-
 #define _CompressPlugin_zlib
 #include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
 

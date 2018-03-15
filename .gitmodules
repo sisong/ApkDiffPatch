@@ -4,3 +4,6 @@
 [submodule "HDiffPatch"]
 	path = HDiffPatch
 	url = https://github.com/sisong/HDiffPatch.git
+[submodule "lzma"]
+	path = lzma
+	url = https://github.com/sisong/lzma.git

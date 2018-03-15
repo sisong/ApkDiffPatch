@@ -12,10 +12,10 @@
 		D6126BE62047B98500183A42 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE42047B98500183A42 /* patch.c */; };
 		D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE82047BF8C00183A42 /* OldStream.cpp */; };
 		D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126BEB2047BFC900183A42 /* NewStream.cpp */; };
-		D66B49D1205A36DA002BF30A /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = D66B49D0205A36DA002BF30A /* LzmaDec.c */; };
 		D671B767204E82CD002D17A7 /* Patcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B766204E82CD002D17A7 /* Patcher.cpp */; };
 		D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B768204E82F4002D17A7 /* zip_patch.cpp */; };
 		D688888D204688640042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888889204688640042E2B3 /* Zipper.cpp */; };
+		D68B02D3205A44B0001F3C40 /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = D68B02D2205A44B0001F3C40 /* LzmaDec.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,7 +43,6 @@
 		D6126BEB2047BFC900183A42 /* NewStream.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NewStream.cpp; sourceTree = "<group>"; };
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D66B49CE205A252F002BF30A /* patch_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch_types.h; sourceTree = "<group>"; };
-		D66B49D0205A36DA002BF30A /* LzmaDec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzmaDec.c; path = ../../../lzma/C/LzmaDec.c; sourceTree = "<group>"; };
 		D66B49D2205A379D002BF30A /* file_for_patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = file_for_patch.h; path = ../../HDiffPatch/file_for_patch.h; sourceTree = "<group>"; };
 		D671B71B204A4830002D17A7 /* decompress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decompress_plugin_demo.h; path = ../../HDiffPatch/decompress_plugin_demo.h; sourceTree = "<group>"; };
 		D671B71C204A4830002D17A7 /* compress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compress_plugin_demo.h; path = ../../HDiffPatch/compress_plugin_demo.h; sourceTree = "<group>"; };
@@ -52,6 +51,7 @@
 		D671B768204E82F4002D17A7 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../src/zip_patch.cpp; sourceTree = "<group>"; };
 		D6888888204688640042E2B3 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
 		D6888889204688640042E2B3 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
+		D68B02D2205A44B0001F3C40 /* LzmaDec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzmaDec.c; path = ../../lzma/C/LzmaDec.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,7 +119,7 @@
 		D66B49CF205A3534002BF30A /* lzma */ = {
 			isa = PBXGroup;
 			children = (
-				D66B49D0205A36DA002BF30A /* LzmaDec.c */,
+				D68B02D2205A44B0001F3C40 /* LzmaDec.c */,
 			);
 			name = lzma;
 			sourceTree = "<group>";
@@ -202,7 +202,7 @@
 			files = (
 				D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */,
 				D6126BE62047B98500183A42 /* patch.c in Sources */,
-				D66B49D1205A36DA002BF30A /* LzmaDec.c in Sources */,
+				D68B02D3205A44B0001F3C40 /* LzmaDec.c in Sources */,
 				D688888D204688640042E2B3 /* Zipper.cpp in Sources */,
 				D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */,
 				D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */,

@@ -18,6 +18,7 @@
 		D671B72D204E7649002D17A7 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B723204E7649002D17A7 /* Zipper.cpp */; };
 		D671B76B204E8346002D17A7 /* zip_diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B76A204E8346002D17A7 /* zip_diff.cpp */; };
 		D671B76E204EA161002D17A7 /* DiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B76D204EA161002D17A7 /* DiffData.cpp */; };
+		D68B02D0205A4462001F3C40 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D68B02D1205A4462001F3C40 /* liblzma.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -54,6 +55,7 @@
 		D671B76A204E8346002D17A7 /* zip_diff.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_diff.cpp; path = ../../src/zip_diff.cpp; sourceTree = "<group>"; };
 		D671B76C204EA161002D17A7 /* DiffData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DiffData.h; sourceTree = "<group>"; };
 		D671B76D204EA161002D17A7 /* DiffData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DiffData.cpp; sourceTree = "<group>"; };
+		D68B02D1205A4462001F3C40 /* liblzma.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = liblzma.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +63,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D68B02D0205A4462001F3C40 /* liblzma.a in Frameworks */,
 				D62AA00F2054035600A61D43 /* libHDiffPatch.a in Frameworks */,
 				D6126B8D20468CF000183A42 /* libzlib.a in Frameworks */,
 			);
@@ -72,6 +75,7 @@
 		D6126B8C20468CF000183A42 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D68B02D1205A4462001F3C40 /* liblzma.a */,
 				D62AA0102054035600A61D43 /* libHDiffPatch.a */,
 				D6126B8E20468CF000183A42 /* libzlib.a */,
 			);
