@@ -55,11 +55,11 @@ hpatch_TDecompress*    __not_used_for_compiler__null4 =&zlibDecompressPlugin;
 hdiff_TStreamCompress* __not_used_for_compiler__null5 =&zlibStreamCompressPlugin;
 //*/
 
-bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
             hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
-bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath);
-bool checkZipIsSame(const char* oldZipPath,const char* newZipPath,bool byteByByteCheckSame);
+static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
+static bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath);
+static bool getFileIsEqual(const char* xFileName,const char* yFileName);
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -83,7 +83,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::vector<uint32_t> oldRefNotDecompressList;
     bool            result=true;
     bool            _isInClear=false;
-    bool            byteByByteCheckSame=false;
+    bool            byteByByteEqualCheck=false;
     size_t          newZipAlignSize=0;
     int             oldZipNormalized_compressLevel=kDefaultZlibCompressLevel;
     int             newZipNormalized_compressLevel=kDefaultZlibCompressLevel;
@@ -113,7 +113,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     if (UnZipper_isHaveApkV2Sign(&newZip))
         newZip._isDataNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
     newZipAlignSize=(newZipAlignSize>0)?newZipAlignSize:kDefaultZipAlignSize;
-    byteByByteCheckSame=UnZipper_isHaveApkV2Sign(&newZip);
+    byteByByteEqualCheck=UnZipper_isHaveApkV2Sign(&newZip);
     check(checkZipInfo(&oldZip,&newZip));
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
@@ -153,7 +153,14 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(UnZipper_close(&oldZip));
     
     check(testZipPatch(oldZipPath,outDiffFileName,temp_ZipPatchFileName));
-    check(checkZipIsSame(newZipPath,temp_ZipPatchFileName,byteByByteCheckSame));
+
+    if (byteByByteEqualCheck){
+       check(getFileIsEqual(newZipPath,temp_ZipPatchFileName));
+        std::cout<<"  check ZipPatch result Equal ok!\n";
+    }else{
+       check(getZipIsSame(newZipPath,temp_ZipPatchFileName));
+       std::cout<<"  check ZipPatch result Same ok!\n";
+    }
     
 clear:
     _isInClear=true;
@@ -161,28 +168,6 @@ clear:
     check(UnZipper_close(&newZip));
     check(UnZipper_close(&oldZip));
     return result;
-}
-
-bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
-    if (oldZip->_isDataNormalized)
-        printf("  NOTE: oldZip Normalized\n");
-    if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
-        printf("  NOTE: oldZip found JarSign(ApkV1Sign)\n");
-    if (UnZipper_isHaveApkV2Sign(oldZip))
-        printf("  NOTE: oldZip found ApkV2Sign\n");
-    if (newZip->_isDataNormalized)
-        printf("  NOTE: newZip Normalized\n");
-    if (UnZipper_isHaveApkV1_or_jarSign(newZip))
-        printf("  NOTE: newZip found JarSign(ApkV1Sign)\n");
-    bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
-    if (newIsV2Sign)
-        printf("  NOTE: newZip found ApkV2Sign\n");
-    
-    if (newIsV2Sign&(!newZip->_isDataNormalized)){
-        printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
-        //return false;
-    }
-    return true;
 }
 
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
@@ -213,8 +198,29 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
     }
 }
 
+static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
+    if (oldZip->_isDataNormalized)
+        printf("  NOTE: oldZip Normalized\n");
+    if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
+        printf("  NOTE: oldZip found JarSign(ApkV1Sign)\n");
+    if (UnZipper_isHaveApkV2Sign(oldZip))
+        printf("  NOTE: oldZip found ApkV2Sign\n");
+    if (newZip->_isDataNormalized)
+        printf("  NOTE: newZip Normalized\n");
+    if (UnZipper_isHaveApkV1_or_jarSign(newZip))
+        printf("  NOTE: newZip found JarSign(ApkV1Sign)\n");
+    bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
+    if (newIsV2Sign)
+        printf("  NOTE: newZip found ApkV2Sign\n");
+    
+    if (newIsV2Sign&(!newZip->_isDataNormalized)){
+        printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
+        //return false;
+    }
+    return true;
+}
 
-bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath){
+static bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath){
     double time0=clock_s();
     TPatchResult ret=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,0,0);
     double time1=clock_s();
@@ -228,7 +234,7 @@ bool testZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* out
 }
 
 
-static bool getFileIsSame(const char* xFileName,const char* yFileName){
+static bool getFileIsEqual(const char* xFileName,const char* yFileName){
     TFileStreamInput x;
     TFileStreamInput y;
     bool            result=true;
@@ -252,18 +258,6 @@ clear:
     _isInClear=true;
     TFileStreamInput_close(&x);
     TFileStreamInput_close(&y);
-    return result;
-}
-
-bool checkZipIsSame(const char* oldZipPath,const char* newZipPath,bool byteByByteCheckSame){
-    bool result;
-    if (byteByByteCheckSame)
-        result=getFileIsSame(oldZipPath,newZipPath);
-    else
-        result=getZipIsSame(oldZipPath,newZipPath);
-    if (result){
-        std::cout<<"  check ZipPatch result ok!\n";
-    }
     return result;
 }
 

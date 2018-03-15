@@ -1,8 +1,8 @@
 **ApkDiffPatch**
 ================
-Version 0.9.3 beta   
+Version 0.9.4 beta   
 Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support apk v2 sign & Jar sign(apk v1).    
-( not support zip64; import lib HDiffPatch, zlib, lzma; )   
+( not support zip64, and only support Deflate decode; dependent libraries HDiffPatch, zlib, lzma; )   
 
 ---
 uses:
@@ -10,7 +10,7 @@ uses:
 *  **ZipDiff(oldZip,newZip,out diffData)**
    
    release the diffData for update oldZip;    
-   your apk use v2 sign? newZip=AndroidSDK#apksigner(**ApkNormalized**(newZip)) before ZipDiff, AND you cannot change zlib version because need byte by byte equality.   
+   your apk use v2 sign? newZip=AndroidSDK#apksigner(**ApkNormalized**(newZip)) before ZipDiff, AND you cannot change zlib version because need zip byte by byte equal.   
    
 *  **ZipPatch(oldZip,diffData,out newZip)**
   
