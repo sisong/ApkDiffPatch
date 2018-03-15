@@ -179,7 +179,8 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
     return 0;
 }
 
-bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
+bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
+                     bool newCompressedDataIsNormalized,int zlibCompressLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
                      std::vector<uint32_t>& out_newRefNotDecompressList,
@@ -194,12 +195,13 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
     
     int newFileCount=UnZipper_fileCount(newZip);
     for (int i=0; i<newFileCount; ++i) {
+        ZipFilePos_t compressedSize=UnZipper_file_compressedSize(newZip,i);
         if (UnZipper_file_isApkV2Compressed(newZip,i)){
             out_newRefNotDecompressList.push_back(i);
-            out_newRefCompressedSizeList.push_back(UnZipper_file_compressedSize(newZip,i));
+            out_newRefCompressedSizeList.push_back(compressedSize);
         }else if ((0==UnZipper_file_uncompressedSize(newZip,i))
                   &&(!UnZipper_file_isCompressed(newZip,i))){ //empty entry
-            check(0==UnZipper_file_compressedSize(newZip,i));
+            check(0==compressedSize);
             //not need: out_newRefList.push_back(i);
         }else{
             bool findSame=false;
@@ -226,9 +228,13 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
             }else{
                 out_newRefList.push_back(i);
                 if (UnZipper_file_isCompressed(newZip,i)){
-                    std::vector<TByte> code;
-                    check(getNormalizedCompressedCode(newZip,i,code,zlibCompressLevel));
-                    out_newRefCompressedSizeList.push_back((uint32_t)code.size());
+                    if (newCompressedDataIsNormalized){
+                        out_newRefCompressedSizeList.push_back(compressedSize);
+                    }else{
+                        std::vector<TByte> code;
+                        check(getNormalizedCompressedCode(newZip,i,code,zlibCompressLevel));
+                        out_newRefCompressedSizeList.push_back((uint32_t)code.size());
+                    }
                 }
             }
         }

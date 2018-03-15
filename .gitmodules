@@ -4,6 +4,3 @@
 [submodule "HDiffPatch"]
 	path = HDiffPatch
 	url = https://github.com/sisong/HDiffPatch.git
-[submodule "zstd"]
-	path = zstd
-	url = https://github.com/facebook/zstd.git

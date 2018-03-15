@@ -40,8 +40,8 @@
 #include "OldRef.h"
 #include "DiffData.h"
 
-#ifdef _CompressPlugin_zstd
-const hdiff_TStreamCompress* __not_used_for_compiler__zstd =&zstdStreamCompressPlugin;
+#ifdef _CompressPlugin_lzma
+const hdiff_TStreamCompress* __not_used_for_compiler__lzma =&lzmaStreamCompressPlugin;
 #endif
 const hdiff_TStreamCompress* __not_used_for_compiler__zlib =&zlibStreamCompressPlugin;
 
@@ -77,10 +77,12 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     size_t          newZipAlignSize=0;
     int             oldZipNormalized_compressLevel=kDefaultZlibCompressLevel;
     int             newZipNormalized_compressLevel=kDefaultZlibCompressLevel;
-#ifdef _CompressPlugin_zstd
-    zstd_compress_level=22; //0..22
-    hdiff_TCompress* compressPlugin=&zstdCompressPlugin;
-    hpatch_TDecompress* decompressPlugin=&zstdDecompressPlugin;
+    bool            newCompressedDataIsNormalized=false;
+#ifdef _CompressPlugin_lzma
+    //lzma_compress_level: hdiffpatch default
+    //lzma_dictSize: hdiffpatch default
+    hdiff_TCompress* compressPlugin=&lzmaCompressPlugin;
+    hpatch_TDecompress* decompressPlugin=&lzmaDecompressPlugin;
 #else
     zlib_compress_level=9; //0..9
     hdiff_TCompress* compressPlugin=&zlibCompressPlugin;
@@ -92,7 +94,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     check(UnZipper_openRead(&oldZip,oldZipPath));
     check(UnZipper_openRead(&newZip,newZipPath));
-    newZip._isDataNormalized=getZipCompressedDataIsNormalized(&newZip,&newZipNormalized_compressLevel);
+    newCompressedDataIsNormalized=getZipCompressedDataIsNormalized(&newZip,&newZipNormalized_compressLevel);
+    newZip._isDataNormalized=newCompressedDataIsNormalized;
     oldZip._isDataNormalized=getZipCompressedDataIsNormalized(&oldZip,&oldZipNormalized_compressLevel);
     if (UnZipper_isHaveApkV2Sign(&newZip))
         oldZip._isDataNormalized&=(oldZipNormalized_compressLevel==newZipNormalized_compressLevel);
@@ -104,8 +107,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(checkZipInfo(&oldZip,&newZip));
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
-    check(getSamePairList(&newZip,&oldZip,newZipNormalized_compressLevel,samePairList,newRefList,
-                          newRefNotDecompressList,newRefCompressedSizeList));
+    check(getSamePairList(&newZip,&oldZip,newCompressedDataIsNormalized,newZipNormalized_compressLevel,
+                          samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
     check(getOldRefList(&newZip,samePairList,newRefList,newRefNotDecompressList,
                         &oldZip,oldRefList,oldRefNotDecompressList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";

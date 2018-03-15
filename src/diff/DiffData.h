@@ -47,7 +47,8 @@ static inline std::string zipFile_name(UnZipper* self,int fileIndex){
     return std::string(nameBegin,nameBegin+nameLen);
 }
 
-bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,int zlibCompressLevel,
+bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
+                     bool newCompressedDataIsNormalized,int zlibCompressLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
                      std::vector<uint32_t>& out_newRefNotDecompressList,

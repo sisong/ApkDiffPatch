@@ -19,8 +19,5 @@
       <FileRef
          location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/zlib.xcodeproj">
       </FileRef>
-      <FileRef
-         location = "group:zstd.xcodeproj">
-      </FileRef>
    </Group>
 </Workspace>
