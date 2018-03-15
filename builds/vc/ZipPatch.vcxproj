@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
-    <ClCompile Include="..\..\src\diff\DiffData.cpp" />
+    <ClCompile Include="..\..\lzma\C\LzmaDec.c" />
     <ClCompile Include="..\..\src\normalized\normalized.cpp" />
     <ClCompile Include="..\..\src\patch\NewStream.cpp" />
     <ClCompile Include="..\..\src\patch\OldStream.cpp" />

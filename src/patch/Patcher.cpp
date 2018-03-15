@@ -28,12 +28,15 @@
 #include "Patcher.h"
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h" //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/file_for_patch.h"
-#include "patch_types.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
 #include "Zipper.h"
 #include "ZipDiffData.h"
 #include "OldStream.h"
 #include "NewStream.h"
+#include "patch_types.h"
+
+#define _CompressPlugin_lzma //default use lzma
+#include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 
 #define  check(value,error) { \
     if (!(value)){ printf(#value" "#error"!\n");  \
@@ -41,7 +44,7 @@
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName){
-    #define CACHE_SIZE  (1<<18)
+    #define HPATCH_CACHE_SIZE  (1<<18)
     UnZipper            oldZip;
     TFileStreamInput    diffData;
     Zipper              out_newZip;
@@ -129,10 +132,10 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
                          zipDiffData.newRefNotDecompressList,zipDiffData.newRefNotDecompressCount,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWSTREAM_ERROR);
     
-    temp_cache =(TByte*)malloc(CACHE_SIZE);
+    temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);
     check(patch_decompress_with_cache(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
-                                      decompressPlugin,temp_cache,temp_cache+CACHE_SIZE),PATCH_HPATCH_ERROR);
+                                      decompressPlugin,temp_cache,temp_cache+HPATCH_CACHE_SIZE),PATCH_HPATCH_ERROR);
     check(newStream.isFinish,PATCH_ZIPPATCH_ERROR);
     
 clear:

@@ -29,6 +29,8 @@
 #ifndef ZipPatch_patch_type_h
 #define ZipPatch_patch_type_h
 
+#define _IsNeedIncludeDefaultCompressHead 0
+
 #define _CompressPlugin_zlib
 #include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
 

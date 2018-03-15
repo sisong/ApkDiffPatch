@@ -32,18 +32,29 @@
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
-#include "../patch/patch_types.h"
-#include "../../HDiffPatch/compress_plugin_demo.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
 #include "../patch/OldStream.h"
 #include "../patch/Patcher.h"
 #include "OldRef.h"
 #include "DiffData.h"
+#include "DiffData.h"
+#include "../patch/patch_types.h"
+#define _CompressPlugin_lzma //default use lzma
+#include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
+#include "../../lzma/C/LzmaEnc.h" // http://www.7-zip.org/sdk.html
+#include "../../HDiffPatch/compress_plugin_demo.h"
+#include "../../HDiffPatch/decompress_plugin_demo.h"
 
+//* for close some compiler warning :(
+hdiff_TStreamCompress* __not_used_for_compiler__null0 =&zlibStreamCompressPlugin;
+hdiff_TStreamCompress* __not_used_for_compiler__null1 =&lzmaStreamCompressPlugin;
 #ifdef _CompressPlugin_lzma
-const hdiff_TStreamCompress* __not_used_for_compiler__lzma =&lzmaStreamCompressPlugin;
+hdiff_TCompress*    __not_used_for_compiler__null2=&zlibCompressPlugin;
+hpatch_TDecompress* __not_used_for_compiler__null3=&zlibDecompressPlugin;
+#else
+hdiff_TCompress*    __not_used_for_compiler__null4=&lzmaCompressPlugin;
+hpatch_TDecompress* __not_used_for_compiler__null5=&lzmaDecompressPlugin;
 #endif
-const hdiff_TStreamCompress* __not_used_for_compiler__zlib =&zlibStreamCompressPlugin;
+//*/
 
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,

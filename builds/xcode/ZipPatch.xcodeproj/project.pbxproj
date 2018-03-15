@@ -43,9 +43,6 @@
 		D6126BEB2047BFC900183A42 /* NewStream.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NewStream.cpp; sourceTree = "<group>"; };
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D66B49CE205A252F002BF30A /* patch_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch_types.h; sourceTree = "<group>"; };
-		D66B49D2205A379D002BF30A /* file_for_patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = file_for_patch.h; path = ../../HDiffPatch/file_for_patch.h; sourceTree = "<group>"; };
-		D671B71B204A4830002D17A7 /* decompress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decompress_plugin_demo.h; path = ../../HDiffPatch/decompress_plugin_demo.h; sourceTree = "<group>"; };
-		D671B71C204A4830002D17A7 /* compress_plugin_demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compress_plugin_demo.h; path = ../../HDiffPatch/compress_plugin_demo.h; sourceTree = "<group>"; };
 		D671B765204E82CD002D17A7 /* Patcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Patcher.h; sourceTree = "<group>"; };
 		D671B766204E82CD002D17A7 /* Patcher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Patcher.cpp; sourceTree = "<group>"; };
 		D671B768204E82F4002D17A7 /* zip_patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = zip_patch.cpp; path = ../../src/zip_patch.cpp; sourceTree = "<group>"; };
@@ -77,9 +74,6 @@
 		D6126BBC2047B65E00183A42 /* HDiffPatch */ = {
 			isa = PBXGroup;
 			children = (
-				D66B49D2205A379D002BF30A /* file_for_patch.h */,
-				D671B71C204A4830002D17A7 /* compress_plugin_demo.h */,
-				D671B71B204A4830002D17A7 /* decompress_plugin_demo.h */,
 				D6126BE22047B98500183A42 /* HPatch */,
 			);
 			name = HDiffPatch;
@@ -255,7 +249,6 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
-					_CompressPlugin_lzma,
 					"$(inherited)",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -308,7 +301,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = _CompressPlugin_lzma;
+				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;

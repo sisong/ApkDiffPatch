@@ -32,8 +32,8 @@
 #include "patch_types.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
-static const hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
-static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
+hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
+hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
 #define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
 #define  kNormalizedZlib_MAX_MEM_LEVEL  9        //fiexd zlib MAX_MEM_LEVEL

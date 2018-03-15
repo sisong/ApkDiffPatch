@@ -18,6 +18,7 @@ ZIPPATCH_OBJ := \
     src/patch/ZipDiffData.o \
     src/patch/Zipper.o \
     HDiffPatch/libHDiffPatch/HPatch/patch.o \
+    lzma/C/LzmaDec.o \
     $(ZLIB_OBJ)
 
 APKNORM_OBJ := \
@@ -40,9 +41,11 @@ ZIPDIFF_OBJ := \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/limit_mem_diff/adler_roll.o \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort64.o \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort.o \
+    lzma/C/LzmaEnc.o \
+    lzma/C/LzFind.o \
     $(ZIPPATCH_OBJ)
 
-CFLAGS      += -O3
+CFLAGS      += -O3 -D_7ZIP_ST
 CXXFLAGS   += -O3
 
 .PHONY: all clean
