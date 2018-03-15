@@ -50,18 +50,18 @@ int main(int argc, const char * argv[]) {
         std::cout << "\nrun ApkNormalized ERROR!\n";
         return 1;
     }
-    double time1=clock_s();
     std::cout << "run ApkNormalized ok!\n";
-    std::cout<<"  ApkNormalized time: "<<(time1-time0)<<" s\n";
     
     //check
     if (!getZipIsSame(srcApk,dstApk)){
         std::cout << "ApkNormalized result file check ERROR!\n";
         return 1;
     }
-    double time2=clock_s();
     std::cout<<"  check ApkNormalized result ok!\n";
-    std::cout<<"  check time: "<<(time2-time1)<<" s\n";
+    
+    double time1=clock_s();
+    std::cout<<"ApkNormalized time: "<<(time1-time0)<<" s\n";
+    
     return 0;
 }
 

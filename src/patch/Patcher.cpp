@@ -34,7 +34,7 @@
 #include "NewStream.h"
 #include "patch_types.h"
 
-#define _CompressPlugin_lzma //default use lzma
+#define _CompressPlugin_lzma //default support lzma
 #include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 

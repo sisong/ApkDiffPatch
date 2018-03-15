@@ -45,15 +45,14 @@
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
 //* for close some compiler warning :(
-hdiff_TStreamCompress* __not_used_for_compiler__null0 =&zlibStreamCompressPlugin;
-hdiff_TStreamCompress* __not_used_for_compiler__null1 =&lzmaStreamCompressPlugin;
 #ifdef _CompressPlugin_lzma
-hdiff_TCompress*    __not_used_for_compiler__null2=&zlibCompressPlugin;
-hpatch_TDecompress* __not_used_for_compiler__null3=&zlibDecompressPlugin;
-#else
-hdiff_TCompress*    __not_used_for_compiler__null4=&lzmaCompressPlugin;
-hpatch_TDecompress* __not_used_for_compiler__null5=&lzmaDecompressPlugin;
+hdiff_TCompress*       __not_used_for_compiler__null0 =&lzmaCompressPlugin;
+hpatch_TDecompress*    __not_used_for_compiler__null1 =&lzmaDecompressPlugin;
+hdiff_TStreamCompress* __not_used_for_compiler__null2 =&lzmaStreamCompressPlugin;
 #endif
+hdiff_TCompress*       __not_used_for_compiler__null3 =&zlibCompressPlugin;
+hpatch_TDecompress*    __not_used_for_compiler__null4 =&zlibDecompressPlugin;
+hdiff_TStreamCompress* __not_used_for_compiler__null5 =&zlibStreamCompressPlugin;
 //*/
 
 bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
@@ -181,7 +180,7 @@ bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
         printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
-        return false;
+        //return false;
     }
     return true;
 }
@@ -257,16 +256,13 @@ clear:
 }
 
 bool checkZipIsSame(const char* oldZipPath,const char* newZipPath,bool byteByByteCheckSame){
-    double time0=clock_s();
     bool result;
     if (byteByByteCheckSame)
         result=getFileIsSame(oldZipPath,newZipPath);
     else
         result=getZipIsSame(oldZipPath,newZipPath);
-    double time1=clock_s();
     if (result){
         std::cout<<"  check ZipPatch result ok!\n";
-        std::cout<<"  check time: "<<(time1-time0)<<" s\n";
     }
     return result;
 }
