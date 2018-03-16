@@ -65,7 +65,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     //write data
     if (self->_curFileIndex<0){//vce
-        memcpy(self->_newZipVCE._cache_vce+writeToPos,data,result);
+        memcpy(self->_newZipVCE._cache_vce+self->_editV2SignSize+writeToPos,data,result);
     }else{
         check(self->_curFileIndex<self->_fileCount);
         check(Zipper_file_append_part(self->_out_newZip,data,result));
@@ -135,7 +135,8 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         assert(false); return false; } }
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
-                    size_t newDataSize,bool newZipIsDataNormalized,size_t newZipVCESize,
+                    size_t newDataSize,bool newZipIsDataNormalized,
+                    size_t newZipVCESize,const hpatch_TStreamInput* editV2Sign,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
                     const uint32_t* reCompressList,size_t reCompressCount){
@@ -157,7 +158,12 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_stream.write=_NewStream_write;
     self->stream=&self->_stream;
     
-    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)newZipVCESize,self->_fileCount));
+    self->_editV2SignSize=(size_t)editV2Sign->streamSize;
+    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipVCESize+self->_editV2SignSize),self->_fileCount));
+    if (self->_editV2SignSize>0){
+        check((long)self->_editV2SignSize==editV2Sign->read(editV2Sign->streamHandle,0,self->_newZipVCE._cache_vce,
+                                                      self->_newZipVCE._cache_vce+self->_editV2SignSize));
+    }
     
     self->_curFileIndex=-1;
     self->_curWriteToPosEnd=newZipVCESize;

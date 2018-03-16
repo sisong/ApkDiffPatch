@@ -27,6 +27,7 @@
  */
 #include "ZipDiffData.h"
 #include <string.h>
+#include "patch_types.h"
 
 void ZipDiffData_init(ZipDiffData* self){
     memset(self,0,sizeof(ZipDiffData));
@@ -94,6 +95,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
     size_t  headDataSize=0;
     size_t  headDataCompressedSize=0;
     size_t  headDataPos=0;
+    size_t  hdiffzSize=0;
     {
         size_t  headInoPos=0;
         check(_openZipDiffData(diffData,decompressPlugin,&headInoPos));
@@ -104,11 +106,11 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
             readLen=(int)(diffData->base.streamSize-headInoPos);
         check(readLen==diffData->base.read(diffData->base.streamHandle,headInoPos,buf,buf+readLen));
         //unpack head info
-        size_t hdiffzSize=0;
         const TByte* curBuf=buf;
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipFileCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipIsDataNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipAlignSize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->isEnableEditApkV2Sign,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newRefNotDecompressCount,size_t);
@@ -126,7 +128,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         headDataPos=(curBuf-buf)+headInoPos;
         
         check(headDataCompressedSize <= diffData->base.streamSize-headDataPos);
-        check(hdiffzSize == diffData->base.streamSize-headDataPos-headDataCompressedSize);
+        check(hdiffzSize <= diffData->base.streamSize-headDataPos-headDataCompressedSize);
     }
     {//head data
         //  memBuf used as:
@@ -183,8 +185,36 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         self->_hdiffzData=*diffData;
         self->_hdiffzData.base.streamHandle=&self->_hdiffzData.base;
         TFileStreamInput_setOffset(&self->_hdiffzData,hdiffzPos);
+        self->_hdiffzData.base.streamSize=hdiffzSize;
+        self->_hdiffzData.m_fpos=(hpatch_StreamPos_t)(-1);
         self->hdiffzData=&self->_hdiffzData.base;
     }
+    {//editV2Sign stream
+        if (self->isEnableEditApkV2Sign){
+            //read V2Sign size+tag
+            check(diffData->base.streamSize>=4+kEditV2SignLen);
+            unsigned char buf4s[4+kEditV2SignLen];
+            check(4+kEditV2SignLen==diffData->base.read(diffData->base.streamHandle,
+                        diffData->base.streamSize-4-kEditV2SignLen,buf4s,buf4s+4+kEditV2SignLen));
+            check(0==memcmp(kEditV2Sign,buf4s+4,kEditV2SignLen));//check tag
+            uint32_t V2SignSize=readUInt32(buf4s);
+            
+            check(4+kEditV2SignLen+self->_hdiffzData.m_offset+hdiffzSize+V2SignSize<=diffData->base.streamSize);
+            hpatch_StreamPos_t editV2SignPos=diffData->base.streamSize-V2SignSize-4-kEditV2SignLen;
+            self->_editV2Sign=*diffData;
+            self->_editV2Sign.base.streamHandle=&self->_editV2Sign.base;
+            check(editV2SignPos==(size_t)editV2SignPos);
+            TFileStreamInput_setOffset(&self->_editV2Sign,(size_t)editV2SignPos);
+            self->_editV2Sign.base.streamSize=V2SignSize;
+            self->_editV2Sign.m_fpos=(hpatch_StreamPos_t)(-1);
+            self->editV2Sign=&self->_editV2Sign.base;
+        }else{
+            self->_editV2Sign=*diffData;
+            self->_editV2Sign.base.streamSize=0;
+            self->editV2Sign=&self->_editV2Sign.base;
+        }
+    }
+    diffData->m_fpos=(hpatch_StreamPos_t)(-1); //force re seek
     
     return true;
 }

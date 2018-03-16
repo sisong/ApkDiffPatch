@@ -55,11 +55,11 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      std::vector<uint32_t>& out_newRefCompressedSizeList);
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
-                       const std::vector<uint32_t>& refNotDecompressList,
+                       const std::vector<uint32_t>& refNotDecompressList,bool isEnableEditApkV2Sign,
                        std::vector<unsigned char>& out_data);
 
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
-                          size_t newZipAlignSize,size_t compressLevel,
+                          size_t newZipAlignSize,bool isEnableEditApkV2Sign,size_t compressLevel,
                           const std::vector<uint32_t>& samePairList,
                           const std::vector<uint32_t>& newRefNotDecompressList,
                           const std::vector<uint32_t>& newRefCompressedSizeList,

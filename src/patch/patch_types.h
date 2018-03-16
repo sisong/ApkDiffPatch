@@ -37,5 +37,10 @@
 inline static uint32_t readUInt32(const unsigned char* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);
 }
+inline static void writeUInt32_to(unsigned char* out_buf4,uint32_t v){
+    out_buf4[0]=(unsigned char)v; out_buf4[1]=(unsigned char)(v>>8);
+    out_buf4[2]=(unsigned char)(v>>16); out_buf4[3]=(unsigned char)(v>>24);
+}
+
 
 #endif //ZipPatch_patch_type_h

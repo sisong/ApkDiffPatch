@@ -1,6 +1,6 @@
 **ApkDiffPatch**
 ================
-Version 0.9.5 beta   
+Version 0.9.6 beta   
 Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support apk v2 sign & Jar sign(apk v1).    
 ( not support zip64, and only support Deflate decode; dependent libraries HDiffPatch, zlib, lzma; )   
 

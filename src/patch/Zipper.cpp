@@ -51,10 +51,6 @@ inline static hpatch_StreamPos_t readUInt64(const TByte* buf){
 inline static void writeUInt16_to(TByte* out_buf2,uint32_t v){
     out_buf2[0]=(TByte)v; out_buf2[1]=(TByte)(v>>8);
 }
-inline static void writeUInt32_to(TByte* out_buf4,uint32_t v){
-    out_buf4[0]=(TByte)v; out_buf4[1]=(TByte)(v>>8);
-    out_buf4[2]=(TByte)(v>>16); out_buf4[3]=(TByte)(v>>24);
-}
 
 #define kBufSize                    (64*1024)
 
@@ -188,7 +184,7 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
 static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
     assert(self->_endCentralDirectory!=0);
     writeUInt32_to(self->_endCentralDirectory+16,
-                   (uint32_t)(self->_centralDirectory-self->_cache_vce));//normalized CentralDirectory的开始位置偏移;
+                   (uint32_t)UnZipper_ApkV2SignSize(self));//normalized CentralDirectory的开始位置偏移;
     self->_isFileDataOffsetMatch=isFileDataOffsetMatch;
     bool test_isFileDataOffsetMatch=true;
     
@@ -737,7 +733,7 @@ bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool
 bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip){
     if (!UnZipper_isHaveApkV2Sign(srcZip))
         return true;
-    return _write(self,srcZip->_cache_vce,srcZip->_centralDirectory-srcZip->_cache_vce);
+    return _write(self,srcZip->_cache_vce,UnZipper_ApkV2SignSize(srcZip));
 }
 
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
