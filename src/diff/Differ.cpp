@@ -38,7 +38,7 @@
 #include "DiffData.h"
 #include "DiffData.h"
 #include "../patch/patch_types.h"
-#define _CompressPlugin_lzma //default use lzma
+#define _CompressPlugin_lzma //use lzma for compress out diffData
 #include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
 #include "../../lzma/C/LzmaEnc.h" // http://www.7-zip.org/sdk.html
 #include "../../HDiffPatch/compress_plugin_demo.h"
@@ -67,7 +67,7 @@ static bool getFileIsEqual(const char* xFileName,const char* yFileName);
 
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,const char* temp_ZipPatchFileName){
-    const int           myBestMatchScore=3;
+    const int           myBestMatchScore=5;
     UnZipper            oldZip;
     UnZipper            newZip;
     TFileStreamOutput   out_diffFile;
@@ -214,7 +214,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
         printf("  NOTE: newZip found ApkV2Sign\n");
     
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
-        printf("  ERROR: newZip not Normalized, need run ApkNormalized(newZip) before run ZipDiff!\n");
+        printf("  ERROR: newZip not Normalized, need run newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before run ZipDiff!\n");
         //return false;
     }
     return true;
