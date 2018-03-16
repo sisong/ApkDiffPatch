@@ -63,7 +63,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     }
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
     if (isHaveApkV2Sign)
-        printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)(unzipper._centralDirectory-unzipper._cache_vce));
+        printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)UnZipper_ApkV2SignSize(&unzipper));
     printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
 
     

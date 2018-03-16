@@ -37,6 +37,7 @@ typedef struct OldStream{
     UnZipper*                   _oldZip;
     const hpatch_TStreamInput*  _input_decompressedStream;
     hpatch_TStreamInput         _stream;
+    bool                        _isEnableEditApkV2Sign;
     
     uint32_t*                   _rangeEndList;
     uint32_t*                   _rangeFileOffsets;
@@ -57,7 +58,7 @@ uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size
 void OldStream_init(OldStream* self);
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                     const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
-                    const hpatch_TStreamInput* input_decompressedStream);
+                    const hpatch_TStreamInput* input_decompressedStream,bool isEnableEditApkV2Sign);
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

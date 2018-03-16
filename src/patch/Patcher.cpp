@@ -90,7 +90,11 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
     check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
                             zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
-    check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
+    if (zipDiffData.isEnableEditApkV2Sign){
+        check(zipDiffData.oldZipVCESize==oldZip._vce_size-UnZipper_ApkV2SignSize(&oldZip),PATCH_OLDDATA_ERROR);
+    }else{
+        check(zipDiffData.oldZipVCESize==oldZip._vce_size,PATCH_OLDDATA_ERROR);
+    }
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
         zipDiffData.oldRefNotDecompressList,zipDiffData.oldRefNotDecompressCount), PATCH_OLDDATA_ERROR);
     
@@ -121,13 +125,14 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(OldStream_open(&oldStream,&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
                          zipDiffData.oldRefNotDecompressList,zipDiffData.oldRefNotDecompressCount,
-                         input_ref), PATCH_OLDSTREAM_ERROR);
+                         input_ref,zipDiffData.isEnableEditApkV2Sign!=0), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
     check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,
                            (int)zipDiffData.newZipAlignSize,(int)zipDiffData.compressLevel),PATCH_OPENWRITE_ERROR)
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
-                         zipDiffData.newZipIsDataNormalized!=0,zipDiffData.newZipVCESize,
+                         zipDiffData.newZipIsDataNormalized!=0,
+                         zipDiffData.newZipVCESize,zipDiffData.editV2Sign,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
                          zipDiffData.newRefNotDecompressList,zipDiffData.newRefNotDecompressCount,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWSTREAM_ERROR);

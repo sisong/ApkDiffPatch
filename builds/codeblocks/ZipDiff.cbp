@@ -31,6 +31,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-D_7ZIP_ST" />
 		</Compiler>
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/diff.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/bytes_rle.cpp" />
@@ -48,6 +49,15 @@
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/limit_mem_diff/stream_serialize.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/suffix_string.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatch/patch.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/LzFind.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/LzmaDec.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/LzmaEnc.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../src/diff/DiffData.cpp" />

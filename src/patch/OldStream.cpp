@@ -63,11 +63,6 @@ bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t
     return true;
 }
 
-inline static void writeUInt32_to(unsigned char* out_buf4,uint32_t v){
-    out_buf4[0]=(unsigned char)v; out_buf4[1]=(unsigned char)(v>>8);
-    out_buf4[2]=(unsigned char)(v>>16); out_buf4[3]=(unsigned char)(v>>24);
-}
-
 uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                              const uint32_t* refNotDecompressList,size_t refNotDecompressCount){
     unsigned char buf4[4];
@@ -106,7 +101,8 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
     hpatch_StreamPos_t readPos=readFromPos - self->_rangeEndList[curRangeIndex-1]
                                 + self->_rangeFileOffsets[curRangeIndex];
     if (curRangeIndex==0){
-        memcpy(out_data,self->_oldZip->_cache_vce+readPos,out_data_end-out_data);
+        unsigned char* src=self->_isEnableEditApkV2Sign?  self->_oldZip->_centralDirectory: self->_oldZip->_cache_vce;
+        memcpy(out_data,src+readPos,out_data_end-out_data);
         return true;
     }else if (self->_rangIsInDecBuf[curRangeIndex]){
         long readLen=(long)(out_data_end-out_data);
@@ -175,7 +171,10 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount,
     self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
     self->_rangIsInDecBuf=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
     
-    curSumSize=self->_oldZip->_vce_size;
+    if (self->_isEnableEditApkV2Sign)
+        curSumSize=self->_oldZip->_vce_size-(uint32_t)UnZipper_ApkV2SignSize(self->_oldZip);
+    else
+        curSumSize=self->_oldZip->_vce_size;
     self->_rangeEndList[-1]=0;
     self->_rangeEndList[0]=curSumSize;
     self->_rangeFileOffsets[0]=0;
@@ -212,11 +211,12 @@ clear:
 
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                     const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
-                    const hpatch_TStreamInput* input_decompressedStream){
+                    const hpatch_TStreamInput* input_decompressedStream,bool isEnableEditApkV2Sign){
     bool result=true;
     uint32_t oldDataSize;
     check(self->stream==0);
     
+    self->_isEnableEditApkV2Sign=isEnableEditApkV2Sign;
     self->_oldZip=oldZip;
     self->_input_decompressedStream=input_decompressedStream;
     check(_createRange(self,refList,refCount,refNotDecompressList,refNotDecompressCount));
