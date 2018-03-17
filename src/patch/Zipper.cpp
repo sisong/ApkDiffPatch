@@ -183,8 +183,7 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
 //缓存相关信息并规范化数据;
 static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
     assert(self->_endCentralDirectory!=0);
-    writeUInt32_to(self->_endCentralDirectory+16,
-                   (uint32_t)UnZipper_ApkV2SignSize(self));//normalized CentralDirectory的开始位置偏移;
+    writeUInt32_to(self->_endCentralDirectory+16,0);//normalized CentralDirectory的开始位置偏移;
     self->_isFileDataOffsetMatch=isFileDataOffsetMatch;
     bool test_isFileDataOffsetMatch=true;
     
@@ -331,8 +330,13 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
     return true;
 }
 
-bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized){
-    _UnZipper_sreachVCE();
+bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize){
+    ZipFilePos_t endCentralDirectory_pos=0;
+    ZipFilePos_t centralDirectory_pos=(ZipFilePos_t)(self->_vce_size-zipCESize);
+    ZipFilePos_t v2sign_pos=0;
+    check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));
+    check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos));
+
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
     self->_isDataNormalized=isDataNormalized;

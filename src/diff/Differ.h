@@ -29,6 +29,6 @@
 #define ZipDiff_Differ_h
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             const char* temp_ZipPatchFileName,bool isEnableEditApkV2Sign=false);
+             const char* temp_ZipPatchFileName,bool isEnableExtraEdit=false);
 
 #endif //ZipDiff_Differ_h
