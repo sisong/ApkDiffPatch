@@ -64,10 +64,14 @@ bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t
 }
 
 uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                             const uint32_t* refNotDecompressList,size_t refNotDecompressCount){
+                             const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
+                             bool isEnableExtraEdit){
     unsigned char buf4[4];
     uLong crc=0;
-    crc=crc32(crc,oldZip->_cache_vce,oldZip->_vce_size);
+    if (!isEnableExtraEdit)
+        crc=crc32(crc,oldZip->_cache_vce,oldZip->_vce_size);
+    else
+        crc=crc32(crc,oldZip->_centralDirectory,oldZip->_vce_size-(uInt)(UnZipper_ApkV2SignSize(oldZip)));
     for (size_t i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
         uint32_t fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
@@ -101,7 +105,7 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
     hpatch_StreamPos_t readPos=readFromPos - self->_rangeEndList[curRangeIndex-1]
                                 + self->_rangeFileOffsets[curRangeIndex];
     if (curRangeIndex==0){
-        unsigned char* src=self->_isEnableEditApkV2Sign?  self->_oldZip->_centralDirectory: self->_oldZip->_cache_vce;
+        unsigned char* src=self->_isEnableExtraEdit?  self->_oldZip->_centralDirectory: self->_oldZip->_cache_vce;
         memcpy(out_data,src+readPos,out_data_end-out_data);
         return true;
     }else if (self->_rangIsInDecBuf[curRangeIndex]){
@@ -171,7 +175,7 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount,
     self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
     self->_rangIsInDecBuf=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
     
-    if (self->_isEnableEditApkV2Sign)
+    if (self->_isEnableExtraEdit)
         curSumSize=self->_oldZip->_vce_size-(uint32_t)UnZipper_ApkV2SignSize(self->_oldZip);
     else
         curSumSize=self->_oldZip->_vce_size;
@@ -211,12 +215,12 @@ clear:
 
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                     const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
-                    const hpatch_TStreamInput* input_decompressedStream,bool isEnableEditApkV2Sign){
+                    const hpatch_TStreamInput* input_decompressedStream,bool isEnableExtraEdit){
     bool result=true;
     uint32_t oldDataSize;
     check(self->stream==0);
     
-    self->_isEnableEditApkV2Sign=isEnableEditApkV2Sign;
+    self->_isEnableExtraEdit=isEnableExtraEdit;
     self->_oldZip=oldZip;
     self->_input_decompressedStream=input_decompressedStream;
     check(_createRange(self,refList,refCount,refNotDecompressList,refNotDecompressCount));

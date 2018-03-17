@@ -10,6 +10,9 @@
    <FileRef
       location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/ZipPatch.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:ZiPatExtraDemo.xcodeproj">
+   </FileRef>
    <Group
       location = "container:"
       name = "lib">

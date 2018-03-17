@@ -99,32 +99,40 @@ static bool _UnZipper_searchCentralDirectory(UnZipper* self,ZipFilePos_t endCent
     return true;
 }
 
-static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
-                                      ZipFilePos_t* v2sign_pos){
-    *v2sign_pos=centralDirectory_pos; //default not found
+
+bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
+                              ZipFilePos_t* v2sign_pos,hpatch_StreamPos_t* out_blockSize){
+    *v2sign_pos=(ZipFilePos_t)centralDirectory_pos; //default not found
     
     //tag
     const size_t APKSigningTagLen=16;
     const char* APKSigningTag="APK Sig Block 42";
     if (APKSigningTagLen>centralDirectory_pos) return true;
-    ZipFilePos_t APKSigningBlockTagPos=centralDirectory_pos-APKSigningTagLen;
+    ZipFilePos_t APKSigningBlockTagPos=(ZipFilePos_t)centralDirectory_pos-APKSigningTagLen;
     TByte buf[APKSigningTagLen];
-    check((long)APKSigningTagLen==self->stream->read(self->stream->streamHandle,
-                                                     APKSigningBlockTagPos,buf,buf+APKSigningTagLen));
+    check((long)APKSigningTagLen==stream->read(stream->streamHandle,
+                                               APKSigningBlockTagPos,buf,buf+APKSigningTagLen));
     if (0!=memcmp(buf,APKSigningTag,APKSigningTagLen)) return true;
     //bottom size
     if (8>APKSigningBlockTagPos) return false; //error
     ZipFilePos_t blockSizeBottomPos=APKSigningBlockTagPos-8;
-    check(8==self->stream->read(self->stream->streamHandle,blockSizeBottomPos,buf,buf+8));
+    check(8==stream->read(stream->streamHandle,blockSizeBottomPos,buf,buf+8));
     hpatch_StreamPos_t blockSize=readUInt64(buf);
     //top
     if (blockSize+8>centralDirectory_pos) return false; //error
-    ZipFilePos_t blockSizeTopPos=centralDirectory_pos-(ZipFilePos_t)blockSize-8;
-    check(8==self->stream->read(self->stream->streamHandle,blockSizeTopPos,buf,buf+8));
+    ZipFilePos_t blockSizeTopPos=(ZipFilePos_t)centralDirectory_pos-(ZipFilePos_t)blockSize-8;
+    check(8==stream->read(stream->streamHandle,blockSizeTopPos,buf,buf+8));
     check(blockSize==readUInt64(buf)); //check top size
     
     *v2sign_pos=blockSizeTopPos;
+    *out_blockSize=blockSize;
     return true;
+}
+
+static inline bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
+                                      ZipFilePos_t* v2sign_pos){
+    hpatch_StreamPos_t blockSize=0;
+    return UnZipper_searchApkV2Sign(self->stream,centralDirectory_pos,v2sign_pos,&blockSize);
 }
 
 static ZipFilePos_t _fileData_offset_read(UnZipper* self,ZipFilePos_t entryOffset){
@@ -183,8 +191,7 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
 //缓存相关信息并规范化数据;
 static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
     assert(self->_endCentralDirectory!=0);
-    writeUInt32_to(self->_endCentralDirectory+16,
-                   (uint32_t)UnZipper_ApkV2SignSize(self));//normalized CentralDirectory的开始位置偏移;
+    writeUInt32_to(self->_endCentralDirectory+16,0);//normalized CentralDirectory的开始位置偏移;
     self->_isFileDataOffsetMatch=isFileDataOffsetMatch;
     bool test_isFileDataOffsetMatch=true;
     
@@ -331,8 +338,12 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
     return true;
 }
 
-bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized){
-    _UnZipper_sreachVCE();
+bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize){
+    ZipFilePos_t endCentralDirectory_pos=0;
+    ZipFilePos_t centralDirectory_pos=(ZipFilePos_t)(self->_vce_size-zipCESize);
+    ZipFilePos_t v2sign_pos=0;
+    check(_UnZipper_searchEndCentralDirectory(self,&endCentralDirectory_pos));
+
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
     self->_isDataNormalized=isDataNormalized;

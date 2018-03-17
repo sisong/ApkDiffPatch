@@ -38,7 +38,9 @@ typedef struct ZipDiffData{
     size_t      newZipFileCount;
     size_t      newZipIsDataNormalized;
     size_t      newZipAlignSize;
-    size_t      isEnableEditApkV2Sign;
+    size_t      newCompressLevel;
+    size_t      isEnableExtraEdit;
+    size_t      newZipCESize;
     size_t      newZipVCESize;
     uint32_t*   samePairList;//[newFileIndex<->oldFileIndex,...]
     size_t      samePairCount;
@@ -46,7 +48,6 @@ typedef struct ZipDiffData{
     size_t      newRefNotDecompressCount;
     uint32_t*   newRefCompressedSizeList;//isCompressed && not in samePairList
     size_t      newRefCompressedSizeCount;
-    size_t      compressLevel;
     size_t      oldZipIsDataNormalized;
     size_t      oldIsFileDataOffsetMatch;
     size_t      oldZipVCESize;
@@ -68,9 +69,9 @@ bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* 
 bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 
-#define  kEditV2Sign     "EditV2Sign"
-#define  kEditV2SignLen  10
-//if (isEnableEditApkV2Sign ON) zip diff out:[head+hdiffzData+EditV2Data+SizeOf(EditV2Data)4Byte+kEditV2Sign]
+#define  kExtraEdit     "ZiPatExtraData"
+#define  kExtraEditLen  14
+//if (isEnableExtraEdit ON) zip diff out:[head+hdiffzData+ExtraData+SizeOf(ExtraData)4Byte+kExtraEdit]
 
 #ifdef __cplusplus
 }
