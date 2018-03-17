@@ -97,7 +97,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     }
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
         zipDiffData.oldRefNotDecompressList,zipDiffData.oldRefNotDecompressCount,
-        zipDiffData.isEnableExtraEdit), PATCH_OLDDATA_ERROR);
+        zipDiffData.isEnableExtraEdit!=0), PATCH_OLDDATA_ERROR);
     
     check(getCompressedDiffInfo(&diffInfo,zipDiffData.hdiffzData),PATCH_HDIFFINFO_ERROR);
     if (strlen(diffInfo.compressType) > 0)
