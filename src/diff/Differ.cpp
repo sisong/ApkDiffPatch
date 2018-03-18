@@ -112,9 +112,11 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     newZip._isDataNormalized=newCompressedDataIsNormalized;
     oldZip._isDataNormalized=getZipCompressedDataIsNormalized(&oldZip,&oldZipNormalized_compressLevel,
                                                               &oldZipNormalized_compressMemLevel);
-    if (UnZipper_isHaveApkV2Sign(&newZip))
-        oldZip._isDataNormalized&=(oldZipNormalized_compressLevel==newZipNormalized_compressLevel)
+    if (UnZipper_isHaveApkV2Sign(&newZip)){
+        oldZip._isDataNormalized &= newCompressedDataIsNormalized
+                                   & (oldZipNormalized_compressLevel==newZipNormalized_compressLevel)
                                    & (oldZipNormalized_compressMemLevel==newZipNormalized_compressMemLevel);
+    }
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip))
         newZip._isDataNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
