@@ -199,6 +199,8 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
     const int fileCount=UnZipper_fileCount(self);
     size_t centralDirectory_size=_centralDirectory_size(self);
     int curOffset=0;
+    memset(self->_dataDescriptors,kDataDescriptor_NO,fileCount);
+    self->_dataDescriptorCount=0;
     for (int i=0; i<fileCount; ++i) {
         TByte* headBuf=buf+curOffset;
         check(kCENTRALHEADERMAGIC==readUInt32(headBuf));
@@ -219,7 +221,20 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch){
         }
         
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
-        writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
+        if ((fileTag&(1<<3))!=0){//have descriptor?
+            writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
+            uint32_t crc=UnZipper_file_crc32(self,i);
+            uint32_t compressedSize=UnZipper_file_compressedSize(self,i);
+            TByte buf[16];
+            check(UnZipper_fileData_read(self,self->_fileDataOffsets[i]+self->_fileCompressedSizes[i],buf,buf+16));
+            if ((readUInt32(buf)==crc)&&(readUInt32(buf+4)==compressedSize))
+                self->_dataDescriptors[i]=kDataDescriptor_12;
+            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+8)==compressedSize))
+                self->_dataDescriptors[i]=kDataDescriptor_16;
+            else
+                check(false);
+            ++self->_dataDescriptorCount;
+        }
         
         int fileNameLen=UnZipper_file_nameLen(self,i);
         int extraFieldLen=readUInt16(headBuf+30);
@@ -266,8 +281,10 @@ static bool _UnZipper_openRead_begin(UnZipper* self){
 static bool _UnZipper_openRead_vce(UnZipper* self,ZipFilePos_t vceSize,int fileCount){
     assert(self->_cache_vce==0);
     self->_vce_size=vceSize;
-    self->_cache_vce=(TByte*)malloc(self->_vce_size+sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2);
-    size_t alignBuf=_hpatch_align_upper((self->_cache_vce+self->_vce_size),sizeof(ZipFilePos_t));
+    self->_cache_vce=(TByte*)malloc(self->_vce_size+1*fileCount
+                                    +sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2);
+    self->_dataDescriptors=self->_cache_vce+self->_vce_size;
+    size_t alignBuf=_hpatch_align_upper((self->_dataDescriptors+fileCount),sizeof(ZipFilePos_t));
     self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
     self->_fileHeaderOffsets=(uint32_t*)(self->_fileDataOffsets+fileCount);
     self->_fileCompressedSizes=(uint32_t*)(self->_fileHeaderOffsets+fileCount);
@@ -369,6 +386,10 @@ ZipFilePos_t UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex){
 
 uint32_t UnZipper_file_crc32(const UnZipper* self,int fileIndex){
     return readUInt32(fileHeaderBuf(self,fileIndex)+16);
+}
+
+TDataDescriptor UnZipper_file_dataDescriptor(const UnZipper* self,int fileIndex){
+    return (TDataDescriptor)self->_dataDescriptors[fileIndex];
 }
 
 ZipFilePos_t UnZipper_fileData_offset(UnZipper* self,int fileIndex){

@@ -160,15 +160,12 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
         ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置?
                                        +UnZipper_file_compressedSize(zip,i-1)) : 0;
         if (entryOffset<lastEndPos) return 0; //顺序有误;
-        if ((entryOffset-lastEndPos>=12)&&(i>0)){//可能上一个file有Data descriptor块;
+        if (i>0){
             //尝试修正lastEndPos;
-            uint32_t crc=UnZipper_file_crc32(zip,i-1);
-            uint32_t compressedSize=UnZipper_file_compressedSize(zip,i-1);
-            TByte buf[16];
-            check(UnZipper_fileData_read(zip,lastEndPos,buf,buf+16));
-            if ((readUInt32(buf)==crc)&&(readUInt32(buf+4)==compressedSize))
+            TDataDescriptor desc=UnZipper_file_dataDescriptor(zip,i-1);
+            if (desc==kDataDescriptor_12)
                 lastEndPos+=12;
-            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+8)==compressedSize))
+            else if (desc==kDataDescriptor_16)
                 lastEndPos+=16;
         }
         ZipFilePos_t skipLen=entryOffset-lastEndPos;

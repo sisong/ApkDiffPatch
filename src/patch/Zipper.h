@@ -36,6 +36,12 @@ extern "C" {
 #endif
 typedef uint32_t ZipFilePos_t;
 
+typedef enum TDataDescriptor{
+    kDataDescriptor_NO =0,
+    kDataDescriptor_12 =1,
+    kDataDescriptor_16 =2
+} TDataDescriptor;
+    
 typedef struct UnZipper{
     hpatch_TStreamInput* stream;
 //private:
@@ -49,6 +55,8 @@ typedef struct UnZipper{
     unsigned char*  _centralDirectory;
     uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
     uint32_t*       _fileCompressedSizes;
+    unsigned char*  _dataDescriptors;
+    int             _dataDescriptorCount;
     ZipFilePos_t*   _fileDataOffsets;
     bool            _isDataNormalized;
     bool            _isFileDataOffsetMatch;
@@ -67,6 +75,8 @@ bool                UnZipper_file_isCompressed(const UnZipper* self,int fileInde
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
 uint32_t            UnZipper_file_crc32(const UnZipper* self,int fileIndex);
+TDataDescriptor     UnZipper_file_dataDescriptor(const UnZipper* self,int fileIndex);
+
 
 ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
