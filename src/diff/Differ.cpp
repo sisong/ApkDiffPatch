@@ -67,7 +67,7 @@ static bool getFileIsEqual(const char* xFileName,const char* yFileName);
 
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             const char* temp_ZipPatchFileName,bool isEnableExtraEdit){
+             const char* temp_ZipPatchFileName){
     const int           myBestMatchScore=5;
     UnZipper            oldZip;
     UnZipper            newZip;
@@ -145,14 +145,13 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     //for (int i=0; i<(int)oldRefList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefList[i])<<"\n";
     //for (int i=0; i<(int)oldRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefNotDecompressList[i])<<"\n";
 
-    check(readZipStreamData(&newZip,newRefList,newRefNotDecompressList,isEnableExtraEdit,newData));
-    check(readZipStreamData(&oldZip,oldRefList,oldRefNotDecompressList,isEnableExtraEdit,oldData));
+    check(readZipStreamData(&newZip,newRefList,newRefNotDecompressList,newData));
+    check(readZipStreamData(&oldZip,oldRefList,oldRefNotDecompressList,oldData));
     check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,myBestMatchScore));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
-    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,
-                               newZipAlignSize,isEnableExtraEdit,
+    check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
                                newZipNormalized_compressLevel,newZipNormalized_compressMemLevel,
                                samePairList,newRefNotDecompressList,newRefCompressedSizeList,
                                oldRefList,oldRefNotDecompressList,hdiffzData,compressPlugin));

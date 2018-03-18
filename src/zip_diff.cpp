@@ -34,30 +34,23 @@
 #include "../HDiffPatch/_clock_for_demo.h"
 
 int main(int argc, const char * argv[]) {
-    if ((argc<4)||(argc>6)){
-        std::cout << "parameter: oldZip newZip outDiffFileName [isEnableExtraEdit(0/1) temp_forTestZipPatchFileName]\n";
+    if ((argc<4)||(argc>5)){
+        std::cout << "parameter: oldZip newZip outDiffFileName [temp_forTestZipPatchFileName]\n";
         return 1;
     }
     int exitCode=0;
     const char* oldZipPath     =argv[1];
     const char* newZipPath     =argv[2];
     const char* outDiffFileName=argv[3];
-    bool isEnableExtraEdit=false;
     std::string temp_ZipPatchFileName=std::string(outDiffFileName)+"_temp_forTestZipPatch.tmp";
     if (argc>=5){
-        const char* strBool=argv[4];
-        isEnableExtraEdit = (strlen(strBool)==1) && ('1'==strBool[0]);
-    }
-    if (argc>=6){
-        temp_ZipPatchFileName=argv[5];
+        temp_ZipPatchFileName=argv[4];
         assert(!temp_ZipPatchFileName.empty());
     }
     
     std::cout<<"oldZip :\"" <<oldZipPath<< "\"\nnewZip :\""<<newZipPath<<"\"\noutDiff:\""<<outDiffFileName<<"\"\n";
-    if (isEnableExtraEdit)
-        std::cout<<"  NOTE: isEnableExtraEdit ON!\n";
     double time0=clock_s();
-    if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,temp_ZipPatchFileName.c_str(),isEnableExtraEdit)){
+    if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,temp_ZipPatchFileName.c_str())){
         std::cout << "ZipDiff error!\n";
         exitCode=1;
     }

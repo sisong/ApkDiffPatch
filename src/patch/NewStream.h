@@ -48,7 +48,7 @@ typedef struct NewStream{
     size_t                  _newReCompressSizeCount;
     hpatch_TStreamOutput    _stream;
     int                     _fileCount;
-    size_t                  _editV2SignSize;
+    size_t                  _extraEditSize;
     
     int                     _curFileIndex;
     hpatch_StreamPos_t      _curWriteToPosEnd;
@@ -62,7 +62,7 @@ typedef struct NewStream{
 void NewStream_init(NewStream* self);
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newDataSize,bool newZipIsDataNormalized,
-                    size_t newZipCESize,size_t newZipVCESize,const hpatch_TStreamInput* editV2Sign,
+                    size_t newZipCESize,const hpatch_TStreamInput* extraEdit,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
                     const uint32_t* reCompressList,size_t reCompressCount);

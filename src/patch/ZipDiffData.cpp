@@ -112,15 +112,13 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipAlignSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newCompressLevel,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newCompressMemLevel,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->isEnableExtraEdit,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipCESize,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->samePairCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newRefNotDecompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newRefCompressedSizeCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldZipIsDataNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldIsFileDataOffsetMatch,size_t);
-        checkUnpackSize(&curBuf,buf+readLen,&self->oldZipVCESize,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->oldZipCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldRefCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldRefNotDecompressCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->oldCrc,uint32_t);
@@ -191,30 +189,24 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         self->_hdiffzData.m_fpos=(hpatch_StreamPos_t)(-1);
         self->hdiffzData=&self->_hdiffzData.base;
     }
-    {//editV2Sign stream
-        if (self->isEnableExtraEdit){
-            //read V2Sign size+tag
-            check(diffData->base.streamSize>=4+kExtraEditLen);
-            unsigned char buf4s[4+kExtraEditLen];
-            check(4+kExtraEditLen==diffData->base.read(diffData->base.streamHandle,
-                        diffData->base.streamSize-4-kExtraEditLen,buf4s,buf4s+4+kExtraEditLen));
-            check(0==memcmp(kExtraEdit,buf4s+4,kExtraEditLen));//check tag
-            uint32_t V2SignSize=readUInt32(buf4s);
-            
-            check(4+kExtraEditLen+self->_hdiffzData.m_offset+hdiffzSize+V2SignSize<=diffData->base.streamSize);
-            hpatch_StreamPos_t editV2SignPos=diffData->base.streamSize-V2SignSize-4-kExtraEditLen;
-            self->_editV2Sign=*diffData;
-            self->_editV2Sign.base.streamHandle=&self->_editV2Sign.base;
-            check(editV2SignPos==(size_t)editV2SignPos);
-            TFileStreamInput_setOffset(&self->_editV2Sign,(size_t)editV2SignPos);
-            self->_editV2Sign.base.streamSize=V2SignSize;
-            self->_editV2Sign.m_fpos=(hpatch_StreamPos_t)(-1);
-            self->editV2Sign=&self->_editV2Sign.base;
-        }else{
-            self->_editV2Sign=*diffData;
-            self->_editV2Sign.base.streamSize=0;
-            self->editV2Sign=&self->_editV2Sign.base;
-        }
+    {//ExtraEdit stream
+        //read size+tag
+        check(diffData->base.streamSize>=4+kExtraEditLen);
+        unsigned char buf4s[4+kExtraEditLen];
+        check(4+kExtraEditLen==diffData->base.read(diffData->base.streamHandle,
+                                                   diffData->base.streamSize-4-kExtraEditLen,buf4s,buf4s+4+kExtraEditLen));
+        check(0==memcmp(kExtraEdit,buf4s+4,kExtraEditLen));//check tag
+        uint32_t extraEditSize=readUInt32(buf4s);
+        
+        check(4+kExtraEditLen+self->_hdiffzData.m_offset+hdiffzSize+extraEditSize<=diffData->base.streamSize);
+        hpatch_StreamPos_t extraEditPos=diffData->base.streamSize-extraEditSize-4-kExtraEditLen;
+        self->_extraEdit=*diffData;
+        self->_extraEdit.base.streamHandle=&self->_extraEdit.base;
+        check(extraEditPos==(size_t)extraEditPos);
+        TFileStreamInput_setOffset(&self->_extraEdit,(size_t)extraEditPos);
+        self->_extraEdit.base.streamSize=extraEditSize;
+        self->_extraEdit.m_fpos=(hpatch_StreamPos_t)(-1);
+        self->extraEdit=&self->_extraEdit.base;
     }
     diffData->m_fpos=(hpatch_StreamPos_t)(-1); //force re seek
     

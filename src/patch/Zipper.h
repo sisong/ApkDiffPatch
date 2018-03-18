@@ -89,6 +89,7 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
 bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
 static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_cache_vce; }
+static inline size_t UnZipper_CESize(const UnZipper* self) { return self->_vce_size-UnZipper_ApkV2SignSize(self); }
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
                               ZipFilePos_t* v2sign_pos,hpatch_StreamPos_t* out_blockSize);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
