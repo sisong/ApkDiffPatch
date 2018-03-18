@@ -125,9 +125,15 @@ bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,i
         *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
         return true;
     }
+    if (_getZipIsCompressedBy(zip,Z_BEST_COMPRESSION,kDefaultZlibCompressMemLevel)){
+        *out_zlibCompressLevel=Z_BEST_COMPRESSION;
+        *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
+        return true;
+    }
     for (int ml=MAX_MEM_LEVEL;ml>=1;--ml){
         for (int cl=Z_BEST_SPEED;cl<=Z_BEST_COMPRESSION;++cl){
-            if ((ml==kDefaultZlibCompressMemLevel)&(cl==kDefaultZlibCompressLevel)) continue;
+            if ((cl==kDefaultZlibCompressLevel)&(ml==kDefaultZlibCompressMemLevel)) continue;
+            if ((cl==Z_BEST_COMPRESSION)&(ml==kDefaultZlibCompressMemLevel)) continue;
             if (_getZipIsCompressedBy(zip,cl,ml)){
                 *out_zlibCompressLevel=cl;
                 *out_zlibCompressMemLevel=ml;

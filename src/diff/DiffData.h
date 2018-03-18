@@ -33,10 +33,15 @@
 #include "../patch/ZipDiffData.h"
 #include "../patch/patch_types.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
+#if MAX_MEM_LEVEL >= 8
+#  define DEF_MEM_LEVEL 8
+#else
+#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#endif
 
-#define  kDefaultZlibCompressLevel  6 //for patch speed;
-#define  kDefaultZlibCompressMemLevel  MAX_MEM_LEVEL
-#define  kDefaultZipAlignSize       8 //for app speed;
+#define  kDefaultZlibCompressLevel      6 //for patch speed;
+#define  kDefaultZlibCompressMemLevel   DEF_MEM_LEVEL
+#define  kDefaultZipAlignSize           8 //for app speed;
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath);

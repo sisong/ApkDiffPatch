@@ -118,8 +118,10 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
                                    & (oldZipNormalized_compressMemLevel==newZipNormalized_compressMemLevel);
     }
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
-    if (UnZipper_isHaveApkV2Sign(&newZip))
+    if (UnZipper_isHaveApkV2Sign(&newZip)){
         newZip._isDataNormalized&=(newZipAlignSize>0);//precondition (+checkZipIsSame() to complete)
+        newZip._isDataNormalized&=(newZip._dataDescriptorCount==0);
+    }
     newZipAlignSize=(newZipAlignSize>0)?newZipAlignSize:kDefaultZipAlignSize;
     byteByByteEqualCheck=UnZipper_isHaveApkV2Sign(&newZip);
     check(checkZipInfo(&oldZip,&newZip));
