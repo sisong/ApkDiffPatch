@@ -99,7 +99,7 @@ static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,
 }
 
 
-static bool _getZipIsCompressedBy(UnZipper* zip,int zlibCompressLevel,int zlibCompressMemLevel){
+bool getZipCompressedDataIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,int zlibCompressMemLevel){
     std::vector<TByte> oldCompressedCode;
     std::vector<TByte> newCompressedCode;
     int fileCount=UnZipper_fileCount(zip);
@@ -120,12 +120,12 @@ static bool _getZipIsCompressedBy(UnZipper* zip,int zlibCompressLevel,int zlibCo
 }
 
 bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,int* out_zlibCompressMemLevel){
-    if (_getZipIsCompressedBy(zip,kDefaultZlibCompressLevel,kDefaultZlibCompressMemLevel)){
+    if (getZipCompressedDataIsNormalizedBy(zip,kDefaultZlibCompressLevel,kDefaultZlibCompressMemLevel)){
         *out_zlibCompressLevel=kDefaultZlibCompressLevel;
         *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
         return true;
     }
-    if (_getZipIsCompressedBy(zip,Z_BEST_COMPRESSION,kDefaultZlibCompressMemLevel)){
+    if (getZipCompressedDataIsNormalizedBy(zip,Z_BEST_COMPRESSION,kDefaultZlibCompressMemLevel)){
         *out_zlibCompressLevel=Z_BEST_COMPRESSION;
         *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
         return true;
@@ -134,7 +134,7 @@ bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,i
         for (int cl=Z_BEST_SPEED;cl<=Z_BEST_COMPRESSION;++cl){
             if ((cl==kDefaultZlibCompressLevel)&(ml==kDefaultZlibCompressMemLevel)) continue;
             if ((cl==Z_BEST_COMPRESSION)&(ml==kDefaultZlibCompressMemLevel)) continue;
-            if (_getZipIsCompressedBy(zip,cl,ml)){
+            if (getZipCompressedDataIsNormalizedBy(zip,cl,ml)){
                 *out_zlibCompressLevel=cl;
                 *out_zlibCompressMemLevel=ml;
                 return true;
