@@ -100,7 +100,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         size_t  headInoPos=0;
         check(_openZipDiffData(diffData,decompressPlugin,&headInoPos));
         //read head info
-        TByte buf[hpatch_kMaxPackedUIntBytes*(16+3)];
+        TByte buf[hpatch_kMaxPackedUIntBytes*(17+3)];
         int readLen=sizeof(buf);
         if (headInoPos+readLen>diffData->base.streamSize)
             readLen=(int)(diffData->base.streamSize-headInoPos);
@@ -111,6 +111,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipIsDataNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipAlignSize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newCompressLevel,size_t);
+        checkUnpackSize(&curBuf,buf+readLen,&self->newCompressMemLevel,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->isEnableExtraEdit,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipCESize,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipVCESize,size_t);

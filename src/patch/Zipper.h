@@ -112,6 +112,7 @@ typedef struct Zipper{
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
     int             _compressLevel;
+    int             _compressMemLevel;
     int             _fileHeaderCount;
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
@@ -123,7 +124,8 @@ typedef struct Zipper{
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize,int compressLevel);
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
+                      int ZipAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
@@ -139,7 +141,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     
 size_t Zipper_compressData_maxCodeSize(size_t dataSize);
 size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
-                           size_t codeSize,int kCompressLevel);
+                           size_t codeSize,int kCompressLevel,int kCompressMemLevel);
 
 #ifdef __cplusplus
 }

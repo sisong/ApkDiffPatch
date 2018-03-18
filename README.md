@@ -1,8 +1,8 @@
 **ApkDiffPatch**
 ================
-Version 0.9.7 beta   
+Version 0.9.8 beta   
 Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support apk v2 sign & Jar sign(apk v1).    
-( not support zip64, and only support Deflate decode; dependent libraries HDiffPatch, zlib, lzma; )   
+( not support zip64, and only support decode Deflated code; dependent libraries HDiffPatch, zlib, lzma. )   
 
 ---
 uses:
@@ -18,7 +18,7 @@ uses:
    **ZipPatch()** can min requires O(1) bytes of memory when using temp disk file.
    
 ---
-*  **Why** need **ApkDiffPatch** after have BsDiff or HDiffPatch**?**
+*  **Why** need **ApkDiffPatch** after have BsDiff or HDiffPatch **?**
 ```
 ApkDiffPatch: v0.9.5beta  BsDiff: v4.3  HDiffPatch: v2.2.6
 =======================================================================================================

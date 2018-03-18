@@ -129,8 +129,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
                          input_ref,zipDiffData.isEnableExtraEdit!=0), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
-    check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,
-                           (int)zipDiffData.newZipAlignSize,(int)zipDiffData.newCompressLevel),PATCH_OPENWRITE_ERROR)
+    check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,(int)zipDiffData.newZipAlignSize,
+                           (int)zipDiffData.newCompressLevel,(int)zipDiffData.newCompressMemLevel),PATCH_OPENWRITE_ERROR)
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsDataNormalized!=0,zipDiffData.newZipCESize,
                          zipDiffData.newZipVCESize,zipDiffData.editV2Sign,

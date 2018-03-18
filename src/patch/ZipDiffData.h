@@ -39,6 +39,7 @@ typedef struct ZipDiffData{
     size_t      newZipIsDataNormalized;
     size_t      newZipAlignSize;
     size_t      newCompressLevel;
+    size_t      newCompressMemLevel;
     size_t      isEnableExtraEdit;
     size_t      newZipCESize;
     size_t      newZipVCESize;

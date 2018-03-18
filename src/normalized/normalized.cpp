@@ -48,7 +48,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     
     check(UnZipper_openRead(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openWrite(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel));
+    check(Zipper_openWrite(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
     
     //sort file
     for (int i=0; i<fileCount; ++i) {
