@@ -194,7 +194,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      int zlibCompressLevel,int zlibCompressMemLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
-                     std::vector<uint32_t>& out_newRefNotDecompressList,
+                     std::vector<uint32_t>& out_newRefListOtherCompressed,
                      std::vector<uint32_t>& out_newRefCompressedSizeList){
     int oldFileCount=UnZipper_fileCount(oldZip);
     typedef std::multimap<uint32_t,int> TMap;
@@ -208,7 +208,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
     for (int i=0; i<newFileCount; ++i) {
         ZipFilePos_t compressedSize=UnZipper_file_compressedSize(newZip,i);
         if (UnZipper_file_isApkV2Compressed(newZip,i)){
-            out_newRefNotDecompressList.push_back(i);
+            out_newRefListOtherCompressed.push_back(i);
             out_newRefCompressedSizeList.push_back(compressedSize);
         }else if ((0==UnZipper_file_uncompressedSize(newZip,i))
                   &&(!UnZipper_file_isCompressed(newZip,i))){ //empty entry
@@ -313,7 +313,7 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
                 packUIntWithTag(headData,(uint32_t)((uint32_t)(backPairOld+1)-curOldValue),1,1);
             backPairOld=curOldValue;
         }
-        pushIncList(headData,data->newRefNotDecompressList,data->newRefNotDecompressCount);
+        pushIncList(headData,data->newRefListOtherCompressed,data->newRefNotDecompressCount);
         for (size_t i=0;i<data->newRefCompressedSizeCount;++i){
             packUInt(headData,(uint32_t)data->newRefCompressedSizeList[i]);
         }
@@ -380,7 +380,7 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
                           size_t newZipAlignSize,size_t compressLevel,size_t compressMemLevel,
                           const std::vector<uint32_t>& samePairList,
-                          const std::vector<uint32_t>& newRefNotDecompressList,
+                          const std::vector<uint32_t>& newRefListOtherCompressed,
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
                           const std::vector<TByte>&    hdiffzData,
@@ -395,8 +395,8 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
     data.newZipCESize=UnZipper_CESize(newZip);
     data.samePairList=(uint32_t*)samePairList.data();
     data.samePairCount=samePairList.size()/2;
-    data.newRefNotDecompressList=(uint32_t*)newRefNotDecompressList.data();
-    data.newRefNotDecompressCount=newRefNotDecompressList.size();
+    data.newRefListOtherCompressed=(uint32_t*)newRefListOtherCompressed.data();
+    data.newRefNotDecompressCount=newRefListOtherCompressed.size();
     data.newRefCompressedSizeList=(uint32_t*)newRefCompressedSizeList.data();
     data.newRefCompressedSizeCount=newRefCompressedSizeList.size();
     data.oldZipIsDataNormalized=(UnZipper_isHaveApkV2Sign(oldZip)&&oldZip->_isDataNormalized)?1:0;

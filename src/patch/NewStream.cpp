@@ -114,7 +114,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         _update_compressedSize(self,self->_curFileIndex,compressedSize);
         
         bool isWriteCompressedData=(self->_curNewRefNotDecompressIndex<self->_newRefNotDecompressCount)
-                &&((int)self->_newRefNotDecompressList[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
+                &&((int)self->_newRefListOtherCompressed[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
         if (isWriteCompressedData)
             ++self->_curNewRefNotDecompressIndex;
         
@@ -138,7 +138,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newDataSize,bool newZipIsDataNormalized,
                     size_t newZipCESize,const hpatch_TStreamInput* extraEdit,
                     const uint32_t* samePairList,size_t samePairCount,
-                    uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
+                    uint32_t* newRefListOtherCompressed,size_t newRefNotDecompressCount,
                     const uint32_t* reCompressList,size_t reCompressCount){
     assert(self->_out_newZip==0);
     self->isFinish=false;
@@ -148,7 +148,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_newZipCESize=newZipCESize;
     self->_samePairList=samePairList;
     self->_samePairCount=samePairCount;
-    self->_newRefNotDecompressList=newRefNotDecompressList;
+    self->_newRefListOtherCompressed=newRefListOtherCompressed;
     self->_newRefNotDecompressCount=newRefNotDecompressCount;
     self->_newReCompressSizeList=reCompressList;
     self->_newReCompressSizeCount=reCompressCount;

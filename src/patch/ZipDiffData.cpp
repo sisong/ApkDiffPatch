@@ -145,8 +145,8 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         check(_uncompress(self->_buf,headDataCompressedSize,self->_buf+memLeft,headDataSize,decompressPlugin));
         
         self->samePairList=(uint32_t*)self->_buf;
-        self->newRefNotDecompressList=self->samePairList+self->samePairCount*2;
-        self->newRefCompressedSizeList=self->newRefNotDecompressList+self->newRefNotDecompressCount;
+        self->newRefListOtherCompressed=self->samePairList+self->samePairCount*2;
+        self->newRefCompressedSizeList=self->newRefListOtherCompressed+self->newRefNotDecompressCount;
         self->oldRefList=self->newRefCompressedSizeList+self->newRefCompressedSizeCount;
         const TByte* curBuf=self->_buf+memLeft;
         const TByte* const bufEnd=self->_buf+memLeft+headDataSize;
@@ -170,7 +170,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
             check(backPairOld==(uint32_t)backPairOld);
             self->samePairList[i*2+1]=(uint32_t)backPairOld;
         }
-        _unpackIncList(self->newRefNotDecompressList,self->newRefNotDecompressCount);
+        _unpackIncList(self->newRefListOtherCompressed,self->newRefNotDecompressCount);
         for (size_t i=0; i<self->newRefCompressedSizeCount; ++i) {
             checkUnpackSize(&curBuf,bufEnd,&self->newRefCompressedSizeList[i],uint32_t);
         }

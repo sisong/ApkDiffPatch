@@ -128,7 +128,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
                          zipDiffData.newZipIsDataNormalized!=0,
                          zipDiffData.newZipCESize,zipDiffData.extraEdit,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
-                         zipDiffData.newRefNotDecompressList,zipDiffData.newRefNotDecompressCount,
+                         zipDiffData.newRefListOtherCompressed,zipDiffData.newRefNotDecompressCount,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWSTREAM_ERROR);
     
     temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);

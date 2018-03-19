@@ -32,7 +32,6 @@
 
 bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
                    const std::vector<uint32_t>& newRefList,
-                   const std::vector<uint32_t>& newRefNotDecompressList,
                    UnZipper* oldZip,std::vector<uint32_t>& out_oldRefList){
     std::vector<uint32_t> oldSameList(samePairList.size()/2);
     for (size_t i=0; i<oldSameList.size(); ++i)
@@ -47,9 +46,6 @@ bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
         while ((iOldSame<oldSameList.size())&&(i==(int)oldSameList[iOldSame])){
             isInSame=true;
             ++iOldSame;
-        }
-        if (UnZipper_file_isApkV2Compressed(oldZip,i)){
-            continue;
         }
         if (UnZipper_file_uncompressedSize(oldZip,i)<=0)
             continue;

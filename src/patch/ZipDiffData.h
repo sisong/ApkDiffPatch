@@ -43,7 +43,7 @@ typedef struct ZipDiffData{
     size_t      newZipCESize;
     uint32_t*   samePairList;//[newFileIndex<->oldFileIndex,...]
     size_t      samePairCount;
-    uint32_t*   newRefNotDecompressList;
+    uint32_t*   newRefListOtherCompressed;
     size_t      newRefNotDecompressCount;
     uint32_t*   newRefCompressedSizeList;//isCompressed && not in samePairList
     size_t      newRefCompressedSizeCount;

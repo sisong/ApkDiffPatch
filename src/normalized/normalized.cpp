@@ -77,8 +77,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
             ++copyCompressedCount;
         }
         printf("\n");
-        
-        check(Zipper_file_append_copy(&zipper,&unzipper,fileIndex,!isCopyCompressed));
+        bool isAlwaysReCompress=!isCopyCompressed;
+        check(Zipper_file_append_copy(&zipper,&unzipper,fileIndex,isAlwaysReCompress));
     }
     printf("\n");
     

@@ -178,13 +178,9 @@ bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
 }
 
 bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
-    bool result=UnZipper_isHaveApkV2Sign(self)
+    return UnZipper_isHaveApkV2Sign(self)
                 && UnZipper_file_isCompressed(self,fileIndex)
                 && UnZipper_file_isApkV1_or_jarSign(self,fileIndex);
-    if (result)
-        return true;
-    else
-        return false;
 }
 
 //缓存相关信息并规范化数据;
