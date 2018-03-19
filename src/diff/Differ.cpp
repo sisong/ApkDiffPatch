@@ -28,6 +28,7 @@
 #include "Differ.h"
 #include <iostream>
 #include <stdio.h>
+#include <algorithm> //sort
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff.h"  //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
@@ -143,6 +144,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     if ((newZip_otherCompressLevel|newZip_otherCompressMemLevel)!=0){
         newRefDecompressList.insert(newRefDecompressList.end(),
                                     newRefOtherCompressedList.begin(),newRefOtherCompressedList.end());
+        std::sort(newRefDecompressList.begin(),newRefDecompressList.end());
     }
     check(getOldRefList(&newZip,samePairList,newRefDecompressList,&oldZip,oldRefList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
