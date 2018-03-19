@@ -41,7 +41,7 @@
 #include "../patch/patch_types.h"
 #define _CompressPlugin_lzma //use lzma for compress out diffData
 #include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
-#include "../../lzma/C/LzmaEnc.h" // http://www.7-zip.org/sdk.html
+#include "../../lzma/C/LzmaEnc.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 

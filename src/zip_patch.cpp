@@ -36,7 +36,11 @@ int main(int argc, const char * argv[]) {
     const char* outNewZipPath=0;
     size_t      maxUncompressMemory=0;
     const char* tempUncompressFileName=0;
-    if (argc==6){
+    if(argc==4){
+        oldZipPath   =argv[1];
+        zipDiffPath  =argv[2];
+        outNewZipPath=argv[3];
+    }else if(argc==6){
         oldZipPath   =argv[1];
         zipDiffPath  =argv[2];
         outNewZipPath=argv[3];
@@ -51,10 +55,6 @@ int main(int argc, const char * argv[]) {
             printf("parameter tempUncompressFileName error!\n");
             return 1;
         }
-    }else if (argc==4){
-        oldZipPath   =argv[1];
-        zipDiffPath  =argv[2];
-        outNewZipPath=argv[3];
     }else{
         printf("parameter: oldZip zipDiffPath outNewZip [maxUncompressMemory tempUncompressFileName]\n");
         return 1;

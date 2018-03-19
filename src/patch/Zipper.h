@@ -42,6 +42,10 @@ typedef enum TDataDescriptor{
     kDataDescriptor_16 =2
 } TDataDescriptor;
     
+// https://en.wikipedia.org/wiki/Zip_(file_format)
+// https://source.android.com/security/apksigning/v2
+// https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
+    
 typedef struct UnZipper{
     hpatch_TStreamInput* stream;
 //private:

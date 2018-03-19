@@ -32,8 +32,8 @@
 #include "patch_types.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
-hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
-hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
+static hdiff_TStreamCompress* compressPlugin  =&zlibStreamCompressPlugin;
+static hpatch_TDecompress*    decompressPlugin=&zlibDecompressPlugin;
 
 #define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
 
@@ -53,7 +53,6 @@ inline static void writeUInt16_to(TByte* out_buf2,uint32_t v){
 
 #define kBufSize                    (64*1024)
 
-//https://en.wikipedia.org/wiki/Zip_(file_format)
 #define kMaxEndGlobalComment        (1<<(2*8)) //2 byte
 #define kMinEndCentralDirectorySize (22)  //struct size
 #define kENDHEADERMAGIC             (0x06054b50)
