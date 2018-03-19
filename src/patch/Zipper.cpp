@@ -644,6 +644,12 @@ long Zipper_file_append_stream::_append_part_output(hpatch_TStreamOutputHandle h
 
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize){
+    return Zipper_file_append_beginWith(self,srcZip,srcFileIndex,dataIsCompressed,dataUncompressedSize,
+                                        dataCompressedSize,self->_compressLevel,self->_compressMemLevel);
+}
+bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
+                                  bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
+                                  int tempCompressLevel,int tempCompressMemLevel){
     if (0==dataCompressedSize){
         check(!dataIsCompressed);
         dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
@@ -678,7 +684,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
         append_state->compressOutStream.streamSize=self->_fileCompressedSizes[curFileIndex];
         append_state->compressOutStream.write=Zipper_file_append_stream::_append_part_output;
         append_state->compressHandle=_zlib_compress_open_by(compressPlugin,&append_state->compressOutStream,
-                                            0,self->_compressLevel,self->_compressMemLevel,self->_codeBuf,kBufSize);
+                                            0,tempCompressLevel,tempCompressMemLevel,self->_codeBuf,kBufSize);
     }else{
         append_state->compressHandle=0; //copy data
     }

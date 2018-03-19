@@ -78,7 +78,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::vector<TByte>  out_diffData;
     std::vector<uint32_t> samePairList;
     std::vector<uint32_t> newRefList;
-    std::vector<uint32_t> newRefListOtherCompressed;
+    std::vector<uint32_t> newRefOtherCompressedList;
     std::vector<uint32_t> newRefCompressedSizeList;
     std::vector<uint32_t> oldRefList;
     bool            result=true;
@@ -87,6 +87,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     size_t          newZipAlignSize=0;
     int             newZipNormalized_compressLevel=kDefaultZlibCompressLevel;
     int             newZipNormalized_compressMemLevel=kDefaultZlibCompressMemLevel;
+    int             newZip_otherCompressLevel=0;
+    int             newZip_otherCompressMemLevel=0;
     bool            newCompressedDataIsNormalized=false;
 #ifdef _CompressPlugin_lzma
     //lzma_compress_level: hdiffpatch default
@@ -112,37 +114,37 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     }
     newZipAlignSize=(newZipAlignSize>0)?newZipAlignSize:kDefaultZipAlignSize;
     if (newZip._isDataNormalized && UnZipper_isHaveApkV2Sign(&newZip)){
-        newCompressedDataIsNormalized=getZipCompressedDataIsNormalized(&newZip,&newZipNormalized_compressLevel,
-                                                                       &newZipNormalized_compressMemLevel);
+        newCompressedDataIsNormalized=getCompressedIsNormalized(&newZip,&newZipNormalized_compressLevel,
+                                                                &newZipNormalized_compressMemLevel);
     }else{
-        newCompressedDataIsNormalized=getZipCompressedDataIsNormalizedBy(&newZip,newZipNormalized_compressLevel,
-                                                                         newZipNormalized_compressMemLevel);
+        newCompressedDataIsNormalized=getCompressedIsNormalizedBy(&newZip,newZipNormalized_compressLevel,
+                                                                  newZipNormalized_compressMemLevel);
     }
     newZip._isDataNormalized&=newCompressedDataIsNormalized;
     byteByByteEqualCheck=UnZipper_isHaveApkV2Sign(&newZip);
     
     if (newCompressedDataIsNormalized && UnZipper_isHaveApkV2Sign(&oldZip))
-        oldZip._isDataNormalized=getZipCompressedDataIsNormalizedBy(&oldZip,newZipNormalized_compressLevel,
-                                                                    newZipNormalized_compressMemLevel);
+        oldZip._isDataNormalized=getCompressedIsNormalizedBy(&oldZip,newZipNormalized_compressLevel,
+                                                             newZipNormalized_compressMemLevel);
     check(checkZipInfo(&oldZip,&newZip));
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
     check(getSamePairList(&newZip,&oldZip,newCompressedDataIsNormalized,
                           newZipNormalized_compressLevel,newZipNormalized_compressMemLevel,
-                          samePairList,newRefList,newRefListOtherCompressed,newRefCompressedSizeList));
+                          samePairList,newRefList,newRefOtherCompressedList,newRefCompressedSizeList));
     check(getOldRefList(&newZip,samePairList,newRefList,&oldZip,oldRefList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
-    std::cout<<"    diff new file count: "<<newRefList.size()+newRefListOtherCompressed.size()<<"\n";
+    std::cout<<"    diff new file count: "<<newRefList.size()+newRefOtherCompressedList.size()<<"\n";
     std::cout<<"     ref old file count: "<<oldRefList.size()<<" ("
         <<UnZipper_fileCount(&oldZip)<<")\n";
     std::cout<<"     ref old decompress: "
         <<OldStream_getDecompressFileCount(&oldZip,oldRefList.data(),oldRefList.size())<<" file ("
         <<OldStream_getDecompressSumSize(&oldZip,oldRefList.data(),oldRefList.size()) <<" byte!)\n";
     //for (int i=0; i<(int)newRefList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefList[i])<<"\n";
-    //for (int i=0; i<(int)newRefListOtherCompressed.size(); ++i) std::cout<<zipFile_name(&newZip,newRefListOtherCompressed[i])<<"\n";
+    //for (int i=0; i<(int)newRefOtherCompressedList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefOtherCompressedList[i])<<"\n";
     //for (int i=0; i<(int)oldRefList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefList[i])<<"\n";
 
-    check(readZipStreamData(&newZip,newRefList,newRefListOtherCompressed,newData));
+    check(readZipStreamData(&newZip,newRefList,newRefOtherCompressedList,newData));
     check(readZipStreamData(&oldZip,oldRefList,std::vector<uint32_t>(),oldData));
     check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,myBestMatchScore));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
@@ -150,7 +152,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     
     check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
                                newZipNormalized_compressLevel,newZipNormalized_compressMemLevel,
-                               samePairList,newRefListOtherCompressed,newRefCompressedSizeList,
+                               newZip_otherCompressLevel,newZip_otherCompressMemLevel,
+                               samePairList,newRefOtherCompressedList,newRefCompressedSizeList,
                                oldRefList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
 

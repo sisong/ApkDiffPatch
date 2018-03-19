@@ -32,7 +32,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 //解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{
     size_t      newZipFileCount;
@@ -40,11 +40,13 @@ typedef struct ZipDiffData{
     size_t      newZipAlignSize;
     size_t      newCompressLevel;
     size_t      newCompressMemLevel;
+    size_t      newOtherCompressLevel;
+    size_t      newOtherCompressMemLevel;
     size_t      newZipCESize;
     uint32_t*   samePairList;//[newFileIndex<->oldFileIndex,...]
     size_t      samePairCount;
-    uint32_t*   newRefListOtherCompressed;
-    size_t      newRefNotDecompressCount;
+    uint32_t*   newRefOtherCompressedList;
+    size_t      newRefOtherCompressedCount;
     uint32_t*   newRefCompressedSizeList;//isCompressed && not in samePairList
     size_t      newRefCompressedSizeCount;
     size_t      oldZipIsDataNormalized;
