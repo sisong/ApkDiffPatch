@@ -65,7 +65,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     //write data
     if (self->_curFileIndex<0){//vce
-        memcpy(self->_newZipVCE._cache_vce+self->_editV2SignSize+writeToPos,data,result);
+        memcpy(self->_newZipVCE._cache_vce+self->_extraEditSize+writeToPos,data,result);
     }else{
         check(self->_curFileIndex<self->_fileCount);
         check(Zipper_file_append_part(self->_out_newZip,data,result));
@@ -113,14 +113,20 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         }
         _update_compressedSize(self,self->_curFileIndex,compressedSize);
         
-        bool isWriteCompressedData=(self->_curNewRefNotDecompressIndex<self->_newRefNotDecompressCount)
-                &&((int)self->_newRefNotDecompressList[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
-        if (isWriteCompressedData)
-            ++self->_curNewRefNotDecompressIndex;
-        
-        check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
-                                       isWriteCompressedData,uncompressedSize,compressedSize));
-        self->_curWriteToPosEnd+=isWriteCompressedData?compressedSize:uncompressedSize;
+        bool isWriteOtherCompressedData=(self->_curNewOtherCompressIndex<self->_newRefOtherCompressedCount)
+                &&((int)self->_newRefOtherCompressedList[self->_curNewOtherCompressIndex]==self->_curFileIndex);
+        if (isWriteOtherCompressedData)
+            ++self->_curNewOtherCompressIndex;
+        if (isWriteOtherCompressedData && self->_newOtherCompressIsValid){
+            check(Zipper_file_append_beginWith(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
+                                               false,uncompressedSize,compressedSize,
+                                               self->_newOtherCompressLevel,self->_newOtherCompressMemLevel));
+            self->_curWriteToPosEnd+=uncompressedSize;
+        }else{
+            check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
+                                           isWriteOtherCompressedData,uncompressedSize,compressedSize));
+            self->_curWriteToPosEnd+=isWriteOtherCompressedData?compressedSize:uncompressedSize;
+        }
         return result;
     }
     
@@ -136,9 +142,10 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
 
 bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newDataSize,bool newZipIsDataNormalized,
-                    size_t newZipCESize,size_t newZipVCESize,const hpatch_TStreamInput* editV2Sign,
+                    size_t newZipCESize,const hpatch_TStreamInput* extraEdit,
                     const uint32_t* samePairList,size_t samePairCount,
-                    uint32_t* newRefNotDecompressList,size_t newRefNotDecompressCount,
+                    uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
+                    int newOtherCompressLevel,int newOtherCompressMemLevel,
                     const uint32_t* reCompressList,size_t reCompressCount){
     assert(self->_out_newZip==0);
     self->isFinish=false;
@@ -148,8 +155,11 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_newZipCESize=newZipCESize;
     self->_samePairList=samePairList;
     self->_samePairCount=samePairCount;
-    self->_newRefNotDecompressList=newRefNotDecompressList;
-    self->_newRefNotDecompressCount=newRefNotDecompressCount;
+    self->_newRefOtherCompressedList=newRefOtherCompressedList;
+    self->_newRefOtherCompressedCount=newRefOtherCompressedCount;
+    self->_newOtherCompressIsValid=(newOtherCompressLevel|newOtherCompressMemLevel)!=0;
+    self->_newOtherCompressLevel=newOtherCompressLevel;
+    self->_newOtherCompressMemLevel=newOtherCompressMemLevel;
     self->_newReCompressSizeList=reCompressList;
     self->_newReCompressSizeCount=reCompressCount;
     self->_fileCount=out_newZip->_fileEntryMaxCount;
@@ -159,17 +169,17 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_stream.write=_NewStream_write;
     self->stream=&self->_stream;
     
-    self->_editV2SignSize=(size_t)editV2Sign->streamSize;
-    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipVCESize+self->_editV2SignSize),self->_fileCount));
-    if (self->_editV2SignSize>0){
-        check((long)self->_editV2SignSize==editV2Sign->read(editV2Sign->streamHandle,0,self->_newZipVCE._cache_vce,
-                                                      self->_newZipVCE._cache_vce+self->_editV2SignSize));
+    self->_extraEditSize=(size_t)extraEdit->streamSize;
+    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
+    if (self->_extraEditSize>0){
+        check((long)self->_extraEditSize==extraEdit->read(extraEdit->streamHandle,0,self->_newZipVCE._cache_vce,
+                                                      self->_newZipVCE._cache_vce+self->_extraEditSize));
     }
     
     self->_curFileIndex=-1;
-    self->_curWriteToPosEnd=newZipVCESize;
+    self->_curWriteToPosEnd=newZipCESize;
     self->_curSamePairIndex=0;
-    self->_curNewRefNotDecompressIndex=0;
+    self->_curNewOtherCompressIndex=0;
     self->_curNewReCompressSizeIndex=0;
     self->_isAlwaysReCompress=false;
     return true;
@@ -179,7 +189,7 @@ static bool _file_entry_end(NewStream* self){
     check(!self->isFinish);
     check(self->_curFileIndex==self->_fileCount);
     check(self->_curSamePairIndex==self->_samePairCount);
-    check(self->_curNewRefNotDecompressIndex==self->_newRefNotDecompressCount);
+    check(self->_curNewOtherCompressIndex==self->_newRefOtherCompressedCount);
     check(self->_curNewReCompressSizeIndex==self->_newReCompressSizeCount);
     
     if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){

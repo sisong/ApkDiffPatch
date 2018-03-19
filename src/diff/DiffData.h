@@ -31,14 +31,24 @@
 #include <string>
 #include "../patch/Zipper.h"
 #include "../patch/ZipDiffData.h"
+#include "../patch/patch_types.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
+#if MAX_MEM_LEVEL >= 8
+#  define DEF_MEM_LEVEL 8
+#else
+#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#endif
 
-#define  kDefaultZlibCompressLevel  6 //for patch speed;
-#define  kDefaultZipAlignSize       8 //for app speed;
+#define  kDefaultZlibCompressLevel      6 //for patch speed;
+#define  kDefaultZlibCompressMemLevel   DEF_MEM_LEVEL
+#define  kDefaultZipAlignSize           8 //for app speed;
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath);
-bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel); //只检查压缩数据是否标准化;
+bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
+                                      int* out_zlibCompressMemLevel,bool testApkV2Compressed=false); //只检查压缩数据是否标准化;
+bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,
+                                      int zlibCompressMemLevel,bool testApkV2Compressed=false); //只检查压缩数据是否标准化;
 size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示未对齐;
 
 static inline std::string zipFile_name(UnZipper* self,int fileIndex){
@@ -48,23 +58,24 @@ static inline std::string zipFile_name(UnZipper* self,int fileIndex){
 }
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
-                     bool newCompressedDataIsNormalized,int zlibCompressLevel,
+                     bool newCompressedDataIsNormalized,
+                     int zlibCompressLevel,int zlibCompressMemLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
-                     std::vector<uint32_t>& out_newRefNotDecompressList,
+                     std::vector<uint32_t>& out_newRefOtherCompressedList,
                      std::vector<uint32_t>& out_newRefCompressedSizeList);
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
-                       const std::vector<uint32_t>& refNotDecompressList,bool isEnableExtraEdit,
+                       const std::vector<uint32_t>& refNotDecompressList,
                        std::vector<unsigned char>& out_data);
 
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
-                          size_t newZipAlignSize,bool isEnableExtraEdit,size_t compressLevel,
+                          size_t newZipAlignSize,size_t compressLevel,size_t compressMemLevel,
+                          size_t otherCompressLevel,size_t otherCompressMemLevel,
                           const std::vector<uint32_t>& samePairList,
-                          const std::vector<uint32_t>& newRefNotDecompressList,
+                          const std::vector<uint32_t>& newRefOtherCompressedList,
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
-                          const std::vector<uint32_t>& oldRefNotDecompressList,
                           const std::vector<TByte>&    hdiffzData,
                           hdiff_TCompress*             compressPlugin);
 

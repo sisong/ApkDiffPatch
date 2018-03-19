@@ -32,7 +32,8 @@
 #include "patch/ZipDiffData.h"
 #include "diff/DiffData.h"
 
-// ZiPatExtraDemo: 演示在可修改的补丁包(ZipDiff by isEnableExtraEdit==true)中插入自己的数据,并支持ApkV2Sign;
+// ZiPatExtraDemo: insert your private data to ZiPatFile(ZipDiff result), support ApkV2Sign ;
+//   data will be write into NewZipFile(front of Central directory) when ZipPatch;
 
 static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
                        const TByte* appendData,size_t dataLen);
@@ -40,17 +41,17 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
 int main(int argc, const char * argv[]) {
     const char* srcZiPatPath=0;
     const char* outZiPatPath=0;
-    if (argc!=3){
-        printf("parameter: ZipDiffResult_ZiPatFileName  outDemo_ZiPatFileName \n");
+    if (argc!=4){
+        printf("parameter: ZipDiffResult_ZiPatFileName  outDemo_ZiPatFileName appendData\n");
         return 1;
     }
     srcZiPatPath =argv[1];
     outZiPatPath =argv[2];
-    printf("src ZiPat:\"%s\"\n",srcZiPatPath);
-    printf("out ZiPat:\"%s\"\n",outZiPatPath);
-    
-    const char* appendDemoData="!!!test temp extra data!!!"; //modify this for your require
-    if (!(addToExtra(srcZiPatPath,outZiPatPath,(const TByte*)appendDemoData,strlen(appendDemoData)))){
+    const char* appendData=argv[3];//NOTE: modify this for your require
+    printf(" src ZiPat :\"%s\"\n",srcZiPatPath);
+    printf(" out ZiPat :\"%s\"\n",outZiPatPath);
+    printf("test append:\"%s\"\n",appendData);
+    if (!(addToExtra(srcZiPatPath,outZiPatPath,(const TByte*)appendData,strlen(appendData)))){
         return 1;
     }
     return 0;
@@ -85,7 +86,7 @@ inline static void writeUInt64_to(unsigned char* out_buf8,hpatch_StreamPos_t v){
     writeUInt32_to(out_buf8+4,(uint32_t)(v>>32));
 }
 
-#define isEnableExtraEdit_ON(input) (0==memcmp(kExtraEdit,input,kExtraEditLen))
+#define isExtraEdit(input) (0==memcmp(kExtraEdit,input,kExtraEditLen))
 
 static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
                        const TByte* appendData,size_t dataLen){
@@ -116,7 +117,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
         const unsigned char * srcZiPatTag=buf4s+4;
         check(4+kExtraEditLen==zipat.base.read(zipat.base.streamHandle,
                                                zipat.base.streamSize-4-kExtraEditLen,buf4s,buf4s+4+kExtraEditLen));
-        check(isEnableExtraEdit_ON(srcZiPatTag));//check tag
+        check(isExtraEdit(srcZiPatTag));//check tag
         oldExtraSize=readUInt32(buf4s);
         
         check(4+kExtraEditLen+oldExtraSize<zipat.base.streamSize);
@@ -135,7 +136,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
         if (isV2SignExtra) check(8+oldV2BlockSize==oldExtraSize);
     }
     if (!isV2SignExtra){//insert data
-        //insert  example
+        //insert example
         check(dataLen==output_file.base.write(output_file.base.streamHandle,editExtraPos,appendData,appendData+dataLen));
         //old Extra
         check(stream_copy(&output_file.base,editExtraPos+dataLen,&zipat.base,editExtraPos,oldExtraSize,buf,bufSize));
@@ -149,7 +150,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
         //copy Apk V2 Sign Block data
         check(stream_copy(&output_file.base,writePos,&zipat.base,editExtraPos+8,oldV2BlockDataSize,buf,bufSize));
         writePos+=oldV2BlockDataSize;
-        //insert
+        //insert example   NOTE: You may have your own method of insert
         check(dataLen==output_file.base.write(output_file.base.streamHandle,writePos,appendData,appendData+dataLen));
         writePos+=dataLen;
         writeUInt64_to(buf,oldV2BlockSize+dataLen);

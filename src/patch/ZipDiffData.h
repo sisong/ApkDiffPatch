@@ -32,36 +32,36 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 //解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{
+    size_t      PatchModel;
     size_t      newZipFileCount;
     size_t      newZipIsDataNormalized;
     size_t      newZipAlignSize;
     size_t      newCompressLevel;
-    size_t      isEnableExtraEdit;
+    size_t      newCompressMemLevel;
+    size_t      newOtherCompressLevel;
+    size_t      newOtherCompressMemLevel;
     size_t      newZipCESize;
-    size_t      newZipVCESize;
     uint32_t*   samePairList;//[newFileIndex<->oldFileIndex,...]
     size_t      samePairCount;
-    uint32_t*   newRefNotDecompressList;
-    size_t      newRefNotDecompressCount;
+    uint32_t*   newRefOtherCompressedList;
+    size_t      newRefOtherCompressedCount;
     uint32_t*   newRefCompressedSizeList;//isCompressed && not in samePairList
     size_t      newRefCompressedSizeCount;
     size_t      oldZipIsDataNormalized;
     size_t      oldIsFileDataOffsetMatch;
-    size_t      oldZipVCESize;
+    size_t      oldZipCESize;
     uint32_t*   oldRefList;
     size_t      oldRefCount;
-    uint32_t*   oldRefNotDecompressList;
-    size_t      oldRefNotDecompressCount;
     uint32_t    oldCrc;
     const hpatch_TStreamInput* hdiffzData;
-    const hpatch_TStreamInput* editV2Sign;
+    const hpatch_TStreamInput* extraEdit;
 //private:
     TByte*              _buf;
     TFileStreamInput    _hdiffzData;
-    TFileStreamInput    _editV2Sign;
+    TFileStreamInput    _extraEdit;
 } ZipDiffData;
 
 void ZipDiffData_init(ZipDiffData* self);
@@ -69,9 +69,9 @@ bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* 
 bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 
-#define  kExtraEdit     "ZiPatExtraData"
-#define  kExtraEditLen  14
-//if (isEnableExtraEdit ON) zip diff out:[head+hdiffzData+ExtraData+SizeOf(ExtraData)4Byte+kExtraEdit]
+#define  kExtraEdit     "ZiPat1&Extra"
+#define  kExtraEditLen  12
+//zip diff out:[head+hdiffzData+ ExtraData +SizeOf(ExtraData)4Byte+kExtraEdit]
 
 #ifdef __cplusplus
 }

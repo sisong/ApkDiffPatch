@@ -32,8 +32,6 @@
 
 bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
                    const std::vector<uint32_t>& newRefList,
-                   const std::vector<uint32_t>& newRefNotDecompressList,
-                   UnZipper* oldZip,std::vector<uint32_t>& out_oldRefList,
-                   std::vector<uint32_t>& out_oldRefNotDecompressList);
+                   UnZipper* oldZip,std::vector<uint32_t>& out_oldRefList);
 
 #endif //ZipDiff_OldRef_h

@@ -83,49 +83,64 @@ clear:
 }
 
 static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,
-                                        std::vector<TByte>& out_compressedCode,int zlibCompressLevel){
+                                        std::vector<TByte>& out_compressedCode,
+                                        int zlibCompressLevel,int zlibCompressMemLevel){
     size_t selfFileSize=UnZipper_file_uncompressedSize(selfZip,selfIndex);
     size_t maxCodeSize=Zipper_compressData_maxCodeSize(selfFileSize);
     std::vector<TByte>& buf(out_compressedCode);
-    buf.resize(selfFileSize+maxCodeSize);
+    buf.resize(maxCodeSize+selfFileSize);
     hpatch_TStreamOutput stream;
-    mem_as_hStreamOutput(&stream,buf.data(),buf.data()+selfFileSize);
+    mem_as_hStreamOutput(&stream,buf.data()+maxCodeSize,buf.data()+maxCodeSize+selfFileSize);
     check(UnZipper_fileData_decompressTo(selfZip,selfIndex,&stream));
-    size_t compressedSize=Zipper_compressData(buf.data(),selfFileSize,buf.data()+selfFileSize,
-                                              maxCodeSize,zlibCompressLevel);
+    size_t compressedSize=Zipper_compressData(buf.data()+maxCodeSize,selfFileSize,buf.data(),
+                                              maxCodeSize,zlibCompressLevel,zlibCompressMemLevel);
     buf.resize(compressedSize);
     return compressedSize>0;
 }
 
 
-static bool _getZipIsCompressedBy(UnZipper* zip,int zlibCompressLevel){
+bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,int zlibCompressMemLevel,bool testApkV2Compressed){
     std::vector<TByte> oldCompressedCode;
     std::vector<TByte> newCompressedCode;
     int fileCount=UnZipper_fileCount(zip);
     for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isCompressed(zip,i)){
-            if (UnZipper_file_isApkV2Compressed(zip,i)) continue;
-            size_t compressedSize=UnZipper_file_compressedSize(zip,i);
-            check(getNormalizedCompressedCode(zip,i,newCompressedCode,zlibCompressLevel));
-            if (compressedSize!=newCompressedCode.size()) return false;
-            
-            ZipFilePos_t pos=UnZipper_fileData_offset(zip,i);
-            oldCompressedCode.resize(compressedSize);
-            check(UnZipper_fileData_read(zip,pos,oldCompressedCode.data(),oldCompressedCode.data()+compressedSize));
-            if (0==memcmp(newCompressedCode.data(),oldCompressedCode.data(),compressedSize))
-                return false;
-        }
+        if (!UnZipper_file_isCompressed(zip,i)) continue;
+        if (testApkV2Compressed ^ UnZipper_file_isApkV2Compressed(zip,i)) continue;
+        check(getNormalizedCompressedCode(zip,i,newCompressedCode,zlibCompressLevel,zlibCompressMemLevel));
+        size_t compressedSize=UnZipper_file_compressedSize(zip,i);
+        if (compressedSize!=newCompressedCode.size()) return false;
+        
+        ZipFilePos_t pos=UnZipper_fileData_offset(zip,i);
+        oldCompressedCode.resize(compressedSize);
+        check(UnZipper_fileData_read(zip,pos,oldCompressedCode.data(),oldCompressedCode.data()+compressedSize));
+        if (0!=memcmp(newCompressedCode.data(),oldCompressedCode.data(),compressedSize))
+            return false;
     }
     return true;
 }
 
-bool getZipCompressedDataIsNormalized(UnZipper* zip,int* out_zlibCompressLevel){
-    if (_getZipIsCompressedBy(zip,kDefaultZlibCompressLevel))
-        { *out_zlibCompressLevel=kDefaultZlibCompressLevel; return true; }
-    for (int i=Z_BEST_SPEED;i<=Z_BEST_COMPRESSION;++i){
-        if (i==kDefaultZlibCompressLevel) continue;
-        if (_getZipIsCompressedBy(zip,i))
-            { *out_zlibCompressLevel=i; return true; }
+bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
+                               int* out_zlibCompressMemLevel,bool testApkV2Compressed){
+    if (getCompressedIsNormalizedBy(zip,kDefaultZlibCompressLevel,kDefaultZlibCompressMemLevel,testApkV2Compressed)){
+        *out_zlibCompressLevel=kDefaultZlibCompressLevel;
+        *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
+        return true;
+    }
+    if (getCompressedIsNormalizedBy(zip,Z_BEST_COMPRESSION,kDefaultZlibCompressMemLevel,testApkV2Compressed)){
+        *out_zlibCompressLevel=Z_BEST_COMPRESSION;
+        *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
+        return true;
+    }
+    for (int ml=MAX_MEM_LEVEL;ml>=1;--ml){
+        for (int cl=Z_BEST_SPEED;cl<=Z_BEST_COMPRESSION;++cl){
+            if ((cl==kDefaultZlibCompressLevel)&(ml==kDefaultZlibCompressMemLevel)) continue;
+            if ((cl==Z_BEST_COMPRESSION)&(ml==kDefaultZlibCompressMemLevel)) continue;
+            if (getCompressedIsNormalizedBy(zip,cl,ml,testApkV2Compressed)){
+                *out_zlibCompressLevel=cl;
+                *out_zlibCompressMemLevel=ml;
+                return true;
+            }
+        }
     }
     return false;
 }
@@ -152,15 +167,12 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
         ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置?
                                        +UnZipper_file_compressedSize(zip,i-1)) : 0;
         if (entryOffset<lastEndPos) return 0; //顺序有误;
-        if ((entryOffset-lastEndPos>=12)&&(i>0)){//可能上一个file有Data descriptor块;
+        if (i>0){
             //尝试修正lastEndPos;
-            uint32_t crc=UnZipper_file_crc32(zip,i-1);
-            uint32_t compressedSize=UnZipper_file_compressedSize(zip,i-1);
-            TByte buf[16];
-            check(UnZipper_fileData_read(zip,lastEndPos,buf,buf+16));
-            if ((readUInt32(buf)==crc)&&(readUInt32(buf+4)==compressedSize))
+            TDataDescriptor desc=UnZipper_file_dataDescriptor(zip,i-1);
+            if (desc==kDataDescriptor_12)
                 lastEndPos+=12;
-            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+8)==compressedSize))
+            else if (desc==kDataDescriptor_16)
                 lastEndPos+=16;
         }
         ZipFilePos_t skipLen=entryOffset-lastEndPos;
@@ -179,10 +191,11 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
 }
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
-                     bool newCompressedDataIsNormalized,int zlibCompressLevel,
+                     bool newCompressedDataIsNormalized,
+                     int zlibCompressLevel,int zlibCompressMemLevel,
                      std::vector<uint32_t>& out_samePairList,
                      std::vector<uint32_t>& out_newRefList,
-                     std::vector<uint32_t>& out_newRefNotDecompressList,
+                     std::vector<uint32_t>& out_newRefOtherCompressedList,
                      std::vector<uint32_t>& out_newRefCompressedSizeList){
     int oldFileCount=UnZipper_fileCount(oldZip);
     typedef std::multimap<uint32_t,int> TMap;
@@ -196,7 +209,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
     for (int i=0; i<newFileCount; ++i) {
         ZipFilePos_t compressedSize=UnZipper_file_compressedSize(newZip,i);
         if (UnZipper_file_isApkV2Compressed(newZip,i)){
-            out_newRefNotDecompressList.push_back(i);
+            out_newRefOtherCompressedList.push_back(i);
             out_newRefCompressedSizeList.push_back(compressedSize);
         }else if ((0==UnZipper_file_uncompressedSize(newZip,i))
                   &&(!UnZipper_file_isCompressed(newZip,i))){ //empty entry
@@ -231,7 +244,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                         out_newRefCompressedSizeList.push_back(compressedSize);
                     }else{
                         std::vector<TByte> code;
-                        check(getNormalizedCompressedCode(newZip,i,code,zlibCompressLevel));
+                        check(getNormalizedCompressedCode(newZip,i,code,zlibCompressLevel,zlibCompressMemLevel));
                         out_newRefCompressedSizeList.push_back((uint32_t)code.size());
                     }
                 }
@@ -248,7 +261,7 @@ struct t_auto_OldStream {
 };
 
 bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
-                       const std::vector<uint32_t>& refNotDecompressList,bool isEnableExtraEdit,
+                       const std::vector<uint32_t>& refNotDecompressList,
                        std::vector<unsigned char>& out_data){
     size_t outSize=0;
     OldStream stream;
@@ -263,7 +276,7 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
     mem_as_hStreamInput(&in_decompressStream,decompressData.data(),decompressData.data()+decompressSumSize);
     check(OldStream_getDecompressData(zip,refList.data(),refList.size(),&out_decompressStream));
     check(OldStream_open(&stream,zip,refList.data(),refList.size(),refNotDecompressList.data(),
-                         refNotDecompressList.size(),&in_decompressStream,isEnableExtraEdit));
+                         refNotDecompressList.size(),&in_decompressStream));
     
     outSize=(size_t)stream.stream->streamSize;
     assert(outSize==stream.stream->streamSize);
@@ -301,12 +314,11 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
                 packUIntWithTag(headData,(uint32_t)((uint32_t)(backPairOld+1)-curOldValue),1,1);
             backPairOld=curOldValue;
         }
-        pushIncList(headData,data->newRefNotDecompressList,data->newRefNotDecompressCount);
+        pushIncList(headData,data->newRefOtherCompressedList,data->newRefOtherCompressedCount);
         for (size_t i=0;i<data->newRefCompressedSizeCount;++i){
             packUInt(headData,(uint32_t)data->newRefCompressedSizeList[i]);
         }
         pushIncList(headData,data->oldRefList,data->oldRefCount);
-        pushIncList(headData,data->oldRefNotDecompressList,data->oldRefNotDecompressCount);
     }
     std::vector<TByte> headCode;
     {
@@ -332,21 +344,22 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
         pushBack(out_data,(const TByte*)compressType,(const TByte*)compressType+compressTypeLen+1); //'\0'
     }
     //head info
+    packUInt(out_data,data->PatchModel);
     packUInt(out_data,data->newZipFileCount);
     packUInt(out_data,data->newZipIsDataNormalized);
     packUInt(out_data,data->newZipAlignSize);
     packUInt(out_data,data->newCompressLevel);
-    packUInt(out_data,data->isEnableExtraEdit);
+    packUInt(out_data,data->newCompressMemLevel);
+    packUInt(out_data,data->newOtherCompressLevel);
+    packUInt(out_data,data->newOtherCompressMemLevel);
     packUInt(out_data,data->newZipCESize);
-    packUInt(out_data,data->newZipVCESize);
     packUInt(out_data,data->samePairCount);
-    packUInt(out_data,data->newRefNotDecompressCount);
+    packUInt(out_data,data->newRefOtherCompressedCount);
     packUInt(out_data,data->newRefCompressedSizeCount);
     packUInt(out_data,data->oldZipIsDataNormalized);
     packUInt(out_data,data->oldIsFileDataOffsetMatch);
-    packUInt(out_data,data->oldZipVCESize);
+    packUInt(out_data,data->oldZipCESize);
     packUInt(out_data,data->oldRefCount);
-    packUInt(out_data,data->oldRefNotDecompressCount);
     packUInt(out_data,data->oldCrc);
     packUInt(out_data,headData.size());
     packUInt(out_data,headCode.size());
@@ -358,7 +371,7 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     headCode.clear();
     pushBack(out_data,hdiffzData);
     
-    if (data->isEnableExtraEdit){
+    {//ExtraEdit
         pushBack(out_data,newZip->_cache_vce,newZip->_centralDirectory);
         TByte buf4[4];
         writeUInt32_to(buf4,(uint32_t)UnZipper_ApkV2SignSize(newZip));
@@ -369,38 +382,36 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
 }
 
 bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZipper* oldZip,
-                          size_t newZipAlignSize,bool isEnableExtraEdit,size_t compressLevel,
+                          size_t newZipAlignSize,size_t compressLevel,size_t compressMemLevel,
+                          size_t otherCompressLevel,size_t otherCompressMemLevel,
                           const std::vector<uint32_t>& samePairList,
-                          const std::vector<uint32_t>& newRefNotDecompressList,
+                          const std::vector<uint32_t>& newRefOtherCompressedList,
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
-                          const std::vector<uint32_t>& oldRefNotDecompressList,
                           const std::vector<TByte>&    hdiffzData,
                           hdiff_TCompress* compressPlugin){
     ZipDiffData  data;
     memset(&data,0,sizeof(ZipDiffData));
+    data.PatchModel=0; //now must 0
     data.newZipFileCount=UnZipper_fileCount(newZip);
     data.newZipIsDataNormalized=newZip->_isDataNormalized?1:0;
     data.newZipAlignSize=newZipAlignSize;
     data.newCompressLevel=compressLevel;
-    data.isEnableExtraEdit=isEnableExtraEdit?1:0;
-    data.newZipVCESize=(!isEnableExtraEdit) ? newZip->_vce_size :
-                        (newZip->_vce_size - UnZipper_ApkV2SignSize(newZip));
+    data.newCompressMemLevel=compressMemLevel;
+    data.newOtherCompressLevel=otherCompressLevel;
+    data.newOtherCompressMemLevel=otherCompressMemLevel;
+    data.newZipCESize=UnZipper_CESize(newZip);
     data.samePairList=(uint32_t*)samePairList.data();
     data.samePairCount=samePairList.size()/2;
-    data.newRefNotDecompressList=(uint32_t*)newRefNotDecompressList.data();
-    data.newRefNotDecompressCount=newRefNotDecompressList.size();
+    data.newRefOtherCompressedList=(uint32_t*)newRefOtherCompressedList.data();
+    data.newRefOtherCompressedCount=newRefOtherCompressedList.size();
     data.newRefCompressedSizeList=(uint32_t*)newRefCompressedSizeList.data();
     data.newRefCompressedSizeCount=newRefCompressedSizeList.size();
     data.oldZipIsDataNormalized=(UnZipper_isHaveApkV2Sign(oldZip)&&oldZip->_isDataNormalized)?1:0;
     data.oldIsFileDataOffsetMatch=(UnZipper_isHaveApkV2Sign(oldZip)&&oldZip->_isFileDataOffsetMatch)?1:0;
-    data.newZipCESize=(oldZip->_vce_size - UnZipper_ApkV2SignSize(oldZip));
-    data.oldZipVCESize=(!isEnableExtraEdit) ? oldZip->_vce_size : data.newZipCESize;
+    data.oldZipCESize=UnZipper_CESize(oldZip);
     data.oldRefList=(uint32_t*)oldRefList.data();
     data.oldRefCount=oldRefList.size();
-    data.oldRefNotDecompressList=(uint32_t*)oldRefNotDecompressList.data();
-    data.oldRefNotDecompressCount=oldRefNotDecompressList.size();
-    data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size(),
-        oldRefNotDecompressList.data(),oldRefNotDecompressList.size(),isEnableExtraEdit);
+    data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size());
     return _serializeZipDiffData(out_data,&data,hdiffzData,compressPlugin,newZip);
 }

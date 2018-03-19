@@ -36,6 +36,12 @@ extern "C" {
 #endif
 typedef uint32_t ZipFilePos_t;
 
+typedef enum TDataDescriptor{
+    kDataDescriptor_NO =0,
+    kDataDescriptor_12 =1,
+    kDataDescriptor_16 =2
+} TDataDescriptor;
+    
 typedef struct UnZipper{
     hpatch_TStreamInput* stream;
 //private:
@@ -49,6 +55,8 @@ typedef struct UnZipper{
     unsigned char*  _centralDirectory;
     uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
     uint32_t*       _fileCompressedSizes;
+    unsigned char*  _dataDescriptors;
+    int             _dataDescriptorCount;
     ZipFilePos_t*   _fileDataOffsets;
     bool            _isDataNormalized;
     bool            _isFileDataOffsetMatch;
@@ -67,6 +75,8 @@ bool                UnZipper_file_isCompressed(const UnZipper* self,int fileInde
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
 uint32_t            UnZipper_file_crc32(const UnZipper* self,int fileIndex);
+TDataDescriptor     UnZipper_file_dataDescriptor(const UnZipper* self,int fileIndex);
+
 
 ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
@@ -79,6 +89,7 @@ bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
 bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
 static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_cache_vce; }
+static inline size_t UnZipper_CESize(const UnZipper* self) { return self->_vce_size-UnZipper_ApkV2SignSize(self); }
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
                               ZipFilePos_t* v2sign_pos,hpatch_StreamPos_t* out_blockSize);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
@@ -112,6 +123,7 @@ typedef struct Zipper{
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
     int             _compressLevel;
+    int             _compressMemLevel;
     int             _fileHeaderCount;
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
@@ -123,12 +135,17 @@ typedef struct Zipper{
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,int ZipAlignSize,int compressLevel);
+bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
+                      int ZipAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
+bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
+                                  bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
+                                  int curFileCompressLevel,int curFileCompressMemLevel);
+
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
@@ -139,7 +156,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     
 size_t Zipper_compressData_maxCodeSize(size_t dataSize);
 size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
-                           size_t codeSize,int kCompressLevel);
+                           size_t codeSize,int kCompressLevel,int kCompressMemLevel);
 
 #ifdef __cplusplus
 }
