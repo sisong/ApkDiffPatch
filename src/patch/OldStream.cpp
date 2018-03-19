@@ -63,19 +63,12 @@ bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t
     return true;
 }
 
-uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                             const uint32_t* refNotDecompressList,size_t refNotDecompressCount){
+uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
     unsigned char buf4[4];
     uLong crc=0;
     crc=crc32(crc,oldZip->_centralDirectory,(uInt)UnZipper_CESize(oldZip));
     for (size_t i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
-        uint32_t fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
-        writeUInt32_to(buf4,fileCrc);
-        crc=crc32(crc,buf4,4);
-    }
-    for (size_t i=0;i<refNotDecompressCount;++i){
-        int fileIndex=(int)refNotDecompressList[i];
         uint32_t fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
         writeUInt32_to(buf4,fileCrc);
         crc=crc32(crc,buf4,4);

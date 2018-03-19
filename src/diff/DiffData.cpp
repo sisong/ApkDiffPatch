@@ -318,7 +318,6 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
             packUInt(headData,(uint32_t)data->newRefCompressedSizeList[i]);
         }
         pushIncList(headData,data->oldRefList,data->oldRefCount);
-        pushIncList(headData,data->oldRefNotDecompressList,data->oldRefNotDecompressCount);
     }
     std::vector<TByte> headCode;
     {
@@ -357,7 +356,6 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     packUInt(out_data,data->oldIsFileDataOffsetMatch);
     packUInt(out_data,data->oldZipCESize);
     packUInt(out_data,data->oldRefCount);
-    packUInt(out_data,data->oldRefNotDecompressCount);
     packUInt(out_data,data->oldCrc);
     packUInt(out_data,headData.size());
     packUInt(out_data,headCode.size());
@@ -385,7 +383,6 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
                           const std::vector<uint32_t>& newRefNotDecompressList,
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
-                          const std::vector<uint32_t>& oldRefNotDecompressList,
                           const std::vector<TByte>&    hdiffzData,
                           hdiff_TCompress* compressPlugin){
     ZipDiffData  data;
@@ -407,9 +404,6 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
     data.oldZipCESize=UnZipper_CESize(oldZip);
     data.oldRefList=(uint32_t*)oldRefList.data();
     data.oldRefCount=oldRefList.size();
-    data.oldRefNotDecompressList=(uint32_t*)oldRefNotDecompressList.data();
-    data.oldRefNotDecompressCount=oldRefNotDecompressList.size();
-    data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size(),
-        oldRefNotDecompressList.data(),oldRefNotDecompressList.size());
+    data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size());
     return _serializeZipDiffData(out_data,&data,hdiffzData,compressPlugin,newZip);
 }

@@ -52,8 +52,6 @@ typedef struct ZipDiffData{
     size_t      oldZipCESize;
     uint32_t*   oldRefList;
     size_t      oldRefCount;
-    uint32_t*   oldRefNotDecompressList;
-    size_t      oldRefNotDecompressCount;
     uint32_t    oldCrc;
     const hpatch_TStreamInput* hdiffzData;
     const hpatch_TStreamInput* extraEdit;

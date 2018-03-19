@@ -51,8 +51,7 @@ int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refL
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                                  hpatch_TStreamOutput* output_refStream);
-uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                             const uint32_t* refNotDecompressList,size_t refNotDecompressCount);
+uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
 
 void OldStream_init(OldStream* self);
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,

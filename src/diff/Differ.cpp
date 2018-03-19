@@ -81,7 +81,6 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     std::vector<uint32_t> newRefNotDecompressList;
     std::vector<uint32_t> newRefCompressedSizeList;
     std::vector<uint32_t> oldRefList;
-    std::vector<uint32_t> oldRefNotDecompressList;
     bool            result=true;
     bool            _isInClear=false;
     bool            byteByByteEqualCheck=false;
@@ -131,11 +130,10 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(getSamePairList(&newZip,&oldZip,newCompressedDataIsNormalized,
                           newZipNormalized_compressLevel,newZipNormalized_compressMemLevel,
                           samePairList,newRefList,newRefNotDecompressList,newRefCompressedSizeList));
-    check(getOldRefList(&newZip,samePairList,newRefList,newRefNotDecompressList,
-                        &oldZip,oldRefList,oldRefNotDecompressList));
+    check(getOldRefList(&newZip,samePairList,newRefList,newRefNotDecompressList,&oldZip,oldRefList));
     std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
     std::cout<<"    diff new file count: "<<newRefList.size()+newRefNotDecompressList.size()<<"\n";
-    std::cout<<"     ref old file count: "<<oldRefList.size()+oldRefNotDecompressList.size()<<" ("
+    std::cout<<"     ref old file count: "<<oldRefList.size()<<" ("
         <<UnZipper_fileCount(&oldZip)<<")\n";
     std::cout<<"     ref old decompress: "
         <<OldStream_getDecompressFileCount(&oldZip,oldRefList.data(),oldRefList.size())<<" file ("
@@ -146,7 +144,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     //for (int i=0; i<(int)oldRefNotDecompressList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefNotDecompressList[i])<<"\n";
 
     check(readZipStreamData(&newZip,newRefList,newRefNotDecompressList,newData));
-    check(readZipStreamData(&oldZip,oldRefList,oldRefNotDecompressList,oldData));
+    check(readZipStreamData(&oldZip,oldRefList,std::vector<uint32_t>(),oldData));
     check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,myBestMatchScore));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
@@ -154,7 +152,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(serializeZipDiffData(out_diffData,&newZip,&oldZip,newZipAlignSize,
                                newZipNormalized_compressLevel,newZipNormalized_compressMemLevel,
                                samePairList,newRefNotDecompressList,newRefCompressedSizeList,
-                               oldRefList,oldRefNotDecompressList,hdiffzData,compressPlugin));
+                               oldRefList,hdiffzData,compressPlugin));
     std::cout<<"\nZipDiff size: "<<out_diffData.size()<<"\n";
 
     check(TFileStreamOutput_open(&out_diffFile,outDiffFileName,out_diffData.size()));
