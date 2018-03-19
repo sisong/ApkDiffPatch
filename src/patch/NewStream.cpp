@@ -113,14 +113,20 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         }
         _update_compressedSize(self,self->_curFileIndex,compressedSize);
         
-        bool isWriteCompressedData=(self->_curNewRefNotDecompressIndex<self->_newRefOtherCompressedCount)
-                &&((int)self->_newRefOtherCompressedList[self->_curNewRefNotDecompressIndex]==self->_curFileIndex);
-        if (isWriteCompressedData)
-            ++self->_curNewRefNotDecompressIndex;
-        
-        check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
-                                       isWriteCompressedData,uncompressedSize,compressedSize));
-        self->_curWriteToPosEnd+=isWriteCompressedData?compressedSize:uncompressedSize;
+        bool isWriteOtherCompressedData=(self->_curNewOtherCompressIndex<self->_newRefOtherCompressedCount)
+                &&((int)self->_newRefOtherCompressedList[self->_curNewOtherCompressIndex]==self->_curFileIndex);
+        if (isWriteOtherCompressedData)
+            ++self->_curNewOtherCompressIndex;
+        if (isWriteOtherCompressedData && self->_newOtherCompressIsValid){
+            check(Zipper_file_append_beginWith(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
+                                               false,uncompressedSize,compressedSize,
+                                               self->_newOtherCompressLevel,self->_newOtherCompressMemLevel));
+            self->_curWriteToPosEnd+=uncompressedSize;
+        }else{
+            check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
+                                           isWriteOtherCompressedData,uncompressedSize,compressedSize));
+            self->_curWriteToPosEnd+=isWriteOtherCompressedData?compressedSize:uncompressedSize;
+        }
         return result;
     }
     
@@ -139,6 +145,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     size_t newZipCESize,const hpatch_TStreamInput* extraEdit,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
+                    int newOtherCompressLevel,int newOtherCompressMemLevel,
                     const uint32_t* reCompressList,size_t reCompressCount){
     assert(self->_out_newZip==0);
     self->isFinish=false;
@@ -150,6 +157,9 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_samePairCount=samePairCount;
     self->_newRefOtherCompressedList=newRefOtherCompressedList;
     self->_newRefOtherCompressedCount=newRefOtherCompressedCount;
+    self->_newOtherCompressIsValid=(newOtherCompressLevel|newOtherCompressMemLevel)!=0;
+    self->_newOtherCompressLevel=newOtherCompressLevel;
+    self->_newOtherCompressMemLevel=newOtherCompressMemLevel;
     self->_newReCompressSizeList=reCompressList;
     self->_newReCompressSizeCount=reCompressCount;
     self->_fileCount=out_newZip->_fileEntryMaxCount;
@@ -169,7 +179,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_curFileIndex=-1;
     self->_curWriteToPosEnd=newZipCESize;
     self->_curSamePairIndex=0;
-    self->_curNewRefNotDecompressIndex=0;
+    self->_curNewOtherCompressIndex=0;
     self->_curNewReCompressSizeIndex=0;
     self->_isAlwaysReCompress=false;
     return true;
@@ -179,7 +189,7 @@ static bool _file_entry_end(NewStream* self){
     check(!self->isFinish);
     check(self->_curFileIndex==self->_fileCount);
     check(self->_curSamePairIndex==self->_samePairCount);
-    check(self->_curNewRefNotDecompressIndex==self->_newRefOtherCompressedCount);
+    check(self->_curNewOtherCompressIndex==self->_newRefOtherCompressedCount);
     check(self->_curNewReCompressSizeIndex==self->_newReCompressSizeCount);
     
     if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){

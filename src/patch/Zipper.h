@@ -144,7 +144,7 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                                   bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
-                                  int tempCompressLevel,int tempCompressMemLevel);
+                                  int curFileCompressLevel,int curFileCompressMemLevel);
 
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);

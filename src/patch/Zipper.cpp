@@ -469,13 +469,16 @@ bool Zipper_close(Zipper* self){
     return 0!=fileClose(&self->_file);
 }
 
+#define checkCompressSet(compressLevel,compressMemLevel){   \
+    check((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));  \
+    check((1<=compressMemLevel)&&(compressMemLevel<=MAX_MEM_LEVEL)); }
+
 bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
                       int ZipAlignSize,int compressLevel,int compressMemLevel){
     check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
     assert(ZipAlignSize>0);
     if (ZipAlignSize<=0) ZipAlignSize=1;
-    check((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));
-    check((1<=compressMemLevel)&&(compressMemLevel<=MAX_MEM_LEVEL));
+    checkCompressSet(compressLevel,compressMemLevel);
     self->_ZipAlignSize=ZipAlignSize;
     self->_compressLevel=compressLevel;
     self->_compressMemLevel=compressMemLevel;
@@ -649,7 +652,8 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
 }
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                                   bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
-                                  int tempCompressLevel,int tempCompressMemLevel){
+                                  int curFileCompressLevel,int curFileCompressMemLevel){
+    if (dataIsCompressed) checkCompressSet(curFileCompressLevel,curFileCompressMemLevel);
     if (0==dataCompressedSize){
         check(!dataIsCompressed);
         dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
@@ -684,7 +688,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
         append_state->compressOutStream.streamSize=self->_fileCompressedSizes[curFileIndex];
         append_state->compressOutStream.write=Zipper_file_append_stream::_append_part_output;
         append_state->compressHandle=_zlib_compress_open_by(compressPlugin,&append_state->compressOutStream,
-                                            0,tempCompressLevel,tempCompressMemLevel,self->_codeBuf,kBufSize);
+                                            0,curFileCompressLevel,curFileCompressMemLevel,self->_codeBuf,kBufSize);
     }else{
         append_state->compressHandle=0; //copy data
     }
