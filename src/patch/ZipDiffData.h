@@ -35,6 +35,7 @@ extern "C" {
 
 //解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{
+    size_t      PatchModel;
     size_t      newZipFileCount;
     size_t      newZipIsDataNormalized;
     size_t      newZipAlignSize;

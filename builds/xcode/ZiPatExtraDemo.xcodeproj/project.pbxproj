@@ -48,8 +48,8 @@
 		D6E03049205C0D060038E54A = {
 			isa = PBXGroup;
 			children = (
-				D6E03060205CBF440038E54A /* patch */,
 				D6E0305C205C0D680038E54A /* ZiPatExtraDemo.cpp */,
+				D6E03060205CBF440038E54A /* patch */,
 				D6E03053205C0D060038E54A /* Products */,
 				D6E03061205CBF5B0038E54A /* Frameworks */,
 			);

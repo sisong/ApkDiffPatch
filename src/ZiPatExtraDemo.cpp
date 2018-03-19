@@ -32,7 +32,8 @@
 #include "patch/ZipDiffData.h"
 #include "diff/DiffData.h"
 
-// ZiPatExtraDemo: 演示在补丁包中插入自己的数据,并支持ApkV2Sign;
+// ZiPatExtraDemo: insert your private data to ZiPatFile(ZipDiff result), support ApkV2Sign ;
+//   data will be write into NewZipFile(front of Central directory) when ZipPatch;
 
 static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
                        const TByte* appendData,size_t dataLen);
@@ -46,7 +47,7 @@ int main(int argc, const char * argv[]) {
     }
     srcZiPatPath =argv[1];
     outZiPatPath =argv[2];
-    const char* appendData=argv[3];//modify this for your require
+    const char* appendData=argv[3];//NOTE: modify this for your require
     printf(" src ZiPat :\"%s\"\n",srcZiPatPath);
     printf(" out ZiPat :\"%s\"\n",outZiPatPath);
     printf("test append:\"%s\"\n",appendData);
@@ -135,7 +136,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
         if (isV2SignExtra) check(8+oldV2BlockSize==oldExtraSize);
     }
     if (!isV2SignExtra){//insert data
-        //insert  example
+        //insert example
         check(dataLen==output_file.base.write(output_file.base.streamHandle,editExtraPos,appendData,appendData+dataLen));
         //old Extra
         check(stream_copy(&output_file.base,editExtraPos+dataLen,&zipat.base,editExtraPos,oldExtraSize,buf,bufSize));
@@ -149,7 +150,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
         //copy Apk V2 Sign Block data
         check(stream_copy(&output_file.base,writePos,&zipat.base,editExtraPos+8,oldV2BlockDataSize,buf,bufSize));
         writePos+=oldV2BlockDataSize;
-        //insert
+        //insert example   NOTE: You may have your own method of insert
         check(dataLen==output_file.base.write(output_file.base.streamHandle,writePos,appendData,appendData+dataLen));
         writePos+=dataLen;
         writeUInt64_to(buf,oldV2BlockSize+dataLen);
