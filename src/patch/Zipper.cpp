@@ -51,6 +51,12 @@ inline static void writeUInt16_to(TByte* out_buf2,uint32_t v){
     out_buf2[0]=(TByte)v; out_buf2[1]=(TByte)(v>>8);
 }
 
+typedef enum TDataDescriptor{
+    kDataDescriptor_NO =0,
+    kDataDescriptor_12 =1,
+    kDataDescriptor_16 =2
+} TDataDescriptor;
+
 #define kBufSize                    (64*1024)
 
 #define kMaxEndGlobalComment        (1<<(2*8)) //2 byte
@@ -383,11 +389,18 @@ uint32_t UnZipper_file_crc32(const UnZipper* self,int fileIndex){
     return readUInt32(fileHeaderBuf(self,fileIndex)+16);
 }
 
-TDataDescriptor UnZipper_file_dataDescriptor(const UnZipper* self,int fileIndex){
-    return (TDataDescriptor)self->_dataDescriptors[fileIndex];
+ZipFilePos_t UnZipper_fileEntry_endOffset(const UnZipper* self,int fileIndex){
+    ZipFilePos_t result=UnZipper_fileData_offset(self,fileIndex)
+                        +UnZipper_file_compressedSize(self,fileIndex);
+    TDataDescriptor desc=(TDataDescriptor)self->_dataDescriptors[fileIndex];
+    if (desc==kDataDescriptor_12)
+        result+=12;
+    else if (desc==kDataDescriptor_16)
+        result+=16;
+    return result;
 }
 
-ZipFilePos_t UnZipper_fileData_offset(UnZipper* self,int fileIndex){
+ZipFilePos_t UnZipper_fileData_offset(const UnZipper* self,int fileIndex){
     return self->_fileDataOffsets[fileIndex];
 }
 

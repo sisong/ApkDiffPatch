@@ -5,10 +5,10 @@
       location = "group:ApkNormalized.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/ZipDiff.xcodeproj">
+      location = "group:ZipDiff.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/ZipPatch.xcodeproj">
+      location = "group:ZipPatch.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:ZiPatExtraDemo.xcodeproj">
@@ -23,7 +23,7 @@
          location = "group:HDiffPatch.xcodeproj">
       </FileRef>
       <FileRef
-         location = "group:/Users/Shared/ApkDiffPatch/builds/xcode/zlib.xcodeproj">
+         location = "group:zlib.xcodeproj">
       </FileRef>
    </Group>
 </Workspace>
