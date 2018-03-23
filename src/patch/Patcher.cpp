@@ -88,7 +88,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     }
     
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
-    check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
+    check(UnZipper_openFile(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
                             zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
     check(zipDiffData.oldZipCESize==UnZipper_CESize(&oldZip),PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount), PATCH_OLDDATA_ERROR);

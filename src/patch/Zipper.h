@@ -30,6 +30,7 @@
 #include <stdio.h> //FILE
 #include <assert.h>
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "../../HDiffPatch/file_for_patch.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,12 +41,9 @@ typedef uint32_t ZipFilePos_t;
 // https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
     
 typedef struct UnZipper{
-    hpatch_TStreamInput* stream;
+    const hpatch_TStreamInput* stream;
 //private:
-    FILE*           _file;
-    ZipFilePos_t    _fileLength;
-    ZipFilePos_t    _file_curPos;
-    hpatch_TStreamInput _stream;
+    TFileStreamInput _fileStream;
     
     ZipFilePos_t    _vce_size;
     unsigned char*  _endCentralDirectory;
@@ -62,8 +60,10 @@ typedef struct UnZipper{
     unsigned char*  _cache_vce;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName,
+bool UnZipper_openFile(UnZipper* self,const char* zipFileName,
                        bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
+bool UnZipper_openStream(UnZipper* self,const hpatch_TStreamInput* zipStream,
+                         bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);

@@ -65,8 +65,8 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
-    test_clear(UnZipper_openRead(&oldZip,oldZipPath));
-    test_clear(UnZipper_openRead(&newZip,newZipPath));
+    test_clear(UnZipper_openFile(&oldZip,oldZipPath));
+    test_clear(UnZipper_openFile(&newZip,newZipPath));
     
     fileCount=UnZipper_fileCount(&oldZip);
     test_clear(fileCount=UnZipper_fileCount(&newZip));

@@ -254,24 +254,14 @@ void UnZipper_init(UnZipper* self){
     memset(self,0,sizeof(*self));
 }
 bool UnZipper_close(UnZipper* self){
-    self->_file_curPos=0;
-    self->_fileLength=0;
+    self->stream=0;
     if (self->_buf) { free(self->_buf); self->_buf=0; }
     if (self->_cache_vce) { free(self->_cache_vce); self->_cache_vce=0; }
-    return 0!=fileClose(&self->_file);
+    if (self->_fileStream.m_file!=0) { check(TFileStreamInput_close(&self->_fileStream)); }
+    return true;
 }
 
-static long _stream_read_file(void* _self,hpatch_StreamPos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
-    if (file_pos!=(ZipFilePos_t)file_pos) return 0;
-    UnZipper* self=(UnZipper*)_self;
-    if (!UnZipper_fileData_read(self,(ZipFilePos_t)file_pos,buf,bufEnd))
-        return 0;
-    else
-        return (long)(bufEnd-buf);
-}
-
-
-static bool _UnZipper_openRead_begin(UnZipper* self){
+static bool _UnZipper_openFile_begin(UnZipper* self){
     assert(self->_buf==0);
     self->_buf=(unsigned char*)malloc(kBufSize);
     check(self->_buf!=0);
@@ -279,7 +269,7 @@ static bool _UnZipper_openRead_begin(UnZipper* self){
     return true;
 }
 
-static bool _UnZipper_openRead_vce(UnZipper* self,ZipFilePos_t vceSize,int fileCount){
+static bool _UnZipper_openFile_vce(UnZipper* self,ZipFilePos_t vceSize,int fileCount){
     assert(self->_cache_vce==0);
     self->_vce_size=vceSize;
     self->_cache_vce=(TByte*)malloc(self->_vce_size+1*fileCount
@@ -289,21 +279,6 @@ static bool _UnZipper_openRead_vce(UnZipper* self,ZipFilePos_t vceSize,int fileC
     self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
     self->_fileHeaderOffsets=(uint32_t*)(self->_fileDataOffsets+fileCount);
     self->_fileCompressedSizes=(uint32_t*)(self->_fileHeaderOffsets+fileCount);
-    return true;
-}
-
-
-static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
-    hpatch_StreamPos_t fileLength=0;
-    assert(self->_file==0);
-    check(fileOpenForRead(zipFileName,&self->_file,&fileLength));
-    self->_file_curPos=0;
-    self->_fileLength=(ZipFilePos_t)fileLength;
-    check(self->_fileLength==fileLength);
-    self->_stream.streamHandle=self;
-    self->_stream.streamSize=fileLength;
-    self->_stream.read=_stream_read_file;
-    self->stream=&self->_stream;
     return true;
 }
 
@@ -317,11 +292,12 @@ static bool _UnZipper_openRead_file(UnZipper* self,const char* zipFileName){
     check(_UnZipper_searchApkV2Sign(self,centralDirectory_pos,&v2sign_pos));
 
 
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isDataNormalized,bool isFileDataOffsetMatch){
-    check(_UnZipper_openRead_begin(self));
-    check(_UnZipper_openRead_file(self,zipFileName));
+bool UnZipper_openStream(UnZipper* self,const hpatch_TStreamInput* zipFileStream,
+                         bool isDataNormalized,bool isFileDataOffsetMatch){
+    check(_UnZipper_openFile_begin(self));
+    self->stream=zipFileStream;
     _UnZipper_sreachVCE();
-    check(_UnZipper_openRead_vce(self,self->_fileLength-v2sign_pos,fileCount));
+    check(_UnZipper_openFile_vce(self,(ZipFilePos_t)self->stream->streamSize-v2sign_pos,fileCount));
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
     
@@ -333,25 +309,16 @@ bool UnZipper_openRead(UnZipper* self,const char* zipFileName,bool isDataNormali
     return true;
 }
 
-static long _stream_read_vce(void* _self,hpatch_StreamPos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
-    UnZipper* self=(UnZipper*)_self;
-    long result=(long)(bufEnd-buf);
-    if (file_pos+result<=self->_vce_size){
-        memcpy(buf,self->_cache_vce+file_pos,result);
-        return result;
-    }else{
-        return 0;
-    }
+bool UnZipper_openFile(UnZipper* self,const char* zipFileName,bool isDataNormalized,bool isFileDataOffsetMatch){
+    check(TFileStreamInput_open(&self->_fileStream,zipFileName));
+    return UnZipper_openStream(self,&self->_fileStream.base,isDataNormalized,isFileDataOffsetMatch);
 }
+
 bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
-    check(_UnZipper_openRead_begin(self));
-    
-    self->_stream.streamHandle=self;
-    self->_stream.streamSize=vce_size;
-    self->_stream.read=_stream_read_vce;
-    self->stream=&self->_stream;
-    
-    check(_UnZipper_openRead_vce(self,vce_size,fileCount));
+    check(_UnZipper_openFile_begin(self));
+    check(_UnZipper_openFile_vce(self,vce_size,fileCount));
+    mem_as_hStreamInput(&self->_fileStream.base,self->_cache_vce,self->_cache_vce+self->_vce_size);
+    self->stream=&self->_fileStream.base;
     return true;
 }
 
@@ -411,12 +378,8 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex){
 
 bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
     //当前的实现不支持多线程;
-    ZipFilePos_t curPos=self->_file_curPos;
-    if (file_pos!=curPos)
-        check(fileSeek64(self->_file,file_pos,SEEK_SET));
-    self->_file_curPos=file_pos+(ZipFilePos_t)(bufEnd-buf);
-    assert(self->_file_curPos<=self->_fileLength);
-    return 0!=fileRead(self->_file,buf,bufEnd);
+    assert(self->_fileStream.m_file!=0);
+    return (long)(bufEnd-buf)==self->stream->read(self->stream->streamHandle,file_pos,buf,bufEnd);
 }
 
 bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
@@ -451,7 +414,7 @@ bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
     ZipFilePos_t file_compressedSize=UnZipper_file_compressedSize(self,fileIndex);
     ZipFilePos_t file_data_size=UnZipper_file_uncompressedSize(self,fileIndex);
     
-    _zlib_TDecompress* decHandle=_zlib_decompress_open_by(decompressPlugin,&self->_stream,file_offset,
+    _zlib_TDecompress* decHandle=_zlib_decompress_open_by(decompressPlugin,self->stream,file_offset,
                                                           file_offset+file_compressedSize,0,
                                                           self->_buf,(kBufSize>>1));
     TByte* dataBuf=self->_buf+(kBufSize>>1);

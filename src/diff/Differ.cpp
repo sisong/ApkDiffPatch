@@ -105,8 +105,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
     TFileStreamOutput_init(&out_diffFile);
-    check(UnZipper_openRead(&oldZip,oldZipPath));
-    check(UnZipper_openRead(&newZip,newZipPath));
+    check(UnZipper_openFile(&oldZip,oldZipPath));
+    check(UnZipper_openFile(&newZip,newZipPath));
     
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip)){//precondition (+checkZipIsSame() to complete)
