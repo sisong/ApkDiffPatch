@@ -40,7 +40,7 @@
 
 #define  check(value,error) { \
     if (!(value)){ printf(#value" "#error"!\n");  \
-        if (result!=PATCH_SUCCESS) result=error; if (!_isInClear){ goto clear; } } }
+        if (result==PATCH_SUCCESS) result=error; if (!_isInClear){ goto clear; } } }
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName){
