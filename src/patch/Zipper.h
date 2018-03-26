@@ -114,7 +114,8 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex);
 
 typedef struct Zipper{
 //private:
-    FILE*           _file;
+    const hpatch_TStreamOutput* _stream;
+    TFileStreamOutput           _fileStream;
     ZipFilePos_t    _curFilePos;
     int             _fileEntryMaxCount;
     int             _fileEntryCount;

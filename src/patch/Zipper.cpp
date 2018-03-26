@@ -438,18 +438,26 @@ clear:
 void Zipper_init(Zipper* self){
     memset(self,0,sizeof(*self));
 }
+
 bool Zipper_close(Zipper* self){
+    self->_stream=0;
     self->_fileEntryCount=0;
     if (self->_buf) { free(self->_buf); self->_buf=0; }
-    return 0!=fileClose(&self->_file);
+    if (self->_fileStream.m_file) { check(TFileStreamOutput_close(&self->_fileStream)); }
+    if (self->_append_stream.compressHandle!=0){
+        struct _zlib_TCompress* compressHandle=self->_append_stream.compressHandle;
+        self->_append_stream.compressHandle=0;
+        check(_zlib_compress_close_by(compressPlugin,compressHandle));
+    }
+    return true;
 }
 
 #define checkCompressSet(compressLevel,compressMemLevel){   \
     check((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));  \
     check((1<=compressMemLevel)&&(compressMemLevel<=MAX_MEM_LEVEL)); }
 
-bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                      int ZipAlignSize,int compressLevel,int compressMemLevel){
+bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
+                       int ZipAlignSize,int compressLevel,int compressMemLevel){
     check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
     assert(ZipAlignSize>0);
     if (ZipAlignSize<=0) ZipAlignSize=1;
@@ -458,8 +466,9 @@ bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
     self->_compressLevel=compressLevel;
     self->_compressMemLevel=compressMemLevel;
     
-    assert(self->_file==0);
-    check(fileOpenForCreateOrReWrite(zipFileName,&self->_file));
+    assert(self->_stream==0);
+    self->_stream=zipStream;
+    
     TByte* buf=(TByte*)malloc(kBufSize*2+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1)
                               +fileEntryMaxCount*sizeof(uint32_t));
     self->_buf=buf;
@@ -476,27 +485,37 @@ bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
     return true;
 }
 
+bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
+                      int ZipAlignSize,int compressLevel,int compressMemLevel){
+    assert(self->_fileStream.m_file==0);
+    check(TFileStreamOutput_open(&self->_fileStream,zipFileName,(hpatch_StreamPos_t)(-1)));
+    TFileStreamOutput_setRandomOut(&self->_fileStream,hpatch_TRUE);
+    return Zipper_openStream(self,&self->_fileStream.base,fileEntryMaxCount,
+                             ZipAlignSize,compressLevel,compressMemLevel);
+}
+
 static bool _writeFlush(Zipper* self){
     size_t curBufLen=self->_curBufLen;
     if (curBufLen>0){
         self->_curBufLen=0;
-        return 0!=fileWrite(self->_file,self->_buf,self->_buf+curBufLen);
-    }else{
-        return true;
+        check(curBufLen==self->_stream->write(self->_stream->streamHandle,self->_curFilePos-curBufLen,
+                                              self->_buf,self->_buf+curBufLen));
     }
+    return true;
 }
 static bool _write(Zipper* self,const TByte* data,size_t len){
-    self->_curFilePos+=(ZipFilePos_t)len;
     size_t curBufLen=self->_curBufLen;
     if (((curBufLen>0)||(len*2<=kBufSize)) && (curBufLen+len<=kBufSize)){//to buf
         memcpy(self->_buf+curBufLen,data,len);
         self->_curBufLen=curBufLen+len;
-        return true;
     }else{
         if (curBufLen>0)
             check(_writeFlush(self));
-        return 0!=fileWrite(self->_file,data,data+len);
+        check(len==self->_stream->write(self->_stream->streamHandle,
+                                        self->_curFilePos-self->_curBufLen,data,data+len));
     }
+    self->_curFilePos+=(ZipFilePos_t)len;
+    return true;
 }
 
 inline static bool _writeUInt32(Zipper* self,uint32_t v){
@@ -678,18 +697,16 @@ bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,uint32_t c
     uint32_t fileEntryOffset=self->_fileEntryOffsets[curFileIndex];
     uint32_t compressedSizeOffset=fileEntryOffset+18;
     
-    if (compressedSizeOffset>=self->_curFilePos-self->_curBufLen){//in cache
+    if (compressedSizeOffset>=self->_curFilePos-self->_curBufLen){//all in cache
         TByte* buf=self->_buf+compressedSizeOffset-(self->_curFilePos-self->_curBufLen);
         writeUInt32_to(buf,compressedSize);
     }else{
         TByte buf[4];
         writeUInt32_to(buf,compressedSize);
-        check(_writeFlush(self));
-        hpatch_StreamPos_t backFilePos=0;
-        check(fileTell64(self->_file,&backFilePos));
-        check(fileSeek64(self->_file,compressedSizeOffset,SEEK_SET));
-        check(fileWrite(self->_file,buf,buf+4));
-        check(fileSeek64(self->_file,backFilePos,SEEK_SET));
+        if (compressedSizeOffset+4>self->_curFilePos-self->_curBufLen){
+            check(_writeFlush(self));
+        }
+        check(4==self->_stream->write(self->_stream->streamHandle,compressedSizeOffset,buf,buf+4));
     }
     return true;
 }
