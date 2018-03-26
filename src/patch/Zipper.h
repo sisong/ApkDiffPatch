@@ -132,8 +132,10 @@ typedef struct Zipper{
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                      int ZipAlignSize,int compressLevel,int compressMemLevel);
+bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
+                    int ZipAlignSize,int compressLevel,int compressMemLevel);
+bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
+                    int ZipAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
@@ -147,7 +149,7 @@ const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
     
-bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip);
+bool Zipper_copyExtra_before_fileHeader(Zipper* self,UnZipper* srcZip);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     

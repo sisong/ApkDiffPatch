@@ -448,7 +448,7 @@ bool Zipper_close(Zipper* self){
     check((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));  \
     check((1<=compressMemLevel)&&(compressMemLevel<=MAX_MEM_LEVEL)); }
 
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
+bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
                       int ZipAlignSize,int compressLevel,int compressMemLevel){
     check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
     assert(ZipAlignSize>0);
@@ -742,10 +742,10 @@ bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool
     return true;
 }
 
-bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip){
-    if (!UnZipper_isHaveApkV2Sign(srcZip))
+bool Zipper_copyExtra_before_fileHeader(Zipper* self,UnZipper* srcZip){
+    if (srcZip->_cache_vce == srcZip->_centralDirectory)
         return true;
-    return _write(self,srcZip->_cache_vce,UnZipper_ApkV2SignSize(srcZip));
+    return _write(self,srcZip->_cache_vce,srcZip->_centralDirectory-srcZip->_cache_vce);
 }
 
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){

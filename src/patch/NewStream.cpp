@@ -192,9 +192,8 @@ static bool _file_entry_end(NewStream* self){
     check(self->_curNewOtherCompressIndex==self->_newRefOtherCompressedCount);
     check(self->_curNewReCompressSizeIndex==self->_newReCompressSizeCount);
     
-    if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){
-        check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
-    }
+    check(Zipper_copyExtra_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
+    
     for (int i=0; i<self->_fileCount; ++i) {
         check(Zipper_fileHeader_append(self->_out_newZip,&self->_newZipVCE,i));
     }
