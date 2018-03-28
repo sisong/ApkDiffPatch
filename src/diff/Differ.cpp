@@ -147,9 +147,10 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
         std::sort(newRefDecompressList.begin(),newRefDecompressList.end());
     }
     check(getOldRefList(&newZip,samePairList,newRefDecompressList,&oldZip,oldRefList));
-    std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<"\n";
+    std::cout<<"ZipDiff same file count: "<<samePairList.size()/2<<" (all "
+        <<UnZipper_fileCount(&newZip)<<")\n";
     std::cout<<"    diff new file count: "<<newRefList.size()+newRefOtherCompressedList.size()<<"\n";
-    std::cout<<"     ref old file count: "<<oldRefList.size()<<" ("
+    std::cout<<"     ref old file count: "<<oldRefList.size()<<" (all "
         <<UnZipper_fileCount(&oldZip)<<")\n";
     std::cout<<"     ref old decompress: "
         <<OldStream_getDecompressFileCount(&oldZip,oldRefList.data(),oldRefList.size())<<" file ("

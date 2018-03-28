@@ -1,16 +1,16 @@
 **ApkDiffPatch**
 ================
-Version 1.0   
+[![release](https://img.shields.io/badge/release-v1.0-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
 Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support apk v2 sign & Jar sign(apk v1).    
 ( not support zip64, and only support decode Deflated code; dependent libraries HDiffPatch, zlib, lzma. )   
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE) [![release](https://img.shields.io/badge/release-v1.0-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)
+
 ---
 uses:
 
 *  **ZipDiff(oldZip,newZip,out diffData)**
    
    release the diffData for update oldZip;    
-   your apk use v2 sign(or need ZipPatch result byte by byte equal)? Released newZip=AndroidSDK#apksigner(**ApkNormalized**(newZip)) before ZipDiff, AND You better not modify the zlib version (unless it is certified compatible), because v2 Apk need byte by byte equal.   
+   your apk use v2 sign(or need ZipPatch result byte by byte equal)? `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff, AND You should not modify the zlib version (unless it is certified compatible).   
    
 *  **ZipPatch(oldZip,diffData,out newZip)**
   
