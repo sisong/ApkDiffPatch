@@ -500,8 +500,8 @@ static bool _writeFlush(Zipper* self){
     size_t curBufLen=self->_curBufLen;
     if (curBufLen>0){
         self->_curBufLen=0;
-        check(curBufLen==self->_stream->write(self->_stream->streamHandle,self->_curFilePos-curBufLen,
-                                              self->_buf,self->_buf+curBufLen));
+        check((long)curBufLen==self->_stream->write(self->_stream->streamHandle,self->_curFilePos-curBufLen,
+                                                    self->_buf,self->_buf+curBufLen));
     }
     return true;
 }
@@ -513,8 +513,8 @@ static bool _write(Zipper* self,const TByte* data,size_t len){
     }else{
         if (curBufLen>0)
             check(_writeFlush(self));
-        check(len==self->_stream->write(self->_stream->streamHandle,
-                                        self->_curFilePos-self->_curBufLen,data,data+len));
+        check((long)len==self->_stream->write(self->_stream->streamHandle,
+                                              self->_curFilePos-self->_curBufLen,data,data+len));
     }
     self->_curFilePos+=(ZipFilePos_t)len;
     return true;
