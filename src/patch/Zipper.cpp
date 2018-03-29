@@ -133,13 +133,13 @@ bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos
     return true;
 }
 
-static inline bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
+inline static bool _UnZipper_searchApkV2Sign(UnZipper* self,ZipFilePos_t centralDirectory_pos,
                                       ZipFilePos_t* v2sign_pos){
     hpatch_StreamPos_t blockSize=0;
     return UnZipper_searchApkV2Sign(self->stream,centralDirectory_pos,v2sign_pos,&blockSize);
 }
 
-static ZipFilePos_t _fileData_offset_read(UnZipper* self,ZipFilePos_t entryOffset){
+inline static ZipFilePos_t _fileData_offset_read(UnZipper* self,ZipFilePos_t entryOffset){
     TByte buf[4];
     check(UnZipper_fileData_read(self,entryOffset+26,buf,buf+4));
     return entryOffset+30+readUInt16(buf)+readUInt16(buf+2);
@@ -148,7 +148,7 @@ static ZipFilePos_t _fileData_offset_read(UnZipper* self,ZipFilePos_t entryOffse
 int UnZipper_fileCount(const UnZipper* self){
     return readUInt16(self->_endCentralDirectory+8);
 }
-static inline int32_t _centralDirectory_size(const UnZipper* self){
+inline static int32_t _centralDirectory_size(const UnZipper* self){
     return readUInt32(self->_endCentralDirectory+12);
 }
 
@@ -261,7 +261,7 @@ bool UnZipper_close(UnZipper* self){
     return true;
 }
 
-static bool _UnZipper_openFile_begin(UnZipper* self){
+static bool _UnZipper_open_begin(UnZipper* self){
     assert(self->_buf==0);
     self->_buf=(unsigned char*)malloc(kBufSize);
     check(self->_buf!=0);
@@ -269,11 +269,12 @@ static bool _UnZipper_openFile_begin(UnZipper* self){
     return true;
 }
 
-static bool _UnZipper_openFile_vce(UnZipper* self,ZipFilePos_t vceSize,int fileCount){
+static bool _UnZipper_open_vce(UnZipper* self,ZipFilePos_t vceSize,int fileCount){
     assert(self->_cache_vce==0);
     self->_vce_size=vceSize;
     self->_cache_vce=(TByte*)malloc(self->_vce_size+1*fileCount
                                     +sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2);
+    check(self->_cache_vce!=0);
     self->_dataDescriptors=self->_cache_vce+self->_vce_size;
     size_t alignBuf=_hpatch_align_upper((self->_dataDescriptors+fileCount),sizeof(ZipFilePos_t));
     self->_fileDataOffsets=(ZipFilePos_t*)alignBuf;
@@ -294,10 +295,10 @@ static bool _UnZipper_openFile_vce(UnZipper* self,ZipFilePos_t vceSize,int fileC
 
 bool UnZipper_openStream(UnZipper* self,const hpatch_TStreamInput* zipFileStream,
                          bool isDataNormalized,bool isFileDataOffsetMatch){
-    check(_UnZipper_openFile_begin(self));
+    check(_UnZipper_open_begin(self));
     self->stream=zipFileStream;
     _UnZipper_sreachVCE();
-    check(_UnZipper_openFile_vce(self,(ZipFilePos_t)self->stream->streamSize-v2sign_pos,fileCount));
+    check(_UnZipper_open_vce(self,(ZipFilePos_t)self->stream->streamSize-v2sign_pos,fileCount));
     self->_centralDirectory=self->_cache_vce+(centralDirectory_pos-v2sign_pos);
     self->_endCentralDirectory=self->_cache_vce+(endCentralDirectory_pos-v2sign_pos);
     
@@ -314,9 +315,9 @@ bool UnZipper_openFile(UnZipper* self,const char* zipFileName,bool isDataNormali
     return UnZipper_openStream(self,&self->_fileStream.base,isDataNormalized,isFileDataOffsetMatch);
 }
 
-bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
-    check(_UnZipper_openFile_begin(self));
-    check(_UnZipper_openFile_vce(self,vce_size,fileCount));
+bool UnZipper_openVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount){
+    check(_UnZipper_open_begin(self));
+    check(_UnZipper_open_vce(self,vce_size,fileCount));
     mem_as_hStreamInput(&self->_fileStream.base,self->_cache_vce,self->_cache_vce+self->_vce_size);
     self->stream=&self->_fileStream.base;
     return true;
@@ -338,7 +339,7 @@ bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize){
 }
 
 
-static uint16_t  _file_compressType(const UnZipper* self,int fileIndex){
+inline static uint16_t _file_compressType(const UnZipper* self,int fileIndex){
     return readUInt16(fileHeaderBuf(self,fileIndex)+10);
 }
 bool  UnZipper_file_isCompressed(const UnZipper* self,int fileIndex){
@@ -371,7 +372,8 @@ ZipFilePos_t UnZipper_fileData_offset(const UnZipper* self,int fileIndex){
     return self->_fileDataOffsets[fileIndex];
 }
 
-ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex){
+ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex){
+    //_UnZipper_vce_normalized set fileEntry offset 0
     const TByte* headBuf=fileHeaderBuf(self,fileIndex);
     return self->_fileDataOffsets[fileIndex]-30-readUInt16(headBuf+28)-readUInt16(headBuf+30);
 }
@@ -547,7 +549,7 @@ inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
     return true;
 }
 
-#define assert_align(self) assert((self->_curFilePos%self->_ZipAlignSize)==0);
+#define assert_align(self) assert((self->_curFilePos%self->_ZipAlignSize)==0)
 
 static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
     const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
@@ -647,7 +649,13 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                                   bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
                                   int curFileCompressLevel,int curFileCompressMemLevel){
-    if (dataIsCompressed) checkCompressSet(curFileCompressLevel,curFileCompressMemLevel);
+    const bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
+    if (isCompressed&&(!dataIsCompressed))
+        checkCompressSet(curFileCompressLevel,curFileCompressMemLevel);
+    if ((!isCompressed)&&(dataIsCompressed)){
+        assert(false);  //now need input decompressed data;
+        return false;       // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
+    }
     if (0==dataCompressedSize){
         check(!dataIsCompressed);
         dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
@@ -656,11 +664,6 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     if (append_state->self!=0){
         assert(false);  //need call Zipper_file_append_end()
         return false;
-    }
-    const bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    if ((!isCompressed)&&(dataIsCompressed)){
-        assert(false);  //now need input decompressed data;
-        return 0;       // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
     }
     
     int curFileIndex=self->_fileEntryCount;
@@ -679,7 +682,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     append_state->write=Zipper_file_append_stream::_append_part_input;
     if (isCompressed&&(!dataIsCompressed)){//compress data
         append_state->compressOutStream.streamHandle=append_state;
-        append_state->compressOutStream.streamSize=self->_fileCompressedSizes[curFileIndex];
+        append_state->compressOutStream.streamSize=self->_fileCompressedSizes[curFileIndex];//not used
         append_state->compressOutStream.write=Zipper_file_append_stream::_append_part_output;
         append_state->compressHandle=_zlib_compress_open_by(compressPlugin,&append_state->compressOutStream,
                                             0,curFileCompressLevel,curFileCompressMemLevel,self->_codeBuf,kBufSize);
@@ -690,7 +693,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
 }
 
 bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,uint32_t compressedSize){
-    if (curFileIndex>=self->_fileEntryCount){ assert(false); return false; }
+    check(curFileIndex<self->_fileEntryCount);
     if (self->_fileCompressedSizes[curFileIndex]==compressedSize) return true;
     self->_fileCompressedSizes[curFileIndex]=compressedSize;
     

@@ -170,7 +170,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->stream=&self->_stream;
     
     self->_extraEditSize=(size_t)extraEdit->streamSize;
-    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
+    check(UnZipper_openVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
     if (self->_extraEditSize>0){
         check((long)self->_extraEditSize==extraEdit->read(extraEdit->streamHandle,0,self->_newZipVCE._cache_vce,
                                                       self->_newZipVCE._cache_vce+self->_extraEditSize));

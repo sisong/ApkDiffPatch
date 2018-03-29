@@ -70,6 +70,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
+        //isCopyCompressed==true时的逻辑并不是必须的;
         bool isCopyCompressed=UnZipper_file_isApkV2Compressed(&unzipper,fileIndex);
         printf("\"%s\"",fileName.c_str());
         if (isCopyCompressed){

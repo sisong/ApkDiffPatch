@@ -100,7 +100,7 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
     }else if (self->_rangIsInDecBuf[curRangeIndex]){
         long readLen=(long)(out_data_end-out_data);
         return (self->_input_decompressedStream->read(self->_input_decompressedStream->streamHandle,
-                                                    readPos,out_data,out_data_end) == readLen);
+                                                      readPos,out_data,out_data_end) == readLen);
     }else{
         return UnZipper_fileData_read(self->_oldZip,(ZipFilePos_t)readPos,out_data,out_data_end);
     }

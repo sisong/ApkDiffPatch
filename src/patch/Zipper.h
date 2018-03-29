@@ -82,7 +82,7 @@ bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
     
-bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
+bool UnZipper_openVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
 bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
 static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_cache_vce; }
@@ -92,7 +92,7 @@ bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
 bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex);
-ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex);
+ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 
 
     struct Zipper;

@@ -38,6 +38,9 @@ using namespace hdiff_private;
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
         assert(false); return false; } }
+#define  check_clear(value) { \
+    if (!(value)){ printf(#value" ERROR!\n");  \
+        result=false; assert(false); if (!_isInClear){ goto clear; } } }
 
 #define  test_clear(value) { \
     if (!(value)){ \
@@ -65,11 +68,11 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
-    test_clear(UnZipper_openFile(&oldZip,oldZipPath));
-    test_clear(UnZipper_openFile(&newZip,newZipPath));
+    check_clear(UnZipper_openFile(&oldZip,oldZipPath));
+    check_clear(UnZipper_openFile(&newZip,newZipPath));
     
     fileCount=UnZipper_fileCount(&oldZip);
-    test_clear(fileCount=UnZipper_fileCount(&newZip));
+    test_clear(fileCount==UnZipper_fileCount(&newZip));
     for (int i=0;i<fileCount; ++i) {
         test_clear(zipFile_name(&oldZip,i)==zipFile_name(&newZip,i));
         test_clear(UnZipper_file_crc32(&oldZip,i)==UnZipper_file_crc32(&newZip,i));
@@ -77,8 +80,8 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     }
 clear:
     _isInClear=true;
-    test_clear(UnZipper_close(&newZip));
-    test_clear(UnZipper_close(&oldZip));
+    check_clear(UnZipper_close(&newZip));
+    check_clear(UnZipper_close(&oldZip));
     return result;
 }
 

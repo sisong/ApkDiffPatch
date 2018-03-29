@@ -14,7 +14,7 @@ uses:
    
 *  **ZipPatch(oldZip,diffData,out newZip)**
   
-   ok , get the newZip; 
+   ok , get the newZip;   
    **ZipPatch()** requires 4*(decompress stream memory) + `ref old decompress` memory + O(1), also `ref old decompress` can use temp disk file without memory. 
    
 ---
