@@ -3,6 +3,7 @@
 [![release](https://img.shields.io/badge/release-v1.0-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
 Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support apk v2 sign & Jar sign(apk v1).    
 ( not support zip64, and only support decode Deflated code; dependent libraries HDiffPatch, zlib, lzma. )   
+[[中文说明](https://blog.csdn.net/housisong/article/details/79768678)]
 
 ---
 uses:
