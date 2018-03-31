@@ -30,29 +30,20 @@
 #include <stdio.h> //FILE
 #include <assert.h>
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
-//todo: support zip64?
+#include "../../HDiffPatch/file_for_patch.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 typedef uint32_t ZipFilePos_t;
-
-typedef enum TDataDescriptor{
-    kDataDescriptor_NO =0,
-    kDataDescriptor_12 =1,
-    kDataDescriptor_16 =2
-} TDataDescriptor;
     
 // https://en.wikipedia.org/wiki/Zip_(file_format)
 // https://source.android.com/security/apksigning/v2
 // https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
     
 typedef struct UnZipper{
-    hpatch_TStreamInput* stream;
+    const hpatch_TStreamInput* stream;
 //private:
-    FILE*           _file;
-    ZipFilePos_t    _fileLength;
-    ZipFilePos_t    _file_curPos;
-    hpatch_TStreamInput _stream;
+    TFileStreamInput _fileStream;
     
     ZipFilePos_t    _vce_size;
     unsigned char*  _endCentralDirectory;
@@ -69,8 +60,10 @@ typedef struct UnZipper{
     unsigned char*  _cache_vce;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
-bool UnZipper_openRead(UnZipper* self,const char* zipFileName,
+bool UnZipper_openFile(UnZipper* self,const char* zipFileName,
                        bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
+bool UnZipper_openStream(UnZipper* self,const hpatch_TStreamInput* zipStream,
+                         bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
@@ -79,17 +72,17 @@ bool                UnZipper_file_isCompressed(const UnZipper* self,int fileInde
 ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
 uint32_t            UnZipper_file_crc32(const UnZipper* self,int fileIndex);
-TDataDescriptor     UnZipper_file_dataDescriptor(const UnZipper* self,int fileIndex);
+ZipFilePos_t        UnZipper_fileEntry_endOffset(const UnZipper* self,int fileIndex);
 
 
-ZipFilePos_t        UnZipper_fileData_offset(UnZipper* self,int fileIndex);
+ZipFilePos_t        UnZipper_fileData_offset(const UnZipper* self,int fileIndex);
 bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
 bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
                                              const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
     
-bool UnZipper_openForVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
+bool UnZipper_openVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
 bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
 static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_cache_vce; }
@@ -99,7 +92,7 @@ bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
 bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex);
-ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex);
+ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 
 
     struct Zipper;
@@ -121,7 +114,8 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(UnZipper* self,int fileIndex);
 
 typedef struct Zipper{
 //private:
-    FILE*           _file;
+    const hpatch_TStreamOutput* _stream;
+    TFileStreamOutput           _fileStream;
     ZipFilePos_t    _curFilePos;
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
@@ -139,8 +133,10 @@ typedef struct Zipper{
     size_t          _curBufLen;
 } Zipper;
 void Zipper_init(Zipper* self);
-bool Zipper_openWrite(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                      int ZipAlignSize,int compressLevel,int compressMemLevel);
+bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
+                    int ZipAlignSize,int compressLevel,int compressMemLevel);
+bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
+                    int ZipAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
@@ -154,7 +150,7 @@ const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
     
-bool Zipper_copyApkV2Sign_before_fileHeader(Zipper* self,UnZipper* srcZip);
+bool Zipper_copyExtra_before_fileHeader(Zipper* self,UnZipper* srcZip);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     

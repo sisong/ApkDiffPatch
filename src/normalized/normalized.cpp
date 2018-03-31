@@ -46,9 +46,9 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     UnZipper_init(&unzipper);
     Zipper_init(&zipper);
     
-    check(UnZipper_openRead(&unzipper,srcApk));
+    check(UnZipper_openFile(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openWrite(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
+    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
     
     //sort file
     for (int i=0; i<fileCount; ++i) {
@@ -70,6 +70,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
+        //isCopyCompressed==true时的逻辑并不是必须的;
         bool isCopyCompressed=UnZipper_file_isApkV2Compressed(&unzipper,fileIndex);
         printf("\"%s\"",fileName.c_str());
         if (isCopyCompressed){
@@ -82,7 +83,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     }
     printf("\n");
     
-    //no run: check(Zipper_copyApkV2Sign_before_fileHeader(&zipper,&unzipper));
+    //no run: check(Zipper_copyExtra_before_fileHeader(&zipper,&unzipper));
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
         check(Zipper_fileHeader_append(&zipper,&unzipper,fileIndex));

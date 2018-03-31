@@ -40,7 +40,7 @@
 
 #define  check(value,error) { \
     if (!(value)){ printf(#value" "#error"!\n");  \
-        if (result!=PATCH_SUCCESS) result=error; if (!_isInClear){ goto clear; } } }
+        if (result==PATCH_SUCCESS) result=error; if (!_isInClear){ goto clear; } } }
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName){
@@ -88,7 +88,7 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
     }
     
     check(ZipDiffData_openRead(&zipDiffData,&diffData,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
-    check(UnZipper_openRead(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
+    check(UnZipper_openFile(&oldZip,oldZipPath,zipDiffData.oldZipIsDataNormalized!=0,
                             zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
     check(zipDiffData.oldZipCESize==UnZipper_CESize(&oldZip),PATCH_OLDDATA_ERROR);
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount), PATCH_OLDDATA_ERROR);
@@ -122,8 +122,8 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
                          0,0,input_ref), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
 
-    check(Zipper_openWrite(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,(int)zipDiffData.newZipAlignSize,
-                           (int)zipDiffData.newCompressLevel,(int)zipDiffData.newCompressMemLevel),PATCH_OPENWRITE_ERROR)
+    check(Zipper_openFile(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,(int)zipDiffData.newZipAlignSize,
+                          (int)zipDiffData.newCompressLevel,(int)zipDiffData.newCompressMemLevel),PATCH_OPENWRITE_ERROR)
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsDataNormalized!=0,
                          zipDiffData.newZipCESize,zipDiffData.extraEdit,

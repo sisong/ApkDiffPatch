@@ -38,6 +38,9 @@ using namespace hdiff_private;
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
         assert(false); return false; } }
+#define  check_clear(value) { \
+    if (!(value)){ printf(#value" ERROR!\n");  \
+        result=false; assert(false); if (!_isInClear){ goto clear; } } }
 
 #define  test_clear(value) { \
     if (!(value)){ \
@@ -65,11 +68,11 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
-    test_clear(UnZipper_openRead(&oldZip,oldZipPath));
-    test_clear(UnZipper_openRead(&newZip,newZipPath));
+    check_clear(UnZipper_openFile(&oldZip,oldZipPath));
+    check_clear(UnZipper_openFile(&newZip,newZipPath));
     
     fileCount=UnZipper_fileCount(&oldZip);
-    test_clear(fileCount=UnZipper_fileCount(&newZip));
+    test_clear(fileCount==UnZipper_fileCount(&newZip));
     for (int i=0;i<fileCount; ++i) {
         test_clear(zipFile_name(&oldZip,i)==zipFile_name(&newZip,i));
         test_clear(UnZipper_file_crc32(&oldZip,i)==UnZipper_file_crc32(&newZip,i));
@@ -77,8 +80,8 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     }
 clear:
     _isInClear=true;
-    test_clear(UnZipper_close(&newZip));
-    test_clear(UnZipper_close(&oldZip));
+    check_clear(UnZipper_close(&newZip));
+    check_clear(UnZipper_close(&oldZip));
     return result;
 }
 
@@ -164,17 +167,8 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
         if (!isNeedAlign)
             continue;
         ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
-        ZipFilePos_t lastEndPos=(i>0)?(UnZipper_fileData_offset(zip,i-1) //unsafe 可能并没有按顺序放置?
-                                       +UnZipper_file_compressedSize(zip,i-1)) : 0;
+        ZipFilePos_t lastEndPos=(i<=0)?0:UnZipper_fileEntry_endOffset(zip,i-1); //unsafe last可能并没有按顺序放置?
         if (entryOffset<lastEndPos) return 0; //顺序有误;
-        if (i>0){
-            //尝试修正lastEndPos;
-            TDataDescriptor desc=UnZipper_file_dataDescriptor(zip,i-1);
-            if (desc==kDataDescriptor_12)
-                lastEndPos+=12;
-            else if (desc==kDataDescriptor_16)
-                lastEndPos+=16;
-        }
         ZipFilePos_t skipLen=entryOffset-lastEndPos;
         if (skipLen>maxSkipLen) maxSkipLen=skipLen;
         ZipFilePos_t offset=UnZipper_fileData_offset(zip,i);

@@ -34,7 +34,7 @@
 
 #include <iostream>
 #include "normalized/normalized.h"
-#include "../../HDiffPatch/_clock_for_demo.h"
+#include "../HDiffPatch/_clock_for_demo.h"
 #include "diff/DiffData.h"
 
 int main(int argc, const char * argv[]) {

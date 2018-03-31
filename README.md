@@ -1,8 +1,9 @@
 **ApkDiffPatch**
 ================
-Version 0.9.8 beta   
+[![release](https://img.shields.io/badge/release-v1.0-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
 Zip(Jar,Apk) file by file Diff & Patch C++ library, create minimal differential, support apk v2 sign & Jar sign(apk v1).    
 ( not support zip64, and only support decode Deflated code; dependent libraries HDiffPatch, zlib, lzma. )   
+[[中文说明](https://blog.csdn.net/housisong/article/details/79768678)]
 
 ---
 uses:
@@ -10,17 +11,17 @@ uses:
 *  **ZipDiff(oldZip,newZip,out diffData)**
    
    release the diffData for update oldZip;    
-   your apk use v2 sign? newZip=AndroidSDK#apksigner(**ApkNormalized**(newZip)) before ZipDiff, AND you cannot change zlib version because v2 Apk need byte by byte equal.   
+   your apk use v2 sign(or need ZipPatch result byte by byte equal)? `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff, AND You should not modify the zlib version (unless it is certified compatible).   
    
 *  **ZipPatch(oldZip,diffData,out newZip)**
   
-   ok , get the newZip; 
-   **ZipPatch()** can min requires O(1) bytes of memory when using temp disk file.
+   ok , get the newZip;   
+   **ZipPatch()** requires 4*(decompress stream memory) + `ref old decompress` memory + O(1), also `ref old decompress` can use temp disk file without memory. 
    
 ---
 *  **Why** need **ApkDiffPatch** after have BsDiff or HDiffPatch **?**
 ```
-ApkDiffPatch: v0.9.8beta  BsDiff: v4.3  HDiffPatch: v2.2.6
+ApkDiffPatch: v1.0  BsDiff: v4.3  HDiffPatch: v2.2.6
 =======================================================================================================
                                                                     BsDiff  HDiffPatch  ApkDiffPatch
              oldVersion   size                 newVersion   size    (bzip2)   (+zlib)  (+zlib)  (+lzma)

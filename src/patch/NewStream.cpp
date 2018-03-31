@@ -170,7 +170,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->stream=&self->_stream;
     
     self->_extraEditSize=(size_t)extraEdit->streamSize;
-    check(UnZipper_openForVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
+    check(UnZipper_openVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
     if (self->_extraEditSize>0){
         check((long)self->_extraEditSize==extraEdit->read(extraEdit->streamHandle,0,self->_newZipVCE._cache_vce,
                                                       self->_newZipVCE._cache_vce+self->_extraEditSize));
@@ -192,9 +192,8 @@ static bool _file_entry_end(NewStream* self){
     check(self->_curNewOtherCompressIndex==self->_newRefOtherCompressedCount);
     check(self->_curNewReCompressSizeIndex==self->_newReCompressSizeCount);
     
-    if (UnZipper_isHaveApkV2Sign(&self->_newZipVCE)){
-        check(Zipper_copyApkV2Sign_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
-    }
+    check(Zipper_copyExtra_before_fileHeader(self->_out_newZip,&self->_newZipVCE));
+    
     for (int i=0; i<self->_fileCount; ++i) {
         check(Zipper_fileHeader_append(self->_out_newZip,&self->_newZipVCE,i));
     }

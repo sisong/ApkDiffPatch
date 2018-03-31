@@ -34,7 +34,7 @@
 #include "../HDiffPatch/_clock_for_demo.h"
 
 int main(int argc, const char * argv[]) {
-    if ((argc<4)||(argc>5)){
+    if (!((4<=argc)&&(argc<=5))){
         std::cout << "parameter: oldZip newZip outDiffFileName [temp_forTestZipPatchFileName]\n";
         return 1;
     }

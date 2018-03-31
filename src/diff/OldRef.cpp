@@ -55,7 +55,7 @@ bool getOldRefList(UnZipper* newZip,const std::vector<uint32_t>& samePairList,
             decompressList.push_back(i);
     }
     assert(iOldSame==oldSameList.size());
-    //todo: reduce decompressList;
+    //optimize: continue to reduce the decompressList?
     out_oldRefList.insert(out_oldRefList.end(),decompressList.begin(),decompressList.end());
     std::sort(out_oldRefList.begin(),out_oldRefList.end());
     return true;
