@@ -60,8 +60,9 @@ bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int src
 }
 
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
-    UnZipper            oldZip;
     UnZipper            newZip;
+    UnZipper            oldZip;
+    std::map<std::string,int> oldMap;
     bool            result=true;
     bool            _isInClear=false;
     int             fileCount=0;
@@ -73,10 +74,17 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     
     fileCount=UnZipper_fileCount(&oldZip);
     test_clear(fileCount==UnZipper_fileCount(&newZip));
+    for (int i=0;i<fileCount; ++i)
+        oldMap[zipFile_name(&oldZip,i)]=i;
+    test_clear(oldMap.size()==(size_t)fileCount);
+    
     for (int i=0;i<fileCount; ++i) {
-        test_clear(zipFile_name(&oldZip,i)==zipFile_name(&newZip,i));
-        test_clear(UnZipper_file_crc32(&oldZip,i)==UnZipper_file_crc32(&newZip,i));
-        test_clear(zipFileData_isSame(&oldZip,i,&newZip,i));
+        std::map<std::string,int>::iterator it=oldMap.find(zipFile_name(&newZip,i));
+        test_clear(it!=oldMap.end());
+        int old_i=it->second;
+        oldMap.erase(it);//del
+        test_clear(UnZipper_file_crc32(&oldZip,old_i)==UnZipper_file_crc32(&newZip,i));
+        test_clear(zipFileData_isSame(&oldZip,old_i,&newZip,i));
     }
 clear:
     _isInClear=true;

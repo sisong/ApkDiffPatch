@@ -39,9 +39,12 @@
 #include "DiffData.h"
 #include "DiffData.h"
 #include "../patch/patch_types.h"
-#define _CompressPlugin_lzma //use lzma for compress out diffData
+
+#define _CompressPlugin_lzma //default use lzma compress diffData
+#ifdef _CompressPlugin_lzma
 #include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
 #include "../../lzma/C/LzmaEnc.h"
+#endif
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
@@ -220,12 +223,12 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
     std::cout<<"  diff  time: "<<(time1-time0)<<" s\n";
     if (!check_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
                                diffData.data(),diffData.data()+diffData.size(),decompressPlugin)){
-        std::cout<<"\n  HPatch check HDiffZ result error!!!\n";
+        std::cout<<"\n  patch check HDiffZ result error!!!\n";
         return false;
     }else{
         double time2=clock_s();
-        std::cout<<"  HPatch check HDiffZ result ok!\n";
-        std::cout<<"  hpatch time: "<<(time2-time1)<<" s\n";
+        std::cout<<"  patch check HDiffZ result ok!\n";
+        std::cout<<"  patch time: "<<(time2-time1)<<" s\n";
         return true;
     }
 }
