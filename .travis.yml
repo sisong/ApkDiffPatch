@@ -1,0 +1,13 @@
+language: cpp
+matrix:
+  include:
+    - os: linux
+    - os: osx
+      osx_image: xcode9.3
+script:
+- make
+- if [[ $TRAVIS_OS_NAME == osx ]]; then xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ApkNormalized -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin; fi
+- if [[ $TRAVIS_OS_NAME == osx ]]; then xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipDiff -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin; fi
+- if [[ $TRAVIS_OS_NAME == osx ]]; then xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipPatch -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin; fi
+- if [[ $TRAVIS_OS_NAME == osx ]]; then xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZiPatExtraDemo -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin; fi
+
