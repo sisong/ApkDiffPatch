@@ -60,4 +60,4 @@ ZipPatch:  src/zip_patch.o $(ZIPPATCH_OBJ)
 	c++ -o ZipPatch src/zip_patch.o $(ZIPPATCH_OBJ)
 
 clean:
-	rm -f ApkNormalized ZipDiff ZipPatch src/zip_patch.o $(ZIPDIFF_OBJ) $(APKNORM_OBJ)
+	-rm -f ApkNormalized ZipDiff ZipPatch src/zip_patch.o $(ZIPDIFF_OBJ) $(APKNORM_OBJ)
