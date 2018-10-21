@@ -81,7 +81,7 @@ static bool _UnZipper_searchEndCentralDirectory(UnZipper* self,ZipFilePos_t* out
         ZipFilePos_t readLen=max_back_pos-readed_pos;
         if (readLen>kBufSize) readLen=kBufSize;
         readed_pos+=readLen;
-        check(readLen==self->stream->read(self->stream->streamHandle,fileLength-readed_pos,buf,buf+readLen));
+        check((long)readLen==self->stream->read(self->stream->streamHandle,fileLength-readed_pos,buf,buf+readLen));
         for (int i=(int)readLen-1; i>=0; --i) {
             cur_value=(cur_value<<8)|buf[i];
             if (cur_value==kENDHEADERMAGIC){

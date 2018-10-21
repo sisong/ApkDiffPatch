@@ -61,7 +61,7 @@ int main(int argc, const char * argv[]) {
     }
     printf("oldZip:\"%s\"\ndiff  :\"%s\"\noutZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
     if (tempUncompressFileName!=0)
-        printf("maxUncompressMemory:%ld\ntempUncompressFileName:\"%s\"\n",maxUncompressMemory,tempUncompressFileName);
+        printf("maxUncompressMemory:%ld\ntempUncompressFileName:\"%s\"\n",(long)maxUncompressMemory,tempUncompressFileName);
     
     double time0=clock_s();
     int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName);
