@@ -39,7 +39,15 @@
 
 int main(int argc, const char * argv[]) {
     if (argc!=3){
-        std::cout << "parameter: srcApk out_newApk\n  input srcApk file can *.zip *.jar *.apk \n";
+        std::cout << "usage: ApkNormalized srcApk out_newApk\n"
+                     "options:\n"
+                     "  input srcApk file can *.zip *.jar *.apk file type;\n"
+                     "  ApkNormalized normalized zip file: recompress all file data, \n"
+                     "    align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
+                     "    remove all data descriptor, reserve & normalized Extra field and Comment,\n"
+                     "    compatible with jar sign(apk v1 sign), etc...\n"
+                     "  if apk file use apk v2 sign,must Released Apk:=AndroidSDK#apksigner(out_newApk)\n"
+                     "    after ApkNormalized;\n";
         return 1;
     }
     const char* srcApk=argv[1];

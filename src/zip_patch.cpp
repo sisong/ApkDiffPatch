@@ -28,7 +28,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../HDiffPatch/_clock_for_demo.h"
+#include "../HDiffPatch/_atosize.h"
 #include "patch/Patcher.h"
+
+#ifndef PRSizeT
+#   ifdef _MSC_VER
+#       define PRSizeT "Iu"
+#   else
+#       define PRSizeT "zu"
+#   endif
+#endif
+
+static void printUsage(){
+    printf("usage: ZipPatch oldZipFile zipDiffFile outNewZipFile "
+           "[maxUncompressMemory tempUncompressFileName]\n"
+           "options:\n"
+           "  decompress data saved in Memory, when DEFAULT or it's size <= maxUncompressMemory;\n"
+           "  if it's size > maxUncompressMemory then save it into file tempUncompressFileName;\n"
+           "  maxUncompressMemory can like 8388608 8m 40m 120m 1g etc... \n");
+}
 
 int main(int argc, const char * argv[]) {
     const char* oldZipPath=0;
@@ -44,30 +62,31 @@ int main(int argc, const char * argv[]) {
         oldZipPath   =argv[1];
         zipDiffPath  =argv[2];
         outNewZipPath=argv[3];
-        long _byteSize=atol(argv[4]);
-        if ((_byteSize<0)||(_byteSize!=(long)(size_t)_byteSize)){
-            printf("parameter maxUncompressMemory error!\n");
+        if (!kmg_to_size(argv[4],strlen(argv[4]),&maxUncompressMemory)){
+            printf("argument maxUncompressMemory ERROR!\n");
+            printUsage();
             return 1;
         }
-        maxUncompressMemory=(size_t)_byteSize;
         tempUncompressFileName=argv[5];
-        if (tempUncompressFileName==0){
-            printf("parameter tempUncompressFileName error!\n");
+        if ((tempUncompressFileName==0)||(strlen(tempUncompressFileName)==0)){
+            printf("argument tempUncompressFileName ERROR!\n");
+            printUsage();
             return 1;
         }
     }else{
-        printf("parameter: oldZip zipDiffPath outNewZip [maxUncompressMemory tempUncompressFileName]\n");
+        printUsage();
         return 1;
     }
-    printf("oldZip:\"%s\"\ndiff  :\"%s\"\noutZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
+    printf("oldZip   :\"%s\"\nzipDiff  :\"%s\"\noutNewZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
     if (tempUncompressFileName!=0)
-        printf("maxUncompressMemory:%ld\ntempUncompressFileName:\"%s\"\n",(long)maxUncompressMemory,tempUncompressFileName);
+        printf("maxUncompressMemory:%" PRSizeT "\ntempUncompressFileName:\"%s\"\n",
+               maxUncompressMemory,tempUncompressFileName);
     
     double time0=clock_s();
     int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName);
     double time1=clock_s();
     if (exitCode==PATCH_SUCCESS)
-        printf("  patch ok!\n");
+        printf("  zip file patch ok!\n");
     printf("\nZipPatch time: %.3f s\n",(time1-time0));
     return exitCode;
 }
