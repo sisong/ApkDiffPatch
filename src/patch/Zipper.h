@@ -112,6 +112,9 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex
                                        const unsigned char* part_data,const unsigned char* part_data_end);
     };
 
+    
+struct TThreadWorkData;
+    
 typedef struct Zipper{
 //private:
     const hpatch_TStreamOutput* _stream;
@@ -131,12 +134,16 @@ typedef struct Zipper{
     //mem
     unsigned char*  _buf; //file out buf
     size_t          _curBufLen;
+    
+    //thread
+    int                 _threadNum;
+    TThreadWorkData*    _threadWorkData;
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                    int ZipAlignSize,int compressLevel,int compressMemLevel);
+                    int ZipAlignSize,int compressLevel,int compressMemLevel,int threadNum=1);
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                    int ZipAlignSize,int compressLevel,int compressMemLevel);
+                    int ZipAlignSize,int compressLevel,int compressMemLevel,int threadNum=1);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);

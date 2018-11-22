@@ -12,6 +12,7 @@
 		D6126BE62047B98500183A42 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE42047B98500183A42 /* patch.c */; };
 		D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE82047BF8C00183A42 /* OldStream.cpp */; };
 		D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126BEB2047BFC900183A42 /* NewStream.cpp */; };
+		D618FFFA21A52BB200546A83 /* parallel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D618FFF821A52BB200546A83 /* parallel.cpp */; };
 		D671B767204E82CD002D17A7 /* Patcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B766204E82CD002D17A7 /* Patcher.cpp */; };
 		D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B768204E82F4002D17A7 /* zip_patch.cpp */; };
 		D688888D204688640042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888889204688640042E2B3 /* Zipper.cpp */; };
@@ -41,6 +42,8 @@
 		D6126BE82047BF8C00183A42 /* OldStream.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = OldStream.cpp; sourceTree = "<group>"; };
 		D6126BEA2047BFC900183A42 /* NewStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NewStream.h; sourceTree = "<group>"; };
 		D6126BEB2047BFC900183A42 /* NewStream.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NewStream.cpp; sourceTree = "<group>"; };
+		D618FFF821A52BB200546A83 /* parallel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parallel.cpp; sourceTree = "<group>"; };
+		D618FFF921A52BB200546A83 /* parallel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parallel.h; sourceTree = "<group>"; };
 		D65119052041A9B400805001 /* ZipPatch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipPatch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D66B49CE205A252F002BF30A /* patch_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch_types.h; sourceTree = "<group>"; };
 		D671B765204E82CD002D17A7 /* Patcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Patcher.h; sourceTree = "<group>"; };
@@ -90,9 +93,20 @@
 			path = ../../HDiffPatch/libHDiffPatch/HPatch;
 			sourceTree = "<group>";
 		};
+		D618FFF721A52B8600546A83 /* parallel */ = {
+			isa = PBXGroup;
+			children = (
+				D618FFF821A52BB200546A83 /* parallel.cpp */,
+				D618FFF921A52BB200546A83 /* parallel.h */,
+			);
+			name = parallel;
+			path = ../../src/parallel;
+			sourceTree = "<group>";
+		};
 		D65118FC2041A9B400805001 = {
 			isa = PBXGroup;
 			children = (
+				D618FFF721A52B8600546A83 /* parallel */,
 				D671B768204E82F4002D17A7 /* zip_patch.cpp */,
 				D6888887204688640042E2B3 /* patch */,
 				D66B49CF205A3534002BF30A /* lzma */,
@@ -198,6 +212,7 @@
 				D6126BE62047B98500183A42 /* patch.c in Sources */,
 				D68B02D3205A44B0001F3C40 /* LzmaDec.c in Sources */,
 				D688888D204688640042E2B3 /* Zipper.cpp in Sources */,
+				D618FFFA21A52BB200546A83 /* parallel.cpp in Sources */,
 				D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */,
 				D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */,
 				D6126B91204697FC00183A42 /* ZipDiffData.cpp in Sources */,
@@ -214,7 +229,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -250,6 +265,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
+					"IS_USED_PTHREAD=1",
 					"$(inherited)",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -272,7 +288,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -304,7 +320,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = "";
+				GCC_PREPROCESSOR_DEFINITIONS = "IS_USED_PTHREAD=1";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;

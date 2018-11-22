@@ -25,6 +25,7 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "../parallel/parallel.h"
 #include "Zipper.h"
 #include <string.h>
 #include "../../HDiffPatch/file_for_patch.h"
@@ -57,7 +58,7 @@ typedef enum TDataDescriptor{
     kDataDescriptor_16 =2
 } TDataDescriptor;
 
-#define kBufSize                    (64*1024)
+#define kBufSize                    (16*1024)
 
 #define kMaxEndGlobalComment        (1<<(2*8)) //2 byte
 #define kMinEndCentralDirectorySize (22)  //struct size
@@ -436,12 +437,20 @@ clear:
 }
 
 //----
+struct TThreadWorkData{
+    
+};
 
 void Zipper_init(Zipper* self){
     memset(self,0,sizeof(*self));
 }
 
 bool Zipper_close(Zipper* self){
+    if (self->_threadWorkData){
+        delete self->_threadWorkData;
+        self->_threadWorkData=0;
+    }
+    
     self->_stream=0;
     self->_fileEntryCount=0;
     if (self->_buf) { free(self->_buf); self->_buf=0; }
@@ -459,8 +468,22 @@ bool Zipper_close(Zipper* self){
     check((1<=compressMemLevel)&&(compressMemLevel<=MAX_MEM_LEVEL)); }
 
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                       int ZipAlignSize,int compressLevel,int compressMemLevel){
+                       int ZipAlignSize,int compressLevel,int compressMemLevel,int threadNum){
     check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
+#if (IS_USED_MULTITHREAD)
+    self->_threadNum=(threadNum>0)?threadNum:1;
+#else
+    self->_threadNum=1;
+#endif
+    self->_threadWorkData=0;
+    if (self->_threadNum>1){
+        try {
+            self->_threadWorkData=new TThreadWorkData();
+        } catch (...) {
+            return false;
+        }
+    }
+    
     assert(ZipAlignSize>0);
     if (ZipAlignSize<=0) ZipAlignSize=1;
     checkCompressSet(compressLevel,compressMemLevel);
@@ -488,12 +511,12 @@ bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fi
 }
 
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                      int ZipAlignSize,int compressLevel,int compressMemLevel){
+                      int ZipAlignSize,int compressLevel,int compressMemLevel,int threadNum){
     assert(self->_fileStream.m_file==0);
     check(TFileStreamOutput_open(&self->_fileStream,zipFileName,(hpatch_StreamPos_t)(-1)));
     TFileStreamOutput_setRandomOut(&self->_fileStream,hpatch_TRUE);
     return Zipper_openStream(self,&self->_fileStream.base,fileEntryMaxCount,
-                             ZipAlignSize,compressLevel,compressMemLevel);
+                             ZipAlignSize,compressLevel,compressMemLevel,threadNum);
 }
 
 static bool _writeFlush(Zipper* self){

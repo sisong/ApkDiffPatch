@@ -47,6 +47,6 @@ typedef enum TPatchResult {
 } TPatchResult;
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
-                      size_t maxUncompressMemory,const char* tempUncompressFileName);
+                      size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum=1);
 
 #endif //ZipPatch_Patcher_h
