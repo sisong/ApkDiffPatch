@@ -95,6 +95,9 @@ bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex);
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 
 
+    
+    struct TZipThreadWorks;
+    struct TZipThreadWork;
     struct Zipper;
     struct _zlib_TCompress;
     struct Zipper_file_append_stream:public hpatch_TStreamOutput{
@@ -102,6 +105,7 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex
         hpatch_StreamPos_t    inputPos;
         hpatch_StreamPos_t    outputPos;
         struct Zipper*        self;
+        TZipThreadWork*       threadWork;
 
         struct _zlib_TCompress* compressHandle;
         hpatch_TStreamOutput    compressOutStream;
@@ -112,8 +116,6 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex
                                        const unsigned char* part_data,const unsigned char* part_data_end);
     };
 
-    
-struct TThreadWorkData;
     
 typedef struct Zipper{
 //private:
@@ -137,13 +139,13 @@ typedef struct Zipper{
     
     //thread
     int                 _threadNum;
-    TThreadWorkData*    _threadWorkData;
+    TZipThreadWorks*    _threadWorks;
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                    int ZipAlignSize,int compressLevel,int compressMemLevel,int threadNum=1);
+                    int ZipAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                    int ZipAlignSize,int compressLevel,int compressMemLevel,int threadNum=1);
+                    int ZipAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
@@ -164,6 +166,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
 size_t Zipper_compressData_maxCodeSize(size_t dataSize);
 size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
                            size_t codeSize,int kCompressLevel,int kCompressMemLevel);
+void Zipper_by_multi_thread(Zipper* self,int threadNum);
 
 #ifdef __cplusplus
 }

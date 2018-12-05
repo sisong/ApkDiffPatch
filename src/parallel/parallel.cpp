@@ -44,10 +44,14 @@ HLocker locker_new(void){
 void    locker_delete(HLocker locker){
     assert(locker==(HLocker)(1));
 }
-void    locker_enter(HLocker locker){
+void    locker_loop_enter(HLocker locker){
     //nothing
 }
 void    locker_leave(HLocker locker){
+    //nothing
+}
+
+void this_thread_yield(){
     //nothing
 }
 
@@ -79,10 +83,10 @@ static void _pthread_mutex_loopLock(pthread_mutex_t* locker){
         if (0==pthread_mutex_trylock(locker))
             break;
         else
-            pthread_yield_np();
+            this_thread_yield();
     }
 }
-void locker_enter(HLocker locker){
+void locker_loop_enter(HLocker locker){
     pthread_mutex_t* self=(pthread_mutex_t*)locker;
     _pthread_mutex_loopLock(self);
 }
@@ -91,6 +95,9 @@ void locker_leave(HLocker locker){
     pthread_mutex_unlock(self);
 }
 
+void this_thread_yield(){
+    pthread_yield_np();
+}
 
 struct _TPThreadData{
     TThreadRunCallBackProc  threadProc;
@@ -131,19 +138,23 @@ void locker_delete(HLocker locker){
         delete (std::atomic<int>*)locker;
 }
 
-void locker_enter(HLocker locker){
+void locker_loop_enter(HLocker locker){
     std::atomic<int>& self=*(std::atomic<int>*)locker;
     while (true) {
         int v=++self;
         if (v==1)
             break;
         --self;
-        std::this_thread::yield();
+        this_thread_yield();
     }
 }
 void locker_leave(HLocker locker){
     std::atomic<int>& self=*(std::atomic<int>*)locker;
     --self;
+}
+
+void this_thread_yield(){
+    std::this_thread::yield();
 }
 
 bool thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread){

@@ -33,11 +33,9 @@
 //#define IS_USED_PTHREAD       1
 //#define IS_USED_CPP11THREAD   1
 
-#if ((IS_USED_PTHREAD) | (IS_USED_CPP11THREAD))
+#if ((IS_USED_PTHREAD) || (IS_USED_CPP11THREAD))
 #   define IS_USED_MULTITHREAD  1
-#   define IS_USED_SINGLETHREAD 0
 #else
-#   define IS_USED_MULTITHREAD  0
 #   define IS_USED_SINGLETHREAD 1
 #endif
 
@@ -45,16 +43,19 @@
 extern "C" {
 #endif
     
-    //并行临界区;
+    //并行临界区锁;
     typedef void*   HLocker;
     HLocker     locker_new(void);
     void        locker_delete(HLocker locker);
-    void        locker_enter(HLocker locker);
+    //need? void locker_enter(HLocker locker); //wait until enter
+    void        locker_loop_enter(HLocker locker); //loop try until enter
     void        locker_leave(HLocker locker);
+    
+    void  this_thread_yield();
     
     //并行工作线程;
     typedef void (*TThreadRunCallBackProc)(int threadIndex,void* workData);
-    bool  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread);
+    bool  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread);    
     
 #ifdef __cplusplus
 }
@@ -62,9 +63,9 @@ extern "C" {
 
 #ifdef __cplusplus
 
-struct CAutoLoker {
-    inline CAutoLoker(HLocker locker):m_locker(locker) { locker_enter(locker); }
-    inline ~CAutoLoker(){ locker_leave(m_locker); }
+struct CAutoLoopLocker {
+    inline CAutoLoopLocker(HLocker locker):m_locker(locker) { locker_loop_enter(locker); }
+    inline ~CAutoLoopLocker(){ locker_leave(m_locker); }
 private:
     HLocker m_locker;
 };

@@ -124,14 +124,15 @@ TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char*
 
     check(Zipper_openFile(&out_newZip,outNewZipPath,(int)zipDiffData.newZipFileCount,
                           (int)zipDiffData.newZipAlignSize,(int)zipDiffData.newCompressLevel,
-                          (int)zipDiffData.newCompressMemLevel,threadNum),PATCH_OPENWRITE_ERROR)
+                          (int)zipDiffData.newCompressMemLevel),PATCH_OPENWRITE_ERROR);
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsDataNormalized!=0,
                          zipDiffData.newZipCESize,zipDiffData.extraEdit,
                          zipDiffData.samePairList,zipDiffData.samePairCount,
                          zipDiffData.newRefOtherCompressedList,zipDiffData.newRefOtherCompressedCount,
                          (int)zipDiffData.newOtherCompressLevel,(int)zipDiffData.newOtherCompressMemLevel,
-                         zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount),PATCH_NEWSTREAM_ERROR);
+                         zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount,
+                         threadNum),PATCH_NEWSTREAM_ERROR);
     
     temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);

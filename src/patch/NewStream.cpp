@@ -80,6 +80,8 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
         bool newIsStable=self->_newZipVCE._isDataNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
         bool oldIsStable=self->_oldZip->_isDataNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
         self->_isAlwaysReCompress=newIsStable&(!oldIsStable);
+        //if (newIsStable)
+            Zipper_by_multi_thread(self->_out_newZip,self->_threadNum);
     }else{
         check(Zipper_file_append_end(self->_out_newZip));
     }
@@ -146,7 +148,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
                     int newOtherCompressLevel,int newOtherCompressMemLevel,
-                    const uint32_t* reCompressList,size_t reCompressCount){
+                    const uint32_t* reCompressList,size_t reCompressCount,int threadNum){
     assert(self->_out_newZip==0);
     self->isFinish=false;
     self->_out_newZip=out_newZip;
@@ -163,6 +165,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_newReCompressSizeList=reCompressList;
     self->_newReCompressSizeCount=reCompressCount;
     self->_fileCount=out_newZip->_fileEntryMaxCount;
+    self->_threadNum=threadNum;
     
     self->_stream.streamHandle=self;
     self->_stream.streamSize=newDataSize;
