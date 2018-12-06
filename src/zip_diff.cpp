@@ -33,19 +33,31 @@
 #include "diff/Differ.h"
 #include "../HDiffPatch/_clock_for_demo.h"
 
+#define _TEMP_ZipPatch_FILENAME "_tempZipPatch.tmp"
+static void printUsage(){
+    std::cout << "usage: ZipDiff oldZipFile newZipFile outDiffFileName [tempZipPatch_fileName]\n"
+                 "options:\n"
+                 "  input oldZipFile & newZipFile file can *.zip *.jar *.apk file type;\n"
+                 "  tempZipPatch_fileName DEFAULT is outDiffFileName + \"" _TEMP_ZipPatch_FILENAME "\";\n";
+}
+
 int main(int argc, const char * argv[]) {
     if (!((4<=argc)&&(argc<=5))){
-        std::cout << "parameter: oldZip newZip outDiffFileName [temp_forTestZipPatchFileName]\n";
+        printUsage();
         return 1;
     }
     int exitCode=0;
     const char* oldZipPath     =argv[1];
     const char* newZipPath     =argv[2];
     const char* outDiffFileName=argv[3];
-    std::string temp_ZipPatchFileName=std::string(outDiffFileName)+"_temp_forTestZipPatch.tmp";
+    std::string temp_ZipPatchFileName=std::string(outDiffFileName)+_TEMP_ZipPatch_FILENAME;
     if (argc>=5){
+        if ((argv[4]==0)||(strlen(argv[4])==0)){
+            printf("argument tempZipPatch_fileName ERROR!\n");
+            printUsage();
+            return 1;
+        }
         temp_ZipPatchFileName=argv[4];
-        assert(!temp_ZipPatchFileName.empty());
     }
     
     std::cout<<"oldZip :\"" <<oldZipPath<< "\"\nnewZip :\""<<newZipPath<<"\"\noutDiff:\""<<outDiffFileName<<"\"\n";

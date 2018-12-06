@@ -72,7 +72,6 @@ static bool getFileIsEqual(const char* xFileName,const char* yFileName);
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
              const char* temp_ZipPatchFileName){
-    const int           myBestMatchScore=5;
     UnZipper            oldZip;
     UnZipper            newZip;
     TFileStreamOutput   out_diffFile;
@@ -95,16 +94,19 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     int             newZip_otherCompressLevel=0;
     int             newZip_otherCompressMemLevel=0;
     bool            newCompressedDataIsNormalized=false;
+    
+    const int           myBestMatchScore=3;
 #ifdef _CompressPlugin_lzma
-    //lzma_compress_level: hdiffpatch default
-    //lzma_dictSize: hdiffpatch default
-    hdiff_TCompress* compressPlugin=&lzmaCompressPlugin;
+    hdiff_TCompress*    compressPlugin=&lzmaCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&lzmaDecompressPlugin;
+    lzma_compress_level =9;
+    lzma_dictSize       =4*1024*1024;
 #else
-    zlib_compress_level=9; //0..9
-    hdiff_TCompress* compressPlugin=&zlibCompressPlugin;
+    hdiff_TCompress*    compressPlugin=&zlibCompressPlugin;
     hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
+    zlib_compress_level =9; //0..9
 #endif
+
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
     TFileStreamOutput_init(&out_diffFile);
@@ -191,10 +193,10 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
 
     if (byteByByteEqualCheck){
        check(getFileIsEqual(newZipPath,temp_ZipPatchFileName));
-        std::cout<<"  check ZipPatch result Equal ok!\n";
+        std::cout<<"  check ZipPatch result Byte By Byte Equal ok!\n";
     }else{
        check(getZipIsSame(newZipPath,temp_ZipPatchFileName));
-       std::cout<<"  check ZipPatch result Same ok!\n";
+       std::cout<<"  check ZipPatch result Same Like ok!\n";
     }
     
 clear:

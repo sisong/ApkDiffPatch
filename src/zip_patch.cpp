@@ -28,7 +28,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../HDiffPatch/_clock_for_demo.h"
+#include "../HDiffPatch/_atosize.h"
 #include "patch/Patcher.h"
+#include "parallel/parallel.h"
+
+#ifndef PRSizeT
+#   ifdef _MSC_VER
+#       define PRSizeT "Iu"
+#   else
+#       define PRSizeT "zu"
+#   endif
+#endif
+
+static void printUsage(){
+    printf("usage: ZipPatch oldZipFile zipDiffFile outNewZipFile"
+           " [maxUncompressMemory tempUncompressFileName]"
+#if (IS_USED_MULTITHREAD)
+           " [-p-parallelThreadNumber]"
+#endif
+           "\noptions:\n"
+           "  decompress data saved in Memory, DEFAULT or when it's size <= maxUncompressMemory;\n"
+           "    if it's size > maxUncompressMemory then save it into file tempUncompressFileName;\n"
+           "    maxUncompressMemory can like 8388608 8m 40m 120m 1g etc... \n"
+#if (IS_USED_MULTITHREAD)
+           "  -p-parallelThreadNumber\n"
+           "    parallelThreadNumber DEFAULT 1, if parallelThreadNumber>1 (recommended 3 etc...)\n"
+           "    then start multi-thread Parallel compress zip; requires more memory!\n"
+#endif
+           );
+}
+
+#define PATCH_OPTIONS_ERROR 1
+#define _options_check(value,errorInfo){ \
+    if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return PATCH_OPTIONS_ERROR; } }
+
+#define THREAD_NUMBER_NULL      0
+#define THREAD_NUMBER_DEFAULT   1
+#define THREAD_NUMBER_MAX       (1<<20)
 
 int main(int argc, const char * argv[]) {
     const char* oldZipPath=0;
@@ -36,38 +72,69 @@ int main(int argc, const char * argv[]) {
     const char* outNewZipPath=0;
     size_t      maxUncompressMemory=0;
     const char* tempUncompressFileName=0;
-    if(argc==4){
-        oldZipPath   =argv[1];
-        zipDiffPath  =argv[2];
-        outNewZipPath=argv[3];
-    }else if(argc==6){
-        oldZipPath   =argv[1];
-        zipDiffPath  =argv[2];
-        outNewZipPath=argv[3];
-        long _byteSize=atol(argv[4]);
-        if ((_byteSize<0)||(_byteSize!=(long)(size_t)_byteSize)){
-            printf("parameter maxUncompressMemory error!\n");
-            return 1;
+    size_t      threadNum = THREAD_NUMBER_NULL;
+    #define kMax_arg_values_size 5
+    const char * arg_values[kMax_arg_values_size]={0};
+    int          arg_values_size=0;
+    int         i;
+    for (i=1; i<argc; ++i) {
+        const char* op=argv[i];
+        _options_check((op!=0)&&(strlen(op)>0),"?");
+        if (op[0]!='-'){
+            _options_check(arg_values_size<kMax_arg_values_size,"count");
+            arg_values[arg_values_size]=op;
+            ++arg_values_size;
+            continue;
         }
-        maxUncompressMemory=(size_t)_byteSize;
-        tempUncompressFileName=argv[5];
-        if (tempUncompressFileName==0){
-            printf("parameter tempUncompressFileName error!\n");
-            return 1;
-        }
-    }else{
-        printf("parameter: oldZip zipDiffPath outNewZip [maxUncompressMemory tempUncompressFileName]\n");
-        return 1;
+        _options_check((op!=0)&&(op[0]=='-'),"?");
+        switch (op[1]) {
+#if (IS_USED_MULTITHREAD)
+            case 'p':{
+                _options_check((threadNum==THREAD_NUMBER_NULL)&&((op[2]=='-')),"-p-?");
+                const char* pnum=op+3;
+                _options_check(a_to_size(pnum,strlen(pnum),&threadNum),"-p-?");
+                _options_check(threadNum>=THREAD_NUMBER_DEFAULT,"-p-?");
+            } break;
+#endif
+            default: {
+                _options_check(hpatch_FALSE,"-?");
+            } break;
+        }//swich
     }
-    printf("oldZip:\"%s\"\ndiff  :\"%s\"\noutZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
+    if (threadNum==THREAD_NUMBER_NULL)
+        threadNum=THREAD_NUMBER_DEFAULT;
+    else if (threadNum>THREAD_NUMBER_MAX)
+        threadNum=THREAD_NUMBER_MAX;
+    
+    if(arg_values_size==3){
+        oldZipPath   =arg_values[0];
+        zipDiffPath  =arg_values[1];
+        outNewZipPath=arg_values[2];
+    }else if(arg_values_size==5){
+        oldZipPath   =arg_values[0];
+        zipDiffPath  =arg_values[1];
+        outNewZipPath=arg_values[2];
+        _options_check(kmg_to_size(arg_values[3],strlen(arg_values[3]),
+                                   &maxUncompressMemory),"maxUncompressMemory");
+        tempUncompressFileName=argv[4];
+        _options_check((tempUncompressFileName!=0)
+                       &&(strlen(tempUncompressFileName)>0),"tempUncompressFileName");
+    }else{
+        _options_check(false,"count");
+    }
+    printf("oldZip   :\"%s\"\nzipDiff  :\"%s\"\noutNewZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
     if (tempUncompressFileName!=0)
-        printf("maxUncompressMemory:%ld\ntempUncompressFileName:\"%s\"\n",maxUncompressMemory,tempUncompressFileName);
+        printf("maxUncompressMemory:%" PRSizeT "\ntempUncompressFileName:\"%s\"\n",
+               maxUncompressMemory,tempUncompressFileName);
     
     double time0=clock_s();
-    int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,maxUncompressMemory,tempUncompressFileName);
+    int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,
+                          maxUncompressMemory,tempUncompressFileName,(int)threadNum);
     double time1=clock_s();
     if (exitCode==PATCH_SUCCESS)
-        printf("  patch ok!\n");
+        printf("  zip file patch ok!\n");
+    else
+        printf("  zip file patch error!\n");
     printf("\nZipPatch time: %.3f s\n",(time1-time0));
     return exitCode;
 }

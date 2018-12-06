@@ -27,6 +27,21 @@
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Release_x86">
+				<Option output="bin/Release_x86/ApkNormalized" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release_x86/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=i386" />
+					<Add option="-O2" />
+					<Add option="-m32" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-m32" />
+				</Linker>
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />

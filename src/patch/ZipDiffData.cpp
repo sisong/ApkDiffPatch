@@ -49,7 +49,7 @@ void ZipDiffData_close(ZipDiffData* self){
     check(v==(TUInt)v);    \
     *(result)=(TUInt)v; }
 
-bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin);
+bool _decompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin);
 
 
 static bool _openZipDiffData(TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin,
@@ -146,7 +146,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
         
         check((long)headDataCompressedSize==diffData->base.read(diffData->base.streamHandle,headDataPos,
                                                                 self->_buf,self->_buf+headDataCompressedSize));
-        check(_uncompress(self->_buf,headDataCompressedSize,self->_buf+memLeft,headDataSize,decompressPlugin));
+        check(_decompress(self->_buf,headDataCompressedSize,self->_buf+memLeft,headDataSize,decompressPlugin));
         
         self->samePairList=(uint32_t*)self->_buf;
         self->newRefOtherCompressedList=self->samePairList+self->samePairCount*2;
@@ -214,7 +214,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TD
     return true;
 }
 
-bool _uncompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin){
+bool _decompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpatch_TDecompress* decompressPlugin){
     bool result=true;
     bool _isInClear=false;
     hpatch_TStreamInput codeStream;
