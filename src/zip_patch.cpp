@@ -84,7 +84,7 @@ int main(int argc, const char * argv[]) {
     
     double time0=clock_s();
     int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,
-                          maxUncompressMemory,tempUncompressFileName,5);
+                          maxUncompressMemory,tempUncompressFileName,3);
     double time1=clock_s();
     if (exitCode==PATCH_SUCCESS)
         printf("  zip file patch ok!\n");

@@ -47,28 +47,69 @@ extern "C" {
     typedef void*   HLocker;
     HLocker     locker_new(void);
     void        locker_delete(HLocker locker);
-    //need? void locker_enter(HLocker locker); //wait until enter
-    void        locker_loop_enter(HLocker locker); //loop try until enter
+    void        locker_enter(HLocker locker);
     void        locker_leave(HLocker locker);
     
-    void  this_thread_yield();
+    //同步变量;
+    typedef void*   HCondvar;
+#if (IS_USED_CPP11THREAD)
+#   define TLockerBox void  /* std::unique_lock<std::mutex> */
+#else
+    struct TLockerBox {
+        HLocker locker;
+    };
+#endif
+    HCondvar    condvar_new(void);
+    void        condvar_delete(HCondvar cond);
+    void        condvar_wait(HCondvar cond,TLockerBox* lockerBox);
+    void        condvar_signal(HCondvar cond);
+    void        condvar_broadcast(HCondvar cond);
     
     //并行工作线程;
     typedef void (*TThreadRunCallBackProc)(int threadIndex,void* workData);
-    bool  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread);    
+    bool  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
+                          int isUseThisThread,int threadIndexStart=0);
     
 #ifdef __cplusplus
 }
 #endif
 
 #ifdef __cplusplus
+#include <stddef.h> //for size_t
 
-struct CAutoLoopLocker {
-    inline CAutoLoopLocker(HLocker locker):m_locker(locker) { locker_loop_enter(locker); }
-    inline ~CAutoLoopLocker(){ locker_leave(m_locker); }
-private:
-    HLocker m_locker;
-};
-
+#if (IS_USED_PTHREAD)
+    struct CAutoLocker:public TLockerBox {
+        inline CAutoLocker(HLocker _locker){ locker=_locker; locker_enter(locker); }
+        inline ~CAutoLocker(){ locker_leave(locker); }
+    };
 #endif
+#if (IS_USED_CPP11THREAD)
+#   include <thread>
+    struct CAutoLocker:public std::unique_lock<std::mutex> {
+        inline CAutoLocker(HLocker _locker)
+            :std::unique_lock<std::mutex>(*(std::mutex*)_locker){ }
+        inline ~CAutoLocker(){  }
+    };
+#endif
+
+#if (IS_USED_MULTITHREAD)
+    //通道交互数据;
+    typedef void* TChanData;
+
+    class _CChannel_import;
+    //通道;
+    class CChannel{
+    public:
+        explicit CChannel(ptrdiff_t maxDataCount=-1);
+        ~CChannel();
+        void close();
+        bool is_can_fast_send(bool isWait); //mybe not need wait when send
+        bool send(TChanData data,bool isWait); //data cannot 0
+        TChanData accept(bool isWait); //threadID can 0;
+    private:
+        _CChannel_import* _import;
+    };
+#endif //IS_USED_MULTITHREAD
+
+#endif //__cplusplus
 #endif //ZipPatch_parallel_h

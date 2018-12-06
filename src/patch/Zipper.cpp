@@ -440,7 +440,6 @@ clear:
 #if (IS_USED_MULTITHREAD)
 //----
 struct TZipThreadWork {
-    TZipThreadWork* _next;
     TByte*  inputData;
     TByte*  code;
     size_t  inputDataSize;
@@ -454,7 +453,6 @@ TZipThreadWork* newThreadWork(size_t _inputDataSize,size_t _codeSize,size_t _wri
                               int _compressLevel,int _compressMemLevel){
     TZipThreadWork* self=(TZipThreadWork*)malloc(sizeof(TZipThreadWork)+_inputDataSize+_codeSize);
     if (self==0) return 0;// error;
-    self->_next=0;
     self->inputData=(TByte*)self + sizeof(TZipThreadWork);
     self->inputDataSize=_inputDataSize;
     self->code=self->inputData+_inputDataSize;
@@ -480,22 +478,8 @@ public:
         }
     }
 private:
-    TZipThreadWork* getWork(){//wait,return 0 exit thread
-        while (true){
-            {   CAutoLoopLocker _locker(this->_locker);
-                if (_waitingList!=0){
-                    TZipThreadWork* result=(TZipThreadWork*)_waitingList;
-                    _waitingList=_waitingList->_next;
-                    if (_waitingList==0) _waitingList_last=0;
-                    result->_next=0; //get a work
-                    return result;
-                }else if(_isAllWorkDispatched){
-                    --_curWorkThreadNum;
-                    return 0; //exit thread
-                }
-            }
-            this_thread_yield();
-        }
+    inline TZipThreadWork* getWork(){//wait,return 0 exit thread
+        return (TZipThreadWork*)_waitingList.accept(true);
     }
     inline static void doWork(TZipThreadWork* work){
         size_t rsize=Zipper_compressData(work->inputData,work->inputDataSize,work->code,work->codeSize,
@@ -503,95 +487,39 @@ private:
         if ((rsize==0)||(rsize!=work->codeSize))
             work->codeSize=0; //error or code size overflow
     }
-    void endWork(TZipThreadWork* workResult){
-        assert(workResult->_next==0);
-        CAutoLoopLocker _locker(this->_locker);
-        if (_finishList_last==0){
-            _finishList=workResult;
-            _finishList_last=workResult;
-        }else{
-            _finishList_last->_next=workResult;
-            _finishList_last=workResult;
-        }
+    inline void endWork(TZipThreadWork* workResult){
+        _finishList.send(workResult,true);
     }
     
 public:
     explicit TZipThreadWorks(Zipper* zip,int workThreadNum)
-    :_zip(zip),_curWorkThreadNum(workThreadNum),_curWorkCount(0),_locker(0),
-    _waitingList(0),_waitingList_last(0),_finishList(0),_finishList_last(0),
-    _isAllWorkDispatched(false){
-        _locker=locker_new();
-    }
+        :_zip(zip),_curWorkCount(0),_waitingList(1),_finishList(workThreadNum){ }
     ~TZipThreadWorks(){
-        waitThreadsExit();
-        locker_delete(_locker);
-        freeList((TZipThreadWork*)_waitingList);
-        freeList((TZipThreadWork*)_finishList);
+        finishDispatchWork();
+        _finishList.close();
     }
     
-    //
-    void dispatchWork(TZipThreadWork* newWork){
-        assert(newWork->_next==0);
-        CAutoLoopLocker _locker(this->_locker);
-        if (_waitingList_last==0){
-            _waitingList=newWork;
-            _waitingList_last=newWork;
-        }else{
-            _waitingList_last->_next=newWork;
-            _waitingList_last=newWork;
-        }
+    inline void waitCanFastDispatchWork(){
+        _waitingList.is_can_fast_send(true);
     }
-    void finishDispatchWork(){
-        {   CAutoLoopLocker _locker(this->_locker);
-            _isAllWorkDispatched=true;
-        }
+    inline void dispatchWork(TZipThreadWork* newWork){
+        ++_curWorkCount;
+        _waitingList.send(newWork,true);
+    }
+    inline void finishDispatchWork(){
+        _waitingList.close();
     }
     TZipThreadWork* haveFinishWork(bool isWait){
-        while (true){
-            {   CAutoLoopLocker _locker(this->_locker);
-                if (_finishList!=0){
-                    TZipThreadWork* result=(TZipThreadWork*)_finishList;
-                    _finishList=_finishList->_next;
-                    if (_finishList==0) _finishList_last=0;
-                    result->_next=0; //get a finished work
-                    return result;
-                }else{
-                    if (!isWait) return 0;//not need wait
-                    if (_curWorkThreadNum==0) return 0;//all thread exit
-                    //else wait
-                }
-            }
-            this_thread_yield();
-        }
+        if (_curWorkCount==0) return 0;
+        TZipThreadWork* result=(TZipThreadWork*)_finishList.accept(isWait);
+        if (result) --_curWorkCount;
+        return result;
     }
 private:
     Zipper*             _zip;
-    volatile int        _curWorkThreadNum;
     volatile int        _curWorkCount;
-    
-    HLocker             _locker;
-    volatile TZipThreadWork*  _waitingList;
-    volatile TZipThreadWork*  _waitingList_last;
-    volatile TZipThreadWork*  _finishList;
-    volatile TZipThreadWork*  _finishList_last;
-    volatile bool       _isAllWorkDispatched;
-    
-    void waitThreadsExit(){
-        while (true){
-            {   CAutoLoopLocker _locker(this->_locker);
-                if (_curWorkThreadNum==0) return;
-                _isAllWorkDispatched=true;
-            }
-            this_thread_yield();
-        }
-    }
-    void freeList(TZipThreadWork* list){
-        while(list){
-            TZipThreadWork* cur=list;
-            list=list->_next;
-            freeThreadWork(cur);
-        }
-    }
+    CChannel            _waitingList;
+    CChannel            _finishList;
 };
 #else
     struct TZipThreadWork{};
@@ -718,11 +646,13 @@ static bool _write(Zipper* self,const TByte* data,size_t len){
     return true;
 }
 
+#if (IS_USED_MULTITHREAD)
 inline static bool _writeSkip(Zipper* self,size_t skipLen){
     check(_writeFlush(self));
     self->_curFilePos+=(ZipFilePos_t)skipLen;
     return true;
 }
+#endif
 
 inline static bool _writeBack(Zipper* self,size_t backPos,const TByte* data,size_t len){
     check((long)len==self->_stream->write(self->_stream->streamHandle,backPos,data,data+len));
@@ -901,6 +831,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     if (isCompressed&&(!dataIsCompressed)){//compress data
 #if (IS_USED_MULTITHREAD)
         if (isUsedMT(self)){
+            self->_threadWorks->waitCanFastDispatchWork();
             append_state->threadWork=newThreadWork(dataUncompressedSize,dataCompressedSize,self->_curFilePos,
                                                    curFileCompressLevel,curFileCompressMemLevel);
             if ((append_state->threadWork)&&(!_writeSkip(self,dataCompressedSize)))
