@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\src\apk_normalized.cpp" />
     <ClCompile Include="..\..\src\diff\DiffData.cpp" />
     <ClCompile Include="..\..\src\normalized\normalized.cpp" />
+    <ClCompile Include="..\..\src\parallel\parallel.cpp" />
     <ClCompile Include="..\..\src\patch\OldStream.cpp" />
     <ClCompile Include="..\..\src\patch\ZipDiffData.cpp" />
     <ClCompile Include="..\..\src\patch\Zipper.cpp" />

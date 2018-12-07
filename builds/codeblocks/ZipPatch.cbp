@@ -46,12 +46,16 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Linker>
+			<Add library="pthread" />
+		</Linker>
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatch/patch.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../lzma/C/LzmaDec.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../../src/parallel/parallel.cpp" />
 		<Unit filename="../../src/patch/NewStream.cpp" />
 		<Unit filename="../../src/patch/OldStream.cpp" />
 		<Unit filename="../../src/patch/Patcher.cpp" />
