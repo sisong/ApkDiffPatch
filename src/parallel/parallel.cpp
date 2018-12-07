@@ -30,6 +30,11 @@
 
 
 #if (IS_USED_PTHREAD)
+#   ifdef WIN32
+#       include "windows.h" //for Sleep
+#       //pragma comment(lib,"pthread.lib") //for static pthread.lib
+#       //define PTW32_STATIC_LIB  //for static pthread.lib
+#   endif
 #   include <pthread.h>
 #   include <stdlib.h>
 #endif
@@ -161,7 +166,11 @@ void this_thread_yield(){
 #ifdef __APPLE__
     pthread_yield_np();
 #else
+#   ifdef WIN32
+    Sleep(0);
+#   else
     pthread_yield();
+#   endif
 #endif
 }
 
@@ -187,7 +196,7 @@ void thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* wor
             pt->threadIndex=i+threadIndexStart;
             pt->threadProc=threadProc;
             pt->workData=workData;
-            pthread_t t=0;
+            pthread_t t; memset(&t,0,sizeof(pthread_t));
             int rt=pthread_create(&t,0,_pt_threadProc,pt);
             if (rt!=0){
                 delete pt;
