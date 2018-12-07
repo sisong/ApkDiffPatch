@@ -71,61 +71,90 @@ void this_thread_yield(){
     //nothing
 }
 
-bool thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread){
+void thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread){
     for (int i=0; i<threadCount; ++i) {
         threadProc(i,workData);
     }
-    return true;
 }
 #endif //IS_USED_SINGLETHREAD
 
 
 #if (IS_USED_PTHREAD)
+#include <stdexcept>
+#include <string>
+#include <stdio.h>
+
+inline static std::string i2a(int ivalue){
+    const int kMaxNumCharSize =32;
+    std::string result;
+    result.resize(kMaxNumCharSize);
+    int len=sprintf(&result[0],"%d",ivalue);
+    result.resize(len);
+    return result;
+}
+#define _check_pthread(result,func_name) { \
+    if (result!=0) throw std::runtime_error(func_name "() return "+i2a(result)+" error!"); }
+
 HLocker locker_new(void){
     pthread_mutex_t* self=new pthread_mutex_t();
-    pthread_mutex_init(self, 0);
+    int rt=pthread_mutex_init(self, 0);
+    if (rt!=0){
+        delete self;
+        _check_pthread(rt,"pthread_mutex_init");
+    }
     return  self;
 }
 void locker_delete(HLocker locker){
     if (locker!=0){
         pthread_mutex_t* self=(pthread_mutex_t*)locker;
-        pthread_mutex_destroy(self);
+        int rt=pthread_mutex_destroy(self);
         delete self;
+        _check_pthread(rt,"pthread_mutex_destroy");
     }
 }
 
 void locker_enter(HLocker locker){
     pthread_mutex_t* self=(pthread_mutex_t*)locker;
-    pthread_mutex_lock(self);
+    int rt=pthread_mutex_lock(self);
+    _check_pthread(rt,"pthread_mutex_lock");
 }
 void locker_leave(HLocker locker){
     pthread_mutex_t* self=(pthread_mutex_t*)locker;
-    pthread_mutex_unlock(self);
+    int rt=pthread_mutex_unlock(self);
+    _check_pthread(rt,"pthread_mutex_unlock");
 }
 
 HCondvar condvar_new(void){
     pthread_cond_t* self=new pthread_cond_t();
-    pthread_cond_init(self,0);
+    int rt=pthread_cond_init(self,0);
+    if (rt!=0){
+        delete self;
+        _check_pthread(rt,"pthread_cond_init");
+    }
     return self;
 }
 void    condvar_delete(HCondvar cond){
     if (cond){
         pthread_cond_t* self=(pthread_cond_t*)cond;
-        pthread_cond_destroy(self);
+        int rt=pthread_cond_destroy(self);
         delete self;
+        _check_pthread(rt,"pthread_cond_destroy");
     }
 }
 void    condvar_wait(HCondvar cond,TLockerBox* lockerBox){
     pthread_cond_t* self=(pthread_cond_t*)cond;
-    pthread_cond_wait(self,(pthread_mutex_t*)(lockerBox->locker));
+    int rt=pthread_cond_wait(self,(pthread_mutex_t*)(lockerBox->locker));
+    _check_pthread(rt,"pthread_cond_wait");
 }
 void    condvar_signal(HCondvar cond){
     pthread_cond_t* self=(pthread_cond_t*)cond;
-    pthread_cond_signal(self);
+    int rt=pthread_cond_signal(self);
+    _check_pthread(rt,"pthread_cond_signal");
 }
 void    condvar_broadcast(HCondvar cond){
     pthread_cond_t* self=(pthread_cond_t*)cond;
-    pthread_cond_broadcast(self);
+    int rt=pthread_cond_broadcast(self);
+    _check_pthread(rt,"pthread_cond_broadcast");
 }
 
 void this_thread_yield(){
@@ -144,7 +173,7 @@ void* _pt_threadProc(void* _pt){
     return 0;
 }
 
-bool thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
+void thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
                      int isUseThisThread,int threadIndexStart){
     for (int i=0; i<threadCount; ++i) {
         if ((i==threadCount-1)&&(isUseThisThread)){
@@ -155,11 +184,15 @@ bool thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* wor
             pt->threadProc=threadProc;
             pt->workData=workData;
             pthread_t t=0;
-            if (pthread_create(&t,0,_pt_threadProc,pt)!=0) return false;
-            if (pthread_detach(t)!=0) return false;
+            int rt=pthread_create(&t,0,_pt_threadProc,pt);
+            if (rt!=0){
+                delete pt;
+                _check_pthread(rt,"pthread_create");
+            }
+            rt=pthread_detach(t);
+            _check_pthread(rt,"pthread_detach");
         }
     }
-    return true;
 }
 #endif //IS_USED_PTHREAD
 
@@ -210,21 +243,16 @@ void this_thread_yield(){
     std::this_thread::yield();
 }
 
-bool thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
+void thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
                      int isUseThisThread,int threadIndexStart){
     for (int i=0; i<threadCount; ++i) {
         if ((i==threadCount-1)&&(isUseThisThread)){
             threadProc(i+threadIndexStart,workData);
         }else{
-            try{
-                std::thread t(threadProc,i+threadIndexStart,workData);
-                t.detach();
-            }catch(...){
-                return false;
-            }
+            std::thread t(threadProc,i+threadIndexStart,workData);
+            t.detach();
         }
     }
-    return true;
 }
 #endif //IS_USED_CPP11THREAD
 

@@ -67,7 +67,7 @@ extern "C" {
     
     //并行工作线程;
     typedef void (*TThreadRunCallBackProc)(int threadIndex,void* workData);
-    bool  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
+    void  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
                           int isUseThisThread,int threadIndexStart=0);
     
 #ifdef __cplusplus
@@ -75,7 +75,7 @@ extern "C" {
 #endif
 
 #ifdef __cplusplus
-#include <stddef.h> //for size_t
+#include <stddef.h> //for size_t ptrdiff_t
 
 #if (IS_USED_PTHREAD)
     struct CAutoLocker:public TLockerBox {
