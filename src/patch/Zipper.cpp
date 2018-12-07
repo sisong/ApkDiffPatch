@@ -601,11 +601,18 @@ void Zipper_by_multi_thread(Zipper* self,int threadNum){
     if (isUsedMT(self)){
         try {
             self->_threadWorks=new TZipThreadWorks(self,self->_threadNum-1);
+        } catch (...) {
+            self->_threadNum=1; //close muti-thread
+            delete self->_threadWorks;
+            self->_threadWorks=0;
+        }
+    }
+    if (isUsedMT(self)){
+        try {
             thread_parallel(self->_threadNum-1,TZipThreadWorks::run,self->_threadWorks,false);
         } catch (...) {
-            if (self->_threadWorks) delete self->_threadWorks;
-            self->_threadWorks=0;
-            self->_threadNum=1;
+            self->_threadNum=1; //close muti-thread
+            self->_threadWorks->finishDispatchWork(); //for safe exit thread
         }
     }
 #else
@@ -836,6 +843,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
                                                    curFileCompressLevel,curFileCompressMemLevel);
             if ((append_state->threadWork)&&(!_writeSkip(self,dataCompressedSize)))
                 return false;
+            //else continue : this thread do compress
         }
 #endif
         if (!append_state->threadWork){
@@ -875,7 +883,7 @@ bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,uint32_t c
 }
 
 #if (IS_USED_MULTITHREAD)
-static bool dispose_filishedThreadWork(Zipper* self,bool isWait){
+static bool _dispose_filishedThreadWork(Zipper* self,bool isWait){
     while (true) {
         TZipThreadWork* work=self->_threadWorks->haveFinishWork(isWait);
         if (work){
@@ -899,12 +907,13 @@ bool Zipper_file_append_end(Zipper* self){
     
     check_clear(append_state->inputPos==append_state->streamSize);
 #if (IS_USED_MULTITHREAD)
-    if (append_state->threadWork){
-        self->_threadWorks->dispatchWork(append_state->threadWork);
-        append_state->threadWork=0;
+    if (isUsedMT(self)) {
+        if (append_state->threadWork){
+            self->_threadWorks->dispatchWork(append_state->threadWork);
+            append_state->threadWork=0;
+        }
+        check_clear(_dispose_filishedThreadWork(self,false));
     }
-    if (isUsedMT(self))
-        check_clear(dispose_filishedThreadWork(self,false));
 #endif
     if (append_state->compressHandle!=0){
         assert(append_state->outputPos==(uint32_t)append_state->outputPos);
@@ -975,7 +984,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
 #if (IS_USED_MULTITHREAD)
     if (isUsedMT(self)){
         self->_threadWorks->finishDispatchWork();
-        check(dispose_filishedThreadWork(self,true));
+        check(_dispose_filishedThreadWork(self,true));
     }
 #endif
     return true;
