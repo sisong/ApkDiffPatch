@@ -158,7 +158,11 @@ void    condvar_broadcast(HCondvar cond){
 }
 
 void this_thread_yield(){
+#ifdef __APPLE__
     pthread_yield_np();
+#else
+    pthread_yield();
+#endif
 }
 
 struct _TPThreadData{

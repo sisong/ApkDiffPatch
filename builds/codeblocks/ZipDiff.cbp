@@ -77,6 +77,7 @@
 		<Unit filename="../../src/diff/DiffData.cpp" />
 		<Unit filename="../../src/diff/Differ.cpp" />
 		<Unit filename="../../src/diff/OldRef.cpp" />
+		<Unit filename="../../src/parallel/parallel.cpp" />
 		<Unit filename="../../src/patch/NewStream.cpp" />
 		<Unit filename="../../src/patch/OldStream.cpp" />
 		<Unit filename="../../src/patch/Patcher.cpp" />

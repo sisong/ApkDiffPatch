@@ -53,6 +53,7 @@
 		<Unit filename="../../src/apk_normalized.cpp" />
 		<Unit filename="../../src/diff/DiffData.cpp" />
 		<Unit filename="../../src/normalized/normalized.cpp" />
+		<Unit filename="../../src/parallel/parallel.cpp" />
 		<Unit filename="../../src/patch/OldStream.cpp" />
 		<Unit filename="../../src/patch/Zipper.cpp" />
 		<Unit filename="../../zlib1.2.11/adler32.c">
