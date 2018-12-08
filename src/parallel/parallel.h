@@ -39,10 +39,8 @@
 #   define IS_USED_SINGLETHREAD 1
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-    
+#if (IS_USED_MULTITHREAD)
+
     //并行临界区锁;
     typedef void*   HLocker;
     HLocker     locker_new(void);
@@ -69,10 +67,6 @@ extern "C" {
     typedef void (*TThreadRunCallBackProc)(int threadIndex,void* workData);
     void  thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,
                           int isUseThisThread,int threadIndexStart=0);
-    
-#ifdef __cplusplus
-}
-#endif
 
 #ifdef __cplusplus
 #include <stddef.h> //for size_t ptrdiff_t
@@ -92,7 +86,6 @@ extern "C" {
     };
 #endif
 
-#if (IS_USED_MULTITHREAD)
     //通道交互数据;
     typedef void* TChanData;
 
@@ -109,7 +102,7 @@ extern "C" {
     private:
         _CChannel_import* _import;
     };
-#endif //IS_USED_MULTITHREAD
 
 #endif //__cplusplus
+#endif //IS_USED_MULTITHREAD
 #endif //ZipPatch_parallel_h

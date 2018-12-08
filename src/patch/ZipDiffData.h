@@ -32,6 +32,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    
+typedef struct TStreamInputClip{
+    hpatch_TStreamInput         base;
+    const hpatch_TStreamInput*  srcStream;
+    hpatch_StreamPos_t          clipBeginPos;
+} TStreamInputClip;
+
+void inputStreamClip(TStreamInputClip* dst,const hpatch_TStreamInput*  srcStream,
+                     hpatch_StreamPos_t clipBeginPos,hpatch_StreamPos_t clipEndPos);
 
 //解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{
@@ -60,13 +69,14 @@ typedef struct ZipDiffData{
     const hpatch_TStreamInput* extraEdit;
 //private:
     TByte*              _buf;
-    TFileStreamInput    _hdiffzData;
-    TFileStreamInput    _extraEdit;
+    TStreamInputClip    _hdiffzData;
+    TStreamInputClip    _extraEdit;
 } ZipDiffData;
 
 void ZipDiffData_init(ZipDiffData* self);
-bool ZipDiffData_isCanDecompress(TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
-bool ZipDiffData_openRead(ZipDiffData* self,TFileStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
+bool ZipDiffData_isCanDecompress(const hpatch_TStreamInput* diffData,hpatch_TDecompress* decompressPlugin);
+bool ZipDiffData_openRead(ZipDiffData* self,const hpatch_TStreamInput* diffData,
+                          hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 
 #define  kExtraEdit     "ZiPat1&Extra"

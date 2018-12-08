@@ -32,8 +32,8 @@
 #if (IS_USED_PTHREAD)
 #   ifdef WIN32
 #       include "windows.h" //for Sleep
-#       //pragma comment(lib,"pthread.lib") //for static pthread.lib
-#       //define PTW32_STATIC_LIB  //for static pthread.lib
+#       //pragma comment(lib,"pthread.lib") //for static pthread lib
+#       //define PTW32_STATIC_LIB  //for static pthread lib
 #   endif
 #   include <pthread.h>
 #   include <stdlib.h>
@@ -42,49 +42,8 @@
 #   include <thread>
 #endif
 
-#if (IS_USED_SINGLETHREAD)
-HLocker locker_new(void){
-    return (HLocker)(1);
-}
-void    locker_delete(HLocker locker){
-    //nothing
-}
-void    locker_enter(HLocker locker){
-    //nothing
-}
-void    locker_leave(HLocker locker){
-    //nothing
-}
-
-HCondvar condvar_new(void){
-    return (HCondvar)(2);
-}
-void    condvar_delete(HCondvar cond){
-    //nothing
-}
-void    condvar_wait(HCondvar cond,TLockerBox* locker){
-    //nothing
-}
-void    condvar_signal(HCondvar cond){
-    //nothing
-}
-void    condvar_broadcast(HCondvar cond){
-    //nothing
-}
-
-void this_thread_yield(){
-    //nothing
-}
-
-void thread_parallel(int threadCount,TThreadRunCallBackProc threadProc,void* workData,int isUseThisThread){
-    for (int i=0; i<threadCount; ++i) {
-        threadProc(i,workData);
-    }
-}
-#endif //IS_USED_SINGLETHREAD
-
-
 #if (IS_USED_PTHREAD)
+#include <string.h> //for memset
 #include <stdexcept>
 #include <string>
 #include <stdio.h>
@@ -387,7 +346,6 @@ private:
     volatile size_t         _waitingCount;
     volatile bool           _isClosed;
 };
-
 
 
 CChannel::CChannel(ptrdiff_t maxDataCount):_import(0){
