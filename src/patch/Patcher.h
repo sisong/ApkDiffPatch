@@ -27,7 +27,7 @@
  */
 #ifndef ZipPatch_Patcher_h
 #define ZipPatch_Patcher_h
-#include <string.h>
+#include "../../HDiffPatch/file_for_patch.h"
 
 typedef enum TPatchResult {
     PATCH_SUCCESS=0,
@@ -48,5 +48,9 @@ typedef enum TPatchResult {
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum=1);
+
+TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* zipDiffStream,
+                                const hpatch_TStreamOutput* outNewZipStream /* Support Random Out */,
+                                size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum=1);
 
 #endif //ZipPatch_Patcher_h

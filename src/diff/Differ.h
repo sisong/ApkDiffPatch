@@ -27,8 +27,25 @@
  */
 #ifndef ZipDiff_Differ_h
 #define ZipDiff_Differ_h
+#include "../../HDiffPatch/file_for_patch.h"
 
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             const char* temp_ZipPatchFileName);
+
+typedef enum TCheckZipDiffResult {
+    CHECK_BYTE_BY_BYTE_EQUAL_TRUE=0, //ok
+    CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE, //ok
+    CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_ERROR, //error
+    CHECK_SAME_LIKE_ERROR,
+    CHECK_ZIPPATCH_ERROR,
+    CHECK_OTHER_ERROR
+} TCheckZipDiffResult;
+
+bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName);
+bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
+                       const hpatch_TStreamOutput* outDiffStream);
+
+TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName);
+TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,
+                                           const hpatch_TStreamInput* newZipStream,
+                                           const hpatch_TStreamInput* diffStream);
 
 #endif //ZipDiff_Differ_h

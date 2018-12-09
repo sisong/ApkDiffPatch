@@ -31,6 +31,7 @@
 #include "../HDiffPatch/_atosize.h"
 #include "patch/Patcher.h"
 #include "parallel/parallel.h"
+#include "patch/patch_types.h"
 
 #ifndef PRSizeT
 #   ifdef _MSC_VER
@@ -42,7 +43,7 @@
 
 static void printUsage(){
     printf("usage: ZipPatch oldZipFile zipDiffFile outNewZipFile"
-           " [maxUncompressMemory tempUncompressFileName]"
+           " [maxUncompressMemory tempUncompressFileName] [-v]"
 #if (IS_USED_MULTITHREAD)
            " [-p-parallelThreadNumber]"
 #endif
@@ -50,6 +51,7 @@ static void printUsage(){
            "  decompress data saved in Memory, DEFAULT or when it's size <= maxUncompressMemory;\n"
            "    if it's size > maxUncompressMemory then save it into file tempUncompressFileName;\n"
            "    maxUncompressMemory can like 8388608 8m 40m 120m 1g etc... \n"
+           "  -v  output Version info. \n"
 #if (IS_USED_MULTITHREAD)
            "  -p-parallelThreadNumber\n"
            "    parallelThreadNumber DEFAULT 1, if parallelThreadNumber>1 (recommended 3 etc...)\n"
@@ -66,12 +68,15 @@ static void printUsage(){
 #define THREAD_NUMBER_DEFAULT   1
 #define THREAD_NUMBER_MAX       (1<<20)
 
+#define _kNULL_VALUE (-1)
+
 int main(int argc, const char * argv[]) {
     const char* oldZipPath=0;
     const char* zipDiffPath=0;
     const char* outNewZipPath=0;
     size_t      maxUncompressMemory=0;
     const char* tempUncompressFileName=0;
+    hpatch_BOOL isOutputVersion=_kNULL_VALUE;
     size_t      threadNum = THREAD_NUMBER_NULL;
     #define kMax_arg_values_size 5
     const char * arg_values[kMax_arg_values_size]={0};
@@ -88,6 +93,10 @@ int main(int argc, const char * argv[]) {
         }
         _options_check((op!=0)&&(op[0]=='-'),"?");
         switch (op[1]) {
+            case 'v':{
+                _options_check((isOutputVersion==_kNULL_VALUE)&&(op[2]=='\0'),"-v");
+                isOutputVersion=hpatch_TRUE;
+            } break;
 #if (IS_USED_MULTITHREAD)
             case 'p':{
                 _options_check((threadNum==THREAD_NUMBER_NULL)&&((op[2]=='-')),"-p-?");
@@ -100,6 +109,13 @@ int main(int argc, const char * argv[]) {
                 _options_check(hpatch_FALSE,"-?");
             } break;
         }//swich
+    }
+    if (isOutputVersion==_kNULL_VALUE)
+        isOutputVersion=hpatch_FALSE;
+    if (isOutputVersion){
+        printf("ApkDiffPatch::ZipPatch v" APKDIFFPATCH_VERSION_STRING "\n\n");
+        if (arg_values_size==0)
+            return 0; //ok
     }
     if (threadNum==THREAD_NUMBER_NULL)
         threadNum=THREAD_NUMBER_DEFAULT;

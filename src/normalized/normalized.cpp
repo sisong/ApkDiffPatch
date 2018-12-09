@@ -39,7 +39,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     bool _isInClear=false;
     int  fileCount=0;
     bool isHaveApkV2Sign=false;
-    int  copyCompressedCount=0;
+    int  jarSignFileCount=0;
     std::vector<int>   fileIndexs;
     UnZipper unzipper;
     Zipper   zipper;
@@ -55,34 +55,23 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
         if (!UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
             fileIndexs.push_back(i);
     }
-    if ((int)fileIndexs.size()<fileCount)
-        printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",fileCount-(int)fileIndexs.size());
+    jarSignFileCount=fileCount-(int)fileIndexs.size();
     for (int i=0; i<fileCount; ++i) {
         if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
             fileIndexs.push_back(i);
     }
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
-    if (isHaveApkV2Sign)
-        printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)UnZipper_ApkV2SignSize(&unzipper));
-    printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
-
     
+    printf("\n");
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
-        //isCopyCompressed==true时的逻辑并不是必须的;
-        bool isCopyCompressed=UnZipper_file_isApkV2Compressed(&unzipper,fileIndex);
-        printf("\"%s\"",fileName.c_str());
-        if (isCopyCompressed){
-            printf("     \t\t(Copy old Compressed %d)",copyCompressedCount);
-            ++copyCompressedCount;
-        }
-        printf("\n");
-        bool isAlwaysReCompress=!isCopyCompressed;
+        printf("\"%s\"\n",fileName.c_str());
+        bool isAlwaysReCompress=true;
         check(Zipper_file_append_copy(&zipper,&unzipper,fileIndex,isAlwaysReCompress));
     }
     printf("\n");
-    
+
     //no run: check(Zipper_copyExtra_before_fileHeader(&zipper,&unzipper));
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
@@ -90,6 +79,12 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     }
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
     
+    if (jarSignFileCount>0)
+        printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",jarSignFileCount);
+    if (isHaveApkV2Sign)
+        printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)UnZipper_ApkV2SignSize(&unzipper));
+    printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
+
 clear:
     _isInClear=true;
     check(UnZipper_close(&unzipper));

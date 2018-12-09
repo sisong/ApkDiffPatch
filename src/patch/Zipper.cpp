@@ -382,7 +382,6 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex
 
 bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
     //当前的实现不支持多线程;
-    assert(self->_fileStream.m_file!=0);
     return (long)(bufEnd-buf)==self->stream->read(self->stream->streamHandle,file_pos,buf,bufEnd);
 }
 

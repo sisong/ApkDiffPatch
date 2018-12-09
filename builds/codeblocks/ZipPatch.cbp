@@ -45,6 +45,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-DIS_USED_PTHREAD=1" />
 		</Compiler>
 		<Linker>
 			<Add library="pthread" />
