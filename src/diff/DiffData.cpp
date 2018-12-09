@@ -59,7 +59,9 @@ bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int src
     return 0==memcmp(buf.data(),buf.data()+selfFileSize,selfFileSize);
 }
 
-bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
+
+bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,
+                            const hpatch_TStreamInput* newZipStream,bool* out_isOldHaveApkV2Sign){
     UnZipper            newZip;
     UnZipper            oldZip;
     std::map<std::string,int> oldMap;
@@ -69,8 +71,12 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath){
     
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
-    check_clear(UnZipper_openFile(&oldZip,oldZipPath));
-    check_clear(UnZipper_openFile(&newZip,newZipPath));
+    check_clear(UnZipper_openStream(&oldZip,oldZipStream));
+    check_clear(UnZipper_openStream(&newZip,newZipStream));
+    
+    if (out_isOldHaveApkV2Sign){
+        *out_isOldHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&oldZip);
+    }
     
     fileCount=UnZipper_fileCount(&oldZip);
     test_clear(fileCount==UnZipper_fileCount(&newZip));
@@ -90,6 +96,23 @@ clear:
     _isInClear=true;
     check_clear(UnZipper_close(&newZip));
     check_clear(UnZipper_close(&oldZip));
+    return result;}
+
+bool getZipIsSame(const char* oldZipPath,const char* newZipPath,bool* out_isOldHaveApkV2Sign){
+    TFileStreamInput    oldZipStream;
+    TFileStreamInput    newZipStream;
+    bool            result=true;
+    bool            _isInClear=false;
+    
+    TFileStreamInput_init(&oldZipStream);
+    TFileStreamInput_init(&newZipStream);
+    check_clear(TFileStreamInput_open(&oldZipStream,oldZipPath));
+    check_clear(TFileStreamInput_open(&newZipStream,newZipPath));
+    result=getZipIsSameWithStream(&oldZipStream.base,&newZipStream.base);
+clear:
+    _isInClear=true;
+    check_clear(TFileStreamInput_close(&newZipStream));
+    check_clear(TFileStreamInput_close(&oldZipStream));
     return result;
 }
 
