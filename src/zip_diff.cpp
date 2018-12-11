@@ -142,16 +142,16 @@ int main(int argc, const char * argv[]) {
                 printf("  check ZipPatch result Same Like ok! (but not Byte By Byte Equal)\n");
             } break;
             case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_ERROR:{
-                printf("  check ZipPatch result Byte By Byte Equal ERROR!)\n");
+                printf("  check ZipPatch result Byte By Byte Equal ERROR!\n");
             } break;
             case CHECK_SAME_LIKE_ERROR:{
-                printf("  check ZipPatch result Same Like ERROR!)\n");
+                printf("  check ZipPatch result Same Like ERROR!\n");
             } break;
             case CHECK_ZIPPATCH_ERROR:{
-                printf("  run ZipPatch ERROR!)\n");
+                printf("  run ZipPatch ERROR!\n");
             } break;
             default: { //CHECK_OTHER_ERROR
-                printf("  run check ZipPatch result ERROR!)\n");
+                printf("  run check ZipPatch result ERROR!\n");
             }
         }
         printf("  patch time: %.3f s\n",(clock_s()-time2));
