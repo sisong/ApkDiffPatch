@@ -279,7 +279,13 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
         printf("  NOTE: newZip found ApkV2Sign\n");
     
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
+        //maybe bring apk can't install ERROR!
         printf("  ERROR: newZip not Normalized, need run newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before run ZipDiff!\n");
+        //return false;
+    }
+    if ((!newIsV2Sign)&&UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(newZip)){
+        //maybe bring apk can't install ERROR!
+        printf("  ERROR: newZip fond \"X-Android-APK-Signed: 2\" in ApkV1Sign file, need re-signing newZip=AndroidSDK#apksigner(newZip) before run ZipDiff!\n");
         //return false;
     }
     return true;

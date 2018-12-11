@@ -28,6 +28,7 @@
 #include "../parallel/parallel.h"
 #include "Zipper.h"
 #include <string.h>
+#include <ctype.h> //for isspace
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 #include "patch_types.h"
@@ -172,6 +173,53 @@ bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self){
     int fCount=UnZipper_fileCount(self);
     for (int i=fCount-1; i>=0; --i) {
         if (UnZipper_file_isApkV1_or_jarSign(self,i))
+            return true;
+    }
+    return false;
+}
+
+    static bool _find_ApkV2SignTag_in_c_string(const char* data){
+        const char* kApkTag="X-Android-APK-Signed";
+        const char* pos=strstr(data,kApkTag);
+        if (pos==0) return false;
+        pos+=strlen(kApkTag);
+        const char* posEnd=strchr(pos,'\n');
+        if (posEnd==0) posEnd=data+strlen(data);
+        const char* posBegin=strchr(pos,':');
+        if ((posBegin==0)||(posBegin>=posEnd)) return false;
+        ++posBegin;
+        while ((posBegin<posEnd)&&isspace(*posBegin)) ++posBegin;
+        while ((posBegin<posEnd)&&isspace(posEnd[-1])) --posEnd;
+        if (posBegin+1!=posEnd) return false;
+        return '2'==(*posBegin);
+    }
+
+    static bool _UnZipper_file_isHaveApkV2SignTag_in_ApkV1SignFile(UnZipper* self,int fileIndex){
+        if (!UnZipper_file_isApkV1_or_jarSign(self,fileIndex)) return false;
+        
+        const char* kJarSignSF=".SF";
+        const size_t kJarSignSFLen=2+1;
+        int fnameLen=UnZipper_file_nameLen(self,fileIndex);
+        if (fnameLen<kJarSignSFLen) return false;
+        const char* fnameBegin=UnZipper_file_nameBegin(self,fileIndex);
+        if (0!=memcmp(fnameBegin+fnameLen-kJarSignSFLen,kJarSignSF,kJarSignSFLen)) return false;
+        
+        size_t fsize=UnZipper_file_uncompressedSize(self,fileIndex);
+        TByte* data=(TByte*)malloc(fsize+1); //+1 for \0
+        check(data!=0);
+        hpatch_TStreamOutput stream;
+        mem_as_hStreamOutput(&stream,data,data+fsize);
+        check(UnZipper_fileData_decompressTo(self,fileIndex,&stream,0));
+        data[fsize]='\0';
+        bool result=_find_ApkV2SignTag_in_c_string((char*)data);
+        if (data) free(data);
+        return result;
+    }
+
+bool UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(UnZipper* self){
+    int fCount=UnZipper_fileCount(self);
+    for (int i=fCount-1; i>=0; --i) {
+        if (_UnZipper_file_isHaveApkV2SignTag_in_ApkV1SignFile(self,i))
             return true;
     }
     return false;
