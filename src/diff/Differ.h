@@ -39,9 +39,9 @@ typedef enum TCheckZipDiffResult {
     CHECK_OTHER_ERROR
 } TCheckZipDiffResult;
 
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName);
+bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,bool* out_isNewZipApkV2SignOk=0);
 bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
-                       const hpatch_TStreamOutput* outDiffStream);
+                       const hpatch_TStreamOutput* outDiffStream,bool* out_isNewZipApkV2SignOk=0);
 
 TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName);
 TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,

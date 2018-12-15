@@ -25,8 +25,6 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <iostream>
-#include <string>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -120,8 +118,9 @@ int main(int argc, const char * argv[]) {
                     oldZipPath,newZipPath,outDiffFileName);
 
     double time0=clock_s();
+    bool   isNewZipApkV2SignOk=true;
     if (isDiff){
-        if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName)){
+        if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,&isNewZipApkV2SignOk)){
             printf("ZipDiff error!\n");
             return 1;
         }//else
@@ -158,5 +157,9 @@ int main(int argc, const char * argv[]) {
     }
     if (isPatchCheck && isDiff)
         printf("\nall     time: %.3f s\n",(clock_s()-time0));
+    if (!isNewZipApkV2SignOk){ //safe check
+        exitCode=1;
+        printf("\nnewZip used ApkV2Sign, but not complete for ZipDiff, as an ERROR!\n\n");
+    }
     return exitCode;
 }

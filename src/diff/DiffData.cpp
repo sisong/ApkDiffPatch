@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <string>
 #include <map>
 #include "../patch/patch_types.h"
 #include "../patch/OldStream.h"
@@ -133,13 +134,13 @@ static bool getNormalizedCompressedCode(UnZipper* selfZip,int selfIndex,
 }
 
 
-bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,int zlibCompressMemLevel,bool testApkV2Compressed){
+bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,int zlibCompressMemLevel,bool testReCompressedByApkV2Sign){
     std::vector<TByte> oldCompressedCode;
     std::vector<TByte> newCompressedCode;
     int fileCount=UnZipper_fileCount(zip);
     for (int i=0; i<fileCount; ++i) {
         if (!UnZipper_file_isCompressed(zip,i)) continue;
-        if (testApkV2Compressed ^ UnZipper_file_isApkV2Compressed(zip,i)) continue;
+        if (testReCompressedByApkV2Sign ^ UnZipper_file_isReCompressedByApkV2Sign(zip,i)) continue;
         check(getNormalizedCompressedCode(zip,i,newCompressedCode,zlibCompressLevel,zlibCompressMemLevel));
         size_t compressedSize=UnZipper_file_compressedSize(zip,i);
         if (compressedSize!=newCompressedCode.size()) return false;
@@ -154,13 +155,13 @@ bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,int zlibCom
 }
 
 bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
-                               int* out_zlibCompressMemLevel,bool testApkV2Compressed){
-    if (getCompressedIsNormalizedBy(zip,kDefaultZlibCompressLevel,kDefaultZlibCompressMemLevel,testApkV2Compressed)){
+                               int* out_zlibCompressMemLevel,bool testReCompressedByApkV2Sign){
+    if (getCompressedIsNormalizedBy(zip,kDefaultZlibCompressLevel,kDefaultZlibCompressMemLevel,testReCompressedByApkV2Sign)){
         *out_zlibCompressLevel=kDefaultZlibCompressLevel;
         *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
         return true;
     }
-    if (getCompressedIsNormalizedBy(zip,Z_BEST_COMPRESSION,kDefaultZlibCompressMemLevel,testApkV2Compressed)){
+    if (getCompressedIsNormalizedBy(zip,Z_BEST_COMPRESSION,kDefaultZlibCompressMemLevel,testReCompressedByApkV2Sign)){
         *out_zlibCompressLevel=Z_BEST_COMPRESSION;
         *out_zlibCompressMemLevel=kDefaultZlibCompressMemLevel;
         return true;
@@ -169,7 +170,7 @@ bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
         for (int cl=Z_BEST_SPEED;cl<=Z_BEST_COMPRESSION;++cl){
             if ((cl==kDefaultZlibCompressLevel)&(ml==kDefaultZlibCompressMemLevel)) continue;
             if ((cl==Z_BEST_COMPRESSION)&(ml==kDefaultZlibCompressMemLevel)) continue;
-            if (getCompressedIsNormalizedBy(zip,cl,ml,testApkV2Compressed)){
+            if (getCompressedIsNormalizedBy(zip,cl,ml,testReCompressedByApkV2Sign)){
                 *out_zlibCompressLevel=cl;
                 *out_zlibCompressMemLevel=ml;
                 return true;
@@ -233,7 +234,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
     int newFileCount=UnZipper_fileCount(newZip);
     for (int i=0; i<newFileCount; ++i) {
         ZipFilePos_t compressedSize=UnZipper_file_compressedSize(newZip,i);
-        if (UnZipper_file_isApkV2Compressed(newZip,i)){
+        if (UnZipper_file_isReCompressedByApkV2Sign(newZip,i)){
             out_newRefOtherCompressedList.push_back(i);
             out_newRefCompressedSizeList.push_back(compressedSize);
         }else if ((0==UnZipper_file_uncompressedSize(newZip,i))
@@ -248,7 +249,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
             for (;range.first!=range.second;++range.first) {
                 int oldIndex=range.first->second;
                 if (zipFileData_isSame(newZip,i,oldZip,oldIndex)){
-                    if (UnZipper_file_isApkV2Compressed(oldZip,oldIndex))
+                    if (UnZipper_file_isReCompressedByApkV2Sign(oldZip,oldIndex))
                         continue;
                     findSame=true;
                     oldSameIndex=oldIndex;

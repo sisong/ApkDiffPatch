@@ -48,7 +48,7 @@
 #include <string>
 #include <stdio.h>
 
-inline static std::string i2a(int ivalue){
+static std::string i2a(int ivalue){
     const int kMaxNumCharSize =32;
     std::string result;
     result.resize(kMaxNumCharSize);
