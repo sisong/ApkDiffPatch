@@ -92,7 +92,7 @@ bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
 bool UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(UnZipper* self);
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
-bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex);
+bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex);
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 
 

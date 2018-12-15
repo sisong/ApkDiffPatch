@@ -48,9 +48,9 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath,bool* out_isOldH
 bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,
                             const hpatch_TStreamInput* newZipStream,bool* out_isOldHaveApkV2Sign=0);
 bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
-                                      int* out_zlibCompressMemLevel,bool testApkV2Compressed=false); //只检查压缩数据是否标准化;
+                                      int* out_zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
 bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,
-                                      int zlibCompressMemLevel,bool testApkV2Compressed=false); //只检查压缩数据是否标准化;
+                                      int zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
 size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示未对齐;
 
 static inline std::string zipFile_name(UnZipper* self,int fileIndex){

@@ -200,7 +200,7 @@ bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self){
         const char* kJarSignSF=".SF";
         const size_t kJarSignSFLen=2+1;
         int fnameLen=UnZipper_file_nameLen(self,fileIndex);
-        if (fnameLen<kJarSignSFLen) return false;
+        if (fnameLen<(int)kJarSignSFLen) return false;
         const char* fnameBegin=UnZipper_file_nameBegin(self,fileIndex);
         if (0!=memcmp(fnameBegin+fnameLen-kJarSignSFLen,kJarSignSF,kJarSignSFLen)) return false;
         
@@ -232,7 +232,7 @@ bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
         && (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),kJarSignPath,kJarSignPathLen));
 }
 
-bool UnZipper_file_isApkV2Compressed(const UnZipper* self,int fileIndex){
+bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex){
     return UnZipper_isHaveApkV2Sign(self)
                 && UnZipper_file_isCompressed(self,fileIndex)
                 && UnZipper_file_isApkV1_or_jarSign(self,fileIndex);
