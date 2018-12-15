@@ -27,6 +27,7 @@
  */
 #include "normalized.h"
 #include <vector>
+#include <string>
 #include "../patch/Zipper.h"
 #include "../diff/DiffData.h"
 
@@ -82,7 +83,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     if (jarSignFileCount>0)
         printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",jarSignFileCount);
     if (isHaveApkV2Sign)
-        printf("NOTE: src found ApkV2Sign and not out(%d Byte)\n",(int)UnZipper_ApkV2SignSize(&unzipper));
+        printf("WARNING: src found ApkV2Sign and not save to dst(%d Byte, need re sign)\n",(int)UnZipper_ApkV2SignSize(&unzipper));
     printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
 
 clear:

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <string>
 #include <map>
 #include "../patch/patch_types.h"
 #include "../patch/OldStream.h"

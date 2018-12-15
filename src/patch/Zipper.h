@@ -90,7 +90,7 @@ static inline size_t UnZipper_CESize(const UnZipper* self) { return self->_vce_s
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
                               ZipFilePos_t* v2sign_pos,hpatch_StreamPos_t* out_blockSize);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
-bool UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(UnZipper* self);
+bool UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(UnZipper* self); //found true; not found or unknown or error false
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
 bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex);
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
@@ -167,7 +167,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
 size_t Zipper_compressData_maxCodeSize(size_t dataSize);
 size_t Zipper_compressData(const unsigned char* data,size_t dataSize,unsigned char* out_code,
                            size_t codeSize,int kCompressLevel,int kCompressMemLevel);
-void Zipper_by_multi_thread(Zipper* self,int threadNum);
+void Zipper_by_multi_thread(Zipper* self,int threadNum);//need ApkV2Sign and know all file compressedSize before compress!
 
 #ifdef __cplusplus
 }
