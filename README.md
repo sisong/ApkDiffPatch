@@ -1,8 +1,9 @@
 **ApkDiffPatch**
 ================
-[![release](https://img.shields.io/badge/release-v1.1.3-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
+[![release](https://img.shields.io/badge/release-v1.1.4-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
 [![Build Status](https://travis-ci.org/sisong/ApkDiffPatch.svg?branch=master)](https://travis-ci.org/sisong/ApkDiffPatch) [![Build status](https://ci.appveyor.com/api/projects/status/u5tbrqwl72875r6h/branch/master?svg=true)](https://ci.appveyor.com/project/sisong/apkdiffpatch/branch/master)   
-a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta; support [Apk v2 sign] & [Jar sign](Apk v1 sign).    
+a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta; support [Apk v2 sign] & [Jar sign](Apk v1 sign).   
+You can use this library (and Android NDK) to delta update your Apk.   
 ( not support zip64, and only support decode Deflated code; dependent libraries [HDiffPatch], [zlib], [lzma]. )   
 [[中文说明](https://blog.csdn.net/housisong/article/details/79768678)]
 
@@ -26,7 +27,7 @@ usage:
    **ZipPatch()** requires 4*(decompress stream memory) + `ref old decompress` memory + O(1), also `ref old decompress` can use temp disk file without memory. 
    
 ---
-*  **Why** need **ApkDiffPatch** after have BsDiff or HDiffPatch **?**
+*  **Why** need **ApkDiffPatch** or archive-patcher after have BsDiff or HDiffPatch **?**
 ```
 ApkDiffPatch: v1.0
 BsDiff: v4.3
@@ -34,8 +35,8 @@ HDiffPatch: v2.2.6
 Google Play patches: https://github.com/andrewhayden/archive-patcher  v1.0 
                      (test by https://github.com/googlesamples/apk-patch-size-estimator )
 =========================================================================================================
-                                                           BsDiff HDiffPatch archive-patcher ApkDiffPatch
-          oldVersion               newVersion      newSize  (bzip2)  (+zlib)   (+gzip)   (+zlib)  (+lzma)
+                                                          BsDiff HDiffPatch archive-patcher ApkDiffPatch
+          oldVersion              newVersion      newSize  (bzip2)  (+zlib)    (+gzip)   (+zlib)  (+lzma)
 ---------------------------------------------------------------------------------------------------------
 chrome-63-0-3239-111.apk chrome-64-0-3282-123.apk 43879588 32916357 32621974  18776996  15995242 13896562
 chrome-64-0-3282-123.apk chrome-64-0-3282-137.apk 43879588 28895294 28538751   1357320   1341073  1149331
