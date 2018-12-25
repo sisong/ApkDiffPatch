@@ -55,7 +55,7 @@ static void printUsage(){
 #if (IS_USED_MULTITHREAD)
            "  -p-parallelThreadNumber\n"
            "    parallelThreadNumber DEFAULT 1, if parallelThreadNumber>1 (recommended 3 etc...)\n"
-           "    then start multi-thread Parallel compress zip; requires more memory!\n"
+           "    and used ApkV2Sign then start multi-thread Parallel compress zip; requires more memory!\n"
 #endif
            );
 }

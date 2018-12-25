@@ -54,7 +54,9 @@ bool _decompress(const TByte* code,size_t codeLen,TByte* dst,size_t dstSize,hpat
 
 static bool _openZipDiffData(const hpatch_TStreamInput* diffData,hpatch_TDecompress* decompressPlugin,
                   size_t* out_headInfoPos=0){
-    #define kVersionTypeLen 7
+    const char* kVersionType="ZiPat1&";
+    const size_t kVersionTypeLen=7;
+    assert(kVersionTypeLen==strlen(kVersionType));
     
     TByte buf[kVersionTypeLen + hpatch_kMaxCompressTypeLength+1+1];
     int readLen=sizeof(buf)-1;
@@ -63,7 +65,7 @@ static bool _openZipDiffData(const hpatch_TStreamInput* diffData,hpatch_TDecompr
         readLen=(int)diffData->streamSize;
     check(readLen==diffData->read(diffData->streamHandle,0,buf,buf+readLen));
     //check type+version
-    check(0==strncmp((const char*)buf,"ZiPat1&",kVersionTypeLen));
+    check(0==strncmp((const char*)buf,kVersionType,kVersionTypeLen));
     {//read compressType
         check(decompressPlugin!=0);
         const char* compressType=(const char*)buf+kVersionTypeLen;
