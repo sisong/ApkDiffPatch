@@ -118,9 +118,9 @@ int main(int argc, const char * argv[]) {
                     oldZipPath,newZipPath,outDiffFileName);
 
     double time0=clock_s();
-    bool   isNewZipApkV2SignOk=true;
+    bool   isNewZipApkV2SignNoError=true;
     if (isDiff){
-        if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,&isNewZipApkV2SignOk)){
+        if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,&isNewZipApkV2SignNoError)){
             printf("ZipDiff error!\n");
             return 1;
         }//else
@@ -142,9 +142,10 @@ int main(int argc, const char * argv[]) {
             } break;
             case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_ERROR:{
                 printf("  check ZipPatch result Byte By Byte Equal ERROR!\n");
+                printf("  (did newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before running ZipDiff?)\n");
             } break;
             case CHECK_SAME_LIKE_ERROR:{
-                printf("  check ZipPatch result Same Like ERROR!\n");
+                printf("  check ZipPatch result zip data ERROR!\n");
             } break;
             case CHECK_ZIPPATCH_ERROR:{
                 printf("  run ZipPatch ERROR!\n");
@@ -157,9 +158,9 @@ int main(int argc, const char * argv[]) {
     }
     if (isPatchCheck && isDiff)
         printf("\nall     time: %.3f s\n",(clock_s()-time0));
-    if (!isNewZipApkV2SignOk){ //safe check
+    if (!isNewZipApkV2SignNoError){ //safe check
         exitCode=1;
-        printf("\nnewZip used ApkV2Sign, but not complete for ZipDiff, as an ERROR!\n\n");
+        printf("\nnewZip used ApkV2Sign, but not complete, as an ERROR!\n\n");
     }
     return exitCode;
 }

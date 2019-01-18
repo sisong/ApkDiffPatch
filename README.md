@@ -1,8 +1,8 @@
 **ApkDiffPatch**
 ================
-[![release](https://img.shields.io/badge/release-v1.1.4-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
+[![release](https://img.shields.io/badge/release-v1.2.0-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
 [![Build Status](https://travis-ci.org/sisong/ApkDiffPatch.svg?branch=master)](https://travis-ci.org/sisong/ApkDiffPatch) [![Build status](https://ci.appveyor.com/api/projects/status/u5tbrqwl72875r6h/branch/master?svg=true)](https://ci.appveyor.com/project/sisong/apkdiffpatch/branch/master)   
-a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta; support [Apk v2 sign] & [Jar sign](Apk v1 sign).   
+a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta; support [Jar sign](Apk v1 sign) & [Apk v2 sign] & [Apk v3 sign] .   
 You can use this library (and Android NDK) to delta update your Apk.   
 ( not support zip64, and only support decode Deflated code; dependent libraries [HDiffPatch], [zlib], [lzma]. )   
 [[中文说明](https://blog.csdn.net/housisong/article/details/79768678)]
@@ -11,6 +11,7 @@ You can use this library (and Android NDK) to delta update your Apk.
 [zlib]: https://github.com/madler/zlib
 [lzma]: https://www.7-zip.org/sdk.html
 [Apk v2 sign]: https://source.android.com/security/apksigning/v2
+[Apk v3 sign]: https://source.android.com/security/apksigning/v3
 [Jar sign]: https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
 
 ---
@@ -19,7 +20,7 @@ usage:
 *  **ZipDiff(oldZip,newZip,out diffData)**
    
    release the diffData for update oldZip;    
-   your apk use v2 sign(or need ZipPatch result byte by byte equal)? `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff, AND You should not modify the zlib version (unless it is certified compatible).   
+   your apk use V2Sign(or V3Sign or need ZipPatch result byte by byte equal)? `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff, AND You should not modify the zlib version (unless it is certified compatible).   
    
 *  **ZipPatch(oldZip,diffData,out newZip)**
   
