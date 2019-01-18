@@ -68,7 +68,8 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
         result=false; if (!_isInClear){ goto clear; } } }
 
 
-bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,bool* out_isNewZipApkV2SignOk){
+bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
+             bool* out_isNewZipApkV2SignNoError){
     TFileStreamInput    oldZipStream;
     TFileStreamInput    newZipStream;
     TFileStreamOutput   outDiffStream;
@@ -82,7 +83,7 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(TFileStreamInput_open(&newZipStream,newZipPath));
     check(TFileStreamOutput_open(&outDiffStream,outDiffFileName,(hpatch_StreamPos_t)(-1)));
     TFileStreamOutput_setRandomOut(&outDiffStream,hpatch_TRUE);
-    result=ZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&outDiffStream.base,out_isNewZipApkV2SignOk);
+    result=ZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&outDiffStream.base,out_isNewZipApkV2SignNoError);
 clear:
     _isInClear=true;
     check(TFileStreamOutput_close(&outDiffStream));
@@ -118,7 +119,7 @@ clear:
 }
 
 bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
-                       const hpatch_TStreamOutput* outDiffStream,bool* out_isNewZipApkV2SignOk){
+                       const hpatch_TStreamOutput* outDiffStream,bool* out_isNewZipApkV2SignNoError){
     UnZipper            oldZip;
     UnZipper            newZip;
     std::vector<TByte>  newData;
@@ -134,7 +135,7 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     bool            result=true;
     bool            _isInClear=false;
     bool            byteByByteEqualCheck=false;
-    bool            isNewZipApkV2SignOk=true;
+    bool            isNewZipApkV2SignNoError=true;
     size_t          newZipAlignSize=0;
     int             newZipNormalized_compressLevel=kDefaultZlibCompressLevel;
     int             newZipNormalized_compressMemLevel=kDefaultZlibCompressMemLevel;
@@ -185,9 +186,9 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     if (newCompressedDataIsNormalized && UnZipper_isHaveApkV2Sign(&oldZip))
         oldZip._isDataNormalized=getCompressedIsNormalizedBy(&oldZip,newZipNormalized_compressLevel,
                                                              newZipNormalized_compressMemLevel);
-    isNewZipApkV2SignOk=checkZipInfo(&oldZip,&newZip);
-    if (out_isNewZipApkV2SignOk) *out_isNewZipApkV2SignOk=isNewZipApkV2SignOk;
-    //if isNewZipApkV2SignOk==false ,same info error,but continue;
+    isNewZipApkV2SignNoError=checkZipInfo(&oldZip,&newZip);
+    if (out_isNewZipApkV2SignNoError) *out_isNewZipApkV2SignNoError=isNewZipApkV2SignNoError;
+    //if isNewZipApkV2SignNoError==false ,same info error,but continue;
     
     std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
     check(getSamePairList(&newZip,&oldZip,newCompressedDataIsNormalized,
@@ -269,29 +270,33 @@ bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
 static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     bool isOk=true;
     if (oldZip->_isDataNormalized)
-        printf("  NOTE: oldZip Normalized\n");
+        printf("  NOTE: oldZip maybe normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
         printf("  NOTE: oldZip found JarSign(ApkV1Sign)\n");
     if (UnZipper_isHaveApkV2Sign(oldZip))
         printf("  NOTE: oldZip found ApkV2Sign\n");
+    if (UnZipper_isHaveApkV3Sign(oldZip))
+        printf("  NOTE: oldZip found ApkV3Sign\n");
     if (newZip->_isDataNormalized)
-        printf("  NOTE: newZip Normalized\n");
+        printf("  NOTE: newZip maybe normalized\n");
     if (UnZipper_isHaveApkV1_or_jarSign(newZip))
         printf("  NOTE: newZip found JarSign(ApkV1Sign)\n");
     bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
     if (newIsV2Sign)
         printf("  NOTE: newZip found ApkV2Sign\n");
+    if (UnZipper_isHaveApkV3Sign(newZip))
+        printf("  NOTE: newZip found ApkV3Sign\n");
     
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
         //maybe bring apk can't install ERROR!
-        printf("  ERROR: newZip not Normalized, need run "
-               "newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before run ZipDiff!\n");
+        printf("  ERROR: newZip not Normalized, need do "
+               "newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before running ZipDiff!\n");
         isOk=false;
     }
-    if ((!newIsV2Sign)&&UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(newZip)){
+    if ((!newIsV2Sign)&&UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(newZip)){
         //maybe bring apk can't install ERROR!
-        printf("  ERROR: newZip fond \"X-Android-APK-Signed: 2\" in ApkV1Sign file, need re sign "
-               "newZip:=AndroidSDK#apksigner(newZip) before run ZipDiff!\n");
+        printf("  ERROR: newZip fond \"X-Android-APK-Signed: 2(or 3...)\" in ApkV1Sign file, need re sign "
+               "newZip:=AndroidSDK#apksigner(newZip) before running ZipDiff!\n");
         isOk=false;
     }
     return isOk;

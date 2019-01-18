@@ -55,6 +55,7 @@ typedef struct UnZipper{
     ZipFilePos_t*   _fileDataOffsets;
     bool            _isDataNormalized;
     bool            _isFileDataOffsetMatch;
+    bool            _isHaveV3Sign;
     //mem
     unsigned char*  _buf; //file read buf
     unsigned char*  _cache_vce;
@@ -88,9 +89,10 @@ static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self-
 static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_cache_vce; }
 static inline size_t UnZipper_CESize(const UnZipper* self) { return self->_vce_size-UnZipper_ApkV2SignSize(self); }
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
-                              ZipFilePos_t* v2sign_pos,hpatch_StreamPos_t* out_blockSize);
+                              ZipFilePos_t* v2sign_topPos,ZipFilePos_t* out_blockSize=0,bool* out_isHaveV3Sign=0);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
-bool UnZipper_isHaveApkV2SignTag_in_ApkV1SignFile(UnZipper* self); //found true; not found or unknown or error false
+bool UnZipper_isHaveApkV3Sign(const UnZipper* self);
+bool UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(UnZipper* self); //found true; not found or unknown or error false
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
 bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex);
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);

@@ -99,8 +99,6 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     uint32_t                    oldExtraSize=0;
     uint32_t                    newExtraSize=0;
     bool                        isV2SignExtra=false;
-    ZipFilePos_t                v2sign_pos=0;
-    hpatch_StreamPos_t          oldV2BlockSize=0;
     bool        result=true;
     bool        _isInClear=false;
     TFileStreamInput_init(&zipat);
@@ -131,8 +129,10 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     check(stream_copy(&output_file.base,0,&zipat.base,0,editExtraPos,buf,bufSize));
     
     {//have Apk V2 Sign?
-        check(UnZipper_searchApkV2Sign(&zipat.base,editExtraPos+oldExtraSize,&v2sign_pos,&oldV2BlockSize));
-        isV2SignExtra=(v2sign_pos==editExtraPos)&&(v2sign_pos<editExtraPos+oldExtraSize);
+        ZipFilePos_t                v2sign_topPos=0;
+        hpatch_StreamPos_t          oldV2BlockSize=0;
+        check(UnZipper_searchApkV2Sign(&zipat.base,editExtraPos+oldExtraSize,&v2sign_topPos,&oldV2BlockSize));
+        isV2SignExtra=(v2sign_topPos==editExtraPos)&&(v2sign_topPos<editExtraPos+oldExtraSize);
         if (isV2SignExtra) check(8+oldV2BlockSize==oldExtraSize);
     }
     if (!isV2SignExtra){//insert data
