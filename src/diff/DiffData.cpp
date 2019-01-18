@@ -397,9 +397,10 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     pushBack(out_data,hdiffzData);
     
     {//ExtraEdit
-        pushBack(out_data,newZip->_cache_vce,newZip->_centralDirectory);
+        pushBack(out_data,newZip->_cache_fvce,newZip->_centralDirectory);
+        uint32_t extraSize=(uint32_t)(newZip->_centralDirectory-newZip->_cache_fvce);
         TByte buf4[4];
-        writeUInt32_to(buf4,(uint32_t)UnZipper_ApkV2SignSize(newZip));
+        writeUInt32_to(buf4,extraSize);
         pushBack(out_data,buf4,buf4+4);
         pushBack(out_data,(const TByte*)kExtraEdit,(const TByte*)kExtraEdit+kExtraEditLen);
     }

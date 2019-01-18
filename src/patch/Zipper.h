@@ -45,7 +45,6 @@ typedef struct UnZipper{
 //private:
     TFileStreamInput _fileStream;
     
-    ZipFilePos_t    _vce_size;
     unsigned char*  _endCentralDirectory;
     unsigned char*  _centralDirectory;
     uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
@@ -58,7 +57,9 @@ typedef struct UnZipper{
     bool            _isHaveV3Sign;
     //mem
     unsigned char*  _buf; //file read buf
-    unsigned char*  _cache_vce;
+    unsigned char*  _vce;
+    unsigned char*  _cache_fvce;// fileDataEnd_fillZero + v2signBlock + centralDirectory + endCentralDirectory
+    ZipFilePos_t    _fvce_size;
 } UnZipper;
 void UnZipper_init(UnZipper* self);
 bool UnZipper_openFile(UnZipper* self,const char* zipFileName,
@@ -83,11 +84,12 @@ bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
                                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
     
-bool UnZipper_openVCE(UnZipper* self,ZipFilePos_t vce_size,int fileCount);
-bool UnZipper_updateVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
-static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_cache_vce < self->_centralDirectory; }
-static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_cache_vce; }
-static inline size_t UnZipper_CESize(const UnZipper* self) { return self->_vce_size-UnZipper_ApkV2SignSize(self); }
+bool UnZipper_openVirtualVCE(UnZipper* self,ZipFilePos_t fvce_size,int fileCount);
+bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
+static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_vce < self->_centralDirectory; }
+static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_vce; }
+static inline size_t UnZipper_CESize(const UnZipper* self) {
+                                            return (self->_cache_fvce+self->_fvce_size)-self->_centralDirectory; }
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
                               ZipFilePos_t* v2sign_topPos,ZipFilePos_t* out_blockSize=0,bool* out_isHaveV3Sign=0);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);

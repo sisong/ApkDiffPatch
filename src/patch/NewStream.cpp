@@ -64,8 +64,8 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     }
     
     //write data
-    if (self->_curFileIndex<0){//vce
-        memcpy(self->_newZipVCE._cache_vce+self->_extraEditSize+writeToPos,data,result);
+    if (self->_curFileIndex<0){//fvce
+        memcpy(self->_newZipVCE._cache_fvce+self->_extraEditSize+writeToPos,data,result);
     }else{
         check(self->_curFileIndex<self->_fileCount);
         check(Zipper_file_append_part(self->_out_newZip,data,result));
@@ -76,7 +76,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     
     //write one end
     if (self->_curFileIndex<0){//vce ok
-        check(UnZipper_updateVCE(&self->_newZipVCE,self->_newZipIsDataNormalized,self->_newZipCESize));
+        check(UnZipper_updateVirtualVCE(&self->_newZipVCE,self->_newZipIsDataNormalized,self->_newZipCESize));
         bool newIsStable=self->_newZipVCE._isDataNormalized && UnZipper_isHaveApkV2Sign(&self->_newZipVCE);
         bool oldIsStable=self->_oldZip->_isDataNormalized && UnZipper_isHaveApkV2Sign(self->_oldZip);
         self->_isAlwaysReCompress=newIsStable&(!oldIsStable);
@@ -173,10 +173,10 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->stream=&self->_stream;
     
     self->_extraEditSize=(size_t)extraEdit->streamSize;
-    check(UnZipper_openVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
+    check(UnZipper_openVirtualVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
     if (self->_extraEditSize>0){
-        check((long)self->_extraEditSize==extraEdit->read(extraEdit->streamHandle,0,self->_newZipVCE._cache_vce,
-                                                      self->_newZipVCE._cache_vce+self->_extraEditSize));
+        check((long)self->_extraEditSize==extraEdit->read(extraEdit->streamHandle,0,self->_newZipVCE._cache_fvce,
+                                                      self->_newZipVCE._cache_fvce+self->_extraEditSize));
     }
     
     self->_curFileIndex=-1;
