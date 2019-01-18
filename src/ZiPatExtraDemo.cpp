@@ -98,6 +98,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     hpatch_StreamPos_t          editExtraPos=0;
     uint32_t                    oldExtraSize=0;
     uint32_t                    newExtraSize=0;
+    ZipFilePos_t                oldV2BlockSize=0;
     bool                        isV2SignExtra=false;
     bool        result=true;
     bool        _isInClear=false;
@@ -130,7 +131,6 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     
     {//have Apk V2 Sign?
         ZipFilePos_t                v2sign_topPos=0;
-        hpatch_StreamPos_t          oldV2BlockSize=0;
         check(UnZipper_searchApkV2Sign(&zipat.base,editExtraPos+oldExtraSize,&v2sign_topPos,&oldV2BlockSize));
         isV2SignExtra=(v2sign_topPos==editExtraPos)&&(v2sign_topPos<editExtraPos+oldExtraSize);
         if (isV2SignExtra) check(8+oldV2BlockSize==oldExtraSize);
