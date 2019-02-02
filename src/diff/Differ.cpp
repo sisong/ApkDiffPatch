@@ -50,17 +50,15 @@
 
 //* for close some compiler warning :(
 #ifdef _CompressPlugin_lzma
-hdiff_TCompress*       __not_used_for_compiler__null0 =&lzmaCompressPlugin;
-hpatch_TDecompress*    __not_used_for_compiler__null1 =&lzmaDecompressPlugin;
-hdiff_TStreamCompress* __not_used_for_compiler__null2 =&lzmaStreamCompressPlugin;
+const hdiff_TCompress*  __not_used_for_compiler__null0 =&lzmaCompressPlugin.base;
+hpatch_TDecompress*     __not_used_for_compiler__null1 =&lzmaDecompressPlugin;
 #endif
-hdiff_TCompress*       __not_used_for_compiler__null3 =&zlibCompressPlugin;
-hpatch_TDecompress*    __not_used_for_compiler__null4 =&zlibDecompressPlugin;
-hdiff_TStreamCompress* __not_used_for_compiler__null5 =&zlibStreamCompressPlugin;
+const hdiff_TCompress*  __not_used_for_compiler__null2 =&zlibCompressPlugin.base;
+hpatch_TDecompress*     __not_used_for_compiler__null3 =&zlibDecompressPlugin;
 //*/
 
-bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
-            hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
+static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
+                   const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
 static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 
 #define  check(value) { \
@@ -70,25 +68,25 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
              bool* out_isNewZipApkV2SignNoError){
-    TFileStreamInput    oldZipStream;
-    TFileStreamInput    newZipStream;
-    TFileStreamOutput   outDiffStream;
+    hpatch_TFileStreamInput    oldZipStream;
+    hpatch_TFileStreamInput    newZipStream;
+    hpatch_TFileStreamOutput   outDiffStream;
     bool            result=true;
     bool            _isInClear=false;
     
-    TFileStreamInput_init(&oldZipStream);
-    TFileStreamInput_init(&newZipStream);
-    TFileStreamOutput_init(&outDiffStream);
-    check(TFileStreamInput_open(&oldZipStream,oldZipPath));
-    check(TFileStreamInput_open(&newZipStream,newZipPath));
-    check(TFileStreamOutput_open(&outDiffStream,outDiffFileName,(hpatch_StreamPos_t)(-1)));
-    TFileStreamOutput_setRandomOut(&outDiffStream,hpatch_TRUE);
+    hpatch_TFileStreamInput_init(&oldZipStream);
+    hpatch_TFileStreamInput_init(&newZipStream);
+    hpatch_TFileStreamOutput_init(&outDiffStream);
+    check(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath));
+    check(hpatch_TFileStreamInput_open(&newZipStream,newZipPath));
+    check(hpatch_TFileStreamOutput_open(&outDiffStream,outDiffFileName,(hpatch_StreamPos_t)(-1)));
+    hpatch_TFileStreamOutput_setRandomOut(&outDiffStream,hpatch_TRUE);
     result=ZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&outDiffStream.base,out_isNewZipApkV2SignNoError);
 clear:
     _isInClear=true;
-    check(TFileStreamOutput_close(&outDiffStream));
-    check(TFileStreamInput_close(&newZipStream));
-    check(TFileStreamInput_close(&oldZipStream));
+    check(hpatch_TFileStreamOutput_close(&outDiffStream));
+    check(hpatch_TFileStreamInput_close(&newZipStream));
+    check(hpatch_TFileStreamInput_close(&oldZipStream));
     return result;
 }
 
@@ -97,24 +95,24 @@ clear:
         result=CHECK_OTHER_ERROR; if (!_isInClear){ goto clear; } } }
 
 TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName){
-    TFileStreamInput    oldZipStream;
-    TFileStreamInput    newZipStream;
-    TFileStreamInput    diffStream;
+    hpatch_TFileStreamInput    oldZipStream;
+    hpatch_TFileStreamInput    newZipStream;
+    hpatch_TFileStreamInput    diffStream;
     TCheckZipDiffResult result=CHECK_OTHER_ERROR;
     bool            _isInClear=false;
     
-    TFileStreamInput_init(&oldZipStream);
-    TFileStreamInput_init(&newZipStream);
-    TFileStreamInput_init(&diffStream);
-    checkC(TFileStreamInput_open(&oldZipStream,oldZipPath));
-    checkC(TFileStreamInput_open(&newZipStream,newZipPath));
-    checkC(TFileStreamInput_open(&diffStream,diffFileName));
+    hpatch_TFileStreamInput_init(&oldZipStream);
+    hpatch_TFileStreamInput_init(&newZipStream);
+    hpatch_TFileStreamInput_init(&diffStream);
+    checkC(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath));
+    checkC(hpatch_TFileStreamInput_open(&newZipStream,newZipPath));
+    checkC(hpatch_TFileStreamInput_open(&diffStream,diffFileName));
     result=checkZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&diffStream.base);
 clear:
     _isInClear=true;
-    checkC(TFileStreamInput_close(&diffStream));
-    checkC(TFileStreamInput_close(&newZipStream));
-    checkC(TFileStreamInput_close(&oldZipStream));
+    checkC(hpatch_TFileStreamInput_close(&diffStream));
+    checkC(hpatch_TFileStreamInput_close(&newZipStream));
+    checkC(hpatch_TFileStreamInput_close(&oldZipStream));
     return result;
 }
 
@@ -145,14 +143,11 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     
     const int           myBestMatchScore=3;
 #ifdef _CompressPlugin_lzma
-    hdiff_TCompress*    compressPlugin=&lzmaCompressPlugin;
-    hpatch_TDecompress* decompressPlugin=&lzmaDecompressPlugin;
-    lzma_compress_level =9;
-    lzma_dictSize       =4*1024*1024;
+    const hdiff_TCompress*  compressPlugin=&lzmaCompressPlugin.base;
+    hpatch_TDecompress*     decompressPlugin=&lzmaDecompressPlugin;
 #else
-    hdiff_TCompress*    compressPlugin=&zlibCompressPlugin;
-    hpatch_TDecompress* decompressPlugin=&zlibDecompressPlugin;
-    zlib_compress_level =9; //0..9
+    const hdiff_TCompress*  compressPlugin=&zlibCompressPlugin.base;
+    hpatch_TDecompress*     decompressPlugin=&zlibDecompressPlugin;
 #endif
     
     UnZipper_init(&oldZip);
@@ -190,7 +185,7 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     if (out_isNewZipApkV2SignNoError) *out_isNewZipApkV2SignNoError=isNewZipApkV2SignNoError;
     //if isNewZipApkV2SignNoError==false ,same info error,but continue;
     
-    std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType(compressPlugin)<<"\"\n";
+    std::cout<<"ZipDiff with compress plugin: \""<<compressPlugin->compressType()<<"\"\n";
     check(getSamePairList(&newZip,&oldZip,newCompressedDataIsNormalized,
                           newZipNormalized_compressLevel,newZipNormalized_compressMemLevel,
                           samePairList,newRefList,newRefOtherCompressedList,newRefCompressedSizeList));
@@ -230,8 +225,7 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
                                oldRefList,hdiffzData,compressPlugin));
     std::cout<<"ZipDiff size: "<<out_diffData.size()<<"\n";
     
-    check((long)out_diffData.size()==outDiffStream->write(outDiffStream->streamHandle,0,out_diffData.data(),
-                                                          out_diffData.data()+out_diffData.size()));
+    check(outDiffStream->write(outDiffStream,0,out_diffData.data(),out_diffData.data()+out_diffData.size()));
 clear:
     _isInClear=true;
     check(UnZipper_close(&newZip));
@@ -239,8 +233,8 @@ clear:
     return result;
 }
 
-bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
-            hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore){
+static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
+                   const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore){
     double time0=clock_s();
     const size_t oldDataSize=oldData.size();
     const size_t newDataSize=newData.size();
@@ -299,6 +293,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
                "newZip:=AndroidSDK#apksigner(newZip) before running ZipDiff!\n");
         isOk=false;
     }
+    printf("\n");
     return isOk;
 }
 
@@ -313,8 +308,8 @@ static bool getIsEqual(const hpatch_TStreamInput* x,const hpatch_TStreamInput* y
         std::vector<TByte> _buf;
         _buf.resize(dataSize*2);
         TByte* buf=_buf.data();
-        if ((long)dataSize!=x->read(x->streamHandle,0,buf,buf+dataSize)) return false;
-        if ((long)dataSize!=y->read(y->streamHandle,0,buf+dataSize,buf+dataSize*2)) return false;
+        if (!x->read(x,0,buf,buf+dataSize)) return false;
+        if (!y->read(y,0,buf+dataSize,buf+dataSize*2)) return false;
         if (0!=memcmp(buf,buf+dataSize,dataSize)) return false;
     }
     return true;
@@ -323,14 +318,14 @@ static bool getIsEqual(const hpatch_TStreamInput* x,const hpatch_TStreamInput* y
 
     struct TVectorStreamOutput:public hpatch_TStreamOutput{
         explicit TVectorStreamOutput(std::vector<TByte>& _dst):dst(_dst){
-            this->streamHandle=this;
+            this->streamImport=this;
             this->streamSize=-1;
             this->write=_write;
         }
-        static long _write(hpatch_TStreamOutputHandle streamHandle,
-                           const hpatch_StreamPos_t writeToPos,
-                           const unsigned char* data,const unsigned char* data_end){
-            TVectorStreamOutput* self=(TVectorStreamOutput*)streamHandle;
+        static hpatch_BOOL _write(const hpatch_TStreamOutput* stream,
+                                  const hpatch_StreamPos_t writeToPos,
+                                  const unsigned char* data,const unsigned char* data_end){
+            TVectorStreamOutput* self=(TVectorStreamOutput*)stream->streamImport;
             std::vector<TByte>& dst=self->dst;
             size_t writeLen=(size_t)(data_end-data);
             assert(writeToPos<=dst.size());
@@ -342,7 +337,7 @@ static bool getIsEqual(const hpatch_TStreamInput* x,const hpatch_TStreamInput* y
                     dst.resize((size_t)(writeToPos+writeLen));
                 memcpy(&dst[(size_t)writeToPos],data,writeLen);
             }
-            return (long)writeLen;
+            return hpatch_TRUE;
         }
         std::vector<TByte>& dst;
     };

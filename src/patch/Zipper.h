@@ -29,7 +29,7 @@
 #define ZipPatch_Zipper_h
 #include <stdio.h> //FILE
 #include <assert.h>
-#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "patch_types.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,7 @@ typedef uint32_t ZipFilePos_t;
 typedef struct UnZipper{
     const hpatch_TStreamInput* stream;
 //private:
-    TFileStreamInput _fileStream;
+    hpatch_TFileStreamInput _fileStream;
     
     unsigned char*  _endCentralDirectory;
     unsigned char*  _centralDirectory;
@@ -115,17 +115,17 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex
         struct _zlib_TCompress* compressHandle;
         hpatch_TStreamOutput    compressOutStream;
         ZipFilePos_t            curFileIndex;
-        static long _append_part_input(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
-                                       const unsigned char* part_data,const unsigned char* part_data_end);
-        static long _append_part_output(hpatch_TStreamOutputHandle handle,hpatch_StreamPos_t pos,
-                                       const unsigned char* part_data,const unsigned char* part_data_end);
+        static hpatch_BOOL _append_part_input(const hpatch_TStreamOutput* stream,hpatch_StreamPos_t pos,
+                                              const unsigned char* part_data,const unsigned char* part_data_end);
+        static hpatch_BOOL _append_part_output(const hpatch_TStreamOutput* stream,hpatch_StreamPos_t pos,
+                                               const unsigned char* part_data,const unsigned char* part_data_end);
     };
 
     
 typedef struct Zipper{
 //private:
     const hpatch_TStreamOutput* _stream;
-    TFileStreamOutput           _fileStream;
+    hpatch_TFileStreamOutput    _fileStream;
     ZipFilePos_t    _curFilePos;
     int             _fileEntryMaxCount;
     int             _fileEntryCount;

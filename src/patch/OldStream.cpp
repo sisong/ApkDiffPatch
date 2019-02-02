@@ -98,9 +98,8 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
         memcpy(out_data,src+readPos,out_data_end-out_data);
         return true;
     }else if (self->_rangIsInDecBuf[curRangeIndex]){
-        long readLen=(long)(out_data_end-out_data);
-        return (self->_input_decompressedStream->read(self->_input_decompressedStream->streamHandle,
-                                                      readPos,out_data,out_data_end) == readLen);
+        return self->_input_decompressedStream->read(self->_input_decompressedStream,
+                                                      readPos,out_data,out_data_end);
     }else{
         return UnZipper_fileData_read(self->_oldZip,(ZipFilePos_t)readPos,out_data,out_data_end);
     }
@@ -115,22 +114,22 @@ static int findRangeIndex(const uint32_t* ranges,size_t rangeCount,uint32_t pos)
     return -1;
 }
 
-static long _OldStream_read(hpatch_TStreamInputHandle streamHandle,
-                            const hpatch_StreamPos_t _readFromPos,
-                            unsigned char* out_data,unsigned char* out_data_end){
-    OldStream* self=(OldStream*)streamHandle;
+static hpatch_BOOL _OldStream_read(const hpatch_TStreamInput* stream,
+                                   const hpatch_StreamPos_t _readFromPos,
+                                   unsigned char* out_data,unsigned char* out_data_end){
+    OldStream* self=(OldStream*)stream->streamImport;
     const uint32_t* ranges=self->_rangeEndList;
     int curRangeIndex=self->_curRangeIndex;
-    long  result=(long)(out_data_end-out_data);
+    hpatch_BOOL  result=hpatch_TRUE;
     size_t readFromPos=(size_t)_readFromPos;
     while (out_data<out_data_end) {
-        long readLen=(long)(out_data_end-out_data);
+        size_t readLen=(size_t)(out_data_end-out_data);
         if (ranges[curRangeIndex-1]<=readFromPos){ //-1 safe
             if (readFromPos+readLen<=ranges[curRangeIndex]){//hit all
                 check(_OldStream_read_do(self,readFromPos,out_data,out_data_end,curRangeIndex));
                 break; //ok out while
             }else if (readFromPos<=ranges[curRangeIndex]){//hit left
-                long leftLen=(long)(ranges[curRangeIndex]-readFromPos);
+                size_t leftLen=(size_t)(ranges[curRangeIndex]-readFromPos);
                 if (leftLen>0)
                     check(_OldStream_read_do(self,readFromPos,out_data,out_data+leftLen,curRangeIndex));
                 ++curRangeIndex;
@@ -218,7 +217,7 @@ bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,siz
     assert(self->_rangeCount>0);
     oldDataSize=self->_rangeEndList[self->_rangeCount-1];
     
-    self->_stream.streamHandle=self;
+    self->_stream.streamImport=self;
     self->_stream.streamSize=oldDataSize;
     self->_stream.read=_OldStream_read;
     self->stream=&self->_stream;

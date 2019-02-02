@@ -47,6 +47,9 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="../../HDiffPatch/file_for_patch.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatch/patch.c">
 			<Option compilerVar="CC" />
 		</Unit>

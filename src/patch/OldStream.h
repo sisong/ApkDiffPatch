@@ -27,7 +27,7 @@
  */
 #ifndef ZipPatch_OldStream_h
 #define ZipPatch_OldStream_h
-#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "patch_types.h"
 #include "Zipper.h"
 
 //利用oldZip、refList模拟成一个输入流;

@@ -28,6 +28,8 @@
 
 #ifndef ZipPatch_patch_type_h
 #define ZipPatch_patch_type_h
+#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include <stdint.h> //uint32_t uint16_t
 
 #define APKDIFFPATCH_VERSION_MAJOR    1
 #define APKDIFFPATCH_VERSION_MINOR    2

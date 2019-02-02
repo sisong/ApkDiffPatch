@@ -79,6 +79,6 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
                           const std::vector<TByte>&    hdiffzData,
-                          hdiff_TCompress*             compressPlugin);
+                          const hdiff_TCompress*       compressPlugin);
 
 #endif //ZipDiff_DiffData_h

@@ -10,6 +10,7 @@
 		D60C394120500030008A292F /* DiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D60C394020500030008A292F /* DiffData.cpp */; };
 		D60C3947205006B1008A292F /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D60C3945205006B1008A292F /* OldStream.cpp */; };
 		D62AA01120540EEC00A61D43 /* libHDiffPatch.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D62AA01220540EEC00A61D43 /* libHDiffPatch.a */; };
+		D65A441A22057AE4001638A6 /* file_for_patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D65A441922057AE4001638A6 /* file_for_patch.c */; };
 		D671B763204E8248002D17A7 /* apk_normalized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B75F204E8248002D17A7 /* apk_normalized.cpp */; };
 		D671B764204E8248002D17A7 /* normalized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B761204E8248002D17A7 /* normalized.cpp */; };
 		D6888885204687F00042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888880204687F00042E2B3 /* Zipper.cpp */; };
@@ -35,6 +36,7 @@
 		D60C3946205006B1008A292F /* OldStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OldStream.h; sourceTree = "<group>"; };
 		D62AA01220540EEC00A61D43 /* libHDiffPatch.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libHDiffPatch.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D65119312041AF8400805001 /* ApkNormalized */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ApkNormalized; sourceTree = BUILT_PRODUCTS_DIR; };
+		D65A441922057AE4001638A6 /* file_for_patch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = file_for_patch.c; path = ../../HDiffPatch/file_for_patch.c; sourceTree = "<group>"; };
 		D671B75F204E8248002D17A7 /* apk_normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = apk_normalized.cpp; path = ../../src/apk_normalized.cpp; sourceTree = "<group>"; };
 		D671B761204E8248002D17A7 /* normalized.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = normalized.cpp; sourceTree = "<group>"; };
 		D671B762204E8248002D17A7 /* normalized.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = normalized.h; sourceTree = "<group>"; };
@@ -68,6 +70,7 @@
 		D65119282041AF8400805001 = {
 			isa = PBXGroup;
 			children = (
+				D65A441922057AE4001638A6 /* file_for_patch.c */,
 				D671B75F204E8248002D17A7 /* apk_normalized.cpp */,
 				D671B760204E8248002D17A7 /* normalized */,
 				D688887D204687F00042E2B3 /* patch */,
@@ -173,6 +176,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D65A441A22057AE4001638A6 /* file_for_patch.c in Sources */,
 				D671B764204E8248002D17A7 /* normalized.cpp in Sources */,
 				D6888885204687F00042E2B3 /* Zipper.cpp in Sources */,
 				D60C394120500030008A292F /* DiffData.cpp in Sources */,

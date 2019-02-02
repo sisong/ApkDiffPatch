@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D65A441C22057B9B001638A6 /* file_for_patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D65A441B22057B9B001638A6 /* file_for_patch.c */; };
 		D6E0305D205C0D680038E54A /* ZiPatExtraDemo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6E0305C205C0D680038E54A /* ZiPatExtraDemo.cpp */; };
 		D6E0305F205CBECA0038E54A /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6E0305E205CBECA0038E54A /* Zipper.cpp */; };
 		D6E03062205CBF5B0038E54A /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6E03063205CBF5B0038E54A /* libzlib.a */; };
@@ -26,6 +27,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D65A441B22057B9B001638A6 /* file_for_patch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = file_for_patch.c; path = ../../HDiffPatch/file_for_patch.c; sourceTree = "<group>"; };
 		D6E03052205C0D060038E54A /* ZiPatExtraDemo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZiPatExtraDemo; sourceTree = BUILT_PRODUCTS_DIR; };
 		D6E0305C205C0D680038E54A /* ZiPatExtraDemo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ZiPatExtraDemo.cpp; path = ../../src/ZiPatExtraDemo.cpp; sourceTree = "<group>"; };
 		D6E0305E205CBECA0038E54A /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Zipper.cpp; path = ../../src/patch/Zipper.cpp; sourceTree = "<group>"; };
@@ -48,6 +50,7 @@
 		D6E03049205C0D060038E54A = {
 			isa = PBXGroup;
 			children = (
+				D65A441B22057B9B001638A6 /* file_for_patch.c */,
 				D6E0305C205C0D680038E54A /* ZiPatExtraDemo.cpp */,
 				D6E03060205CBF440038E54A /* patch */,
 				D6E03053205C0D060038E54A /* Products */,
@@ -139,6 +142,7 @@
 			files = (
 				D6E03065205CBF760038E54A /* patch.c in Sources */,
 				D6E0305D205C0D680038E54A /* ZiPatExtraDemo.cpp in Sources */,
+				D65A441C22057B9B001638A6 /* file_for_patch.c in Sources */,
 				D6E0305F205CBECA0038E54A /* Zipper.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
