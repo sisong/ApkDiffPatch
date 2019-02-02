@@ -500,7 +500,7 @@ ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex
 
 bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd){
     //当前的实现不支持多线程;
-    return self->stream->read(self->stream,file_pos,buf,bufEnd);
+    return hpatch_FALSE!=self->stream->read(self->stream,file_pos,buf,bufEnd);
 }
 
 bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
@@ -510,8 +510,8 @@ bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
     ZipFilePos_t fileDataOffset=UnZipper_fileData_offset(self,fileIndex);
     ZipFilePos_t curWritePos=0;
     while (curWritePos<fileSavedSize) {
-        size_t readLen=kBufSize;
-        if ((ZipFilePos_t)readLen>(fileSavedSize-curWritePos)) readLen=(size_t)(fileSavedSize-curWritePos);
+        ZipFilePos_t readLen=kBufSize;
+        if (readLen>(fileSavedSize-curWritePos)) readLen=fileSavedSize-curWritePos;
         check(UnZipper_fileData_read(self,fileDataOffset+curWritePos,buf,buf+readLen));
         check(outStream->write(outStream,writeToPos+curWritePos,buf,buf+readLen));
         curWritePos+=readLen;
@@ -542,8 +542,8 @@ bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
     ZipFilePos_t  curWritePos=0;
     check_clear(decHandle!=0);
     while (curWritePos<file_data_size){
-        size_t readLen=(kBufSize>>1);
-        if ((ZipFilePos_t)readLen>(file_data_size-curWritePos)) readLen=(size_t)(file_data_size-curWritePos);
+        ZipFilePos_t readLen=(kBufSize>>1);
+        if (readLen>(file_data_size-curWritePos)) readLen=file_data_size-curWritePos;
         check_clear(_zlib_decompress_part(decHandle,dataBuf,dataBuf+readLen));
         check_clear(outStream->write(outStream,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
         curWritePos+=readLen;
@@ -1045,7 +1045,7 @@ const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self){
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize){
     Zipper_file_append_stream* append_state=&self->_append_stream;
     if (append_state->self==0) { assert(false); return false; }
-    return append_state->write(append_state,append_state->inputPos,part_data,part_data+partSize);
+    return hpatch_FALSE!=append_state->write(append_state,append_state->inputPos,part_data,part_data+partSize);
 }
 
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,bool isAlwaysReCompress){

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\HDiffPatch\file_for_patch.c" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
     <ClCompile Include="..\..\lzma\C\LzmaDec.c" />
     <ClCompile Include="..\..\src\normalized\normalized.cpp" />

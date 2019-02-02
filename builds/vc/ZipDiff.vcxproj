@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\HDiffPatch\file_for_patch.c" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\diff.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\bytes_rle.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\compress_detect.cpp" />

@@ -98,8 +98,8 @@ static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
         memcpy(out_data,src+readPos,out_data_end-out_data);
         return true;
     }else if (self->_rangIsInDecBuf[curRangeIndex]){
-        return self->_input_decompressedStream->read(self->_input_decompressedStream,
-                                                      readPos,out_data,out_data_end);
+        return hpatch_FALSE!=self->_input_decompressedStream->read(self->_input_decompressedStream,
+                                                                   readPos,out_data,out_data_end);
     }else{
         return UnZipper_fileData_read(self->_oldZip,(ZipFilePos_t)readPos,out_data,out_data_end);
     }
