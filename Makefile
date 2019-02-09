@@ -18,6 +18,9 @@ ZIPPATCH_OBJ := \
     src/patch/ZipDiffData.o \
     src/patch/Zipper.o \
     HDiffPatch/libHDiffPatch/HPatch/patch.o \
+    HDiffPatch/file_for_patch.o \
+    HDiffPatch/libParallel/parallel_import.o \
+    HDiffPatch/libParallel/parallel_channel.o \
     lzma/C/LzmaDec.o \
     $(ZLIB_OBJ)
 
@@ -45,19 +48,19 @@ ZIPDIFF_OBJ := \
     lzma/C/LzFind.o \
     $(ZIPPATCH_OBJ)
 
-CFLAGS      += -O3 -D_7ZIP_ST
-CXXFLAGS   += -O3
+CFLAGS      += -O3 -DNDEBUG -D_7ZIP_ST
+CXXFLAGS   += -O3 -DNDEBUG -D_7ZIP_ST
 
 .PHONY: all clean
 
 all: ApkNormalized ZipDiff ZipPatch
 
 ApkNormalized: $(APKNORM_OBJ)
-	c++ -o ApkNormalized $(APKNORM_OBJ)
+	$(CXX) $(APKNORM_OBJ) -lpthread -o ApkNormalized
 ZipDiff: $(ZIPDIFF_OBJ)
-	c++ -o ZipDiff $(ZIPDIFF_OBJ)
-ZipPatch:  src/zip_patch.o $(ZIPPATCH_OBJ)
-	c++ -o ZipPatch src/zip_patch.o $(ZIPPATCH_OBJ)
+	$(CXX) $(ZIPDIFF_OBJ) -lpthread -o ZipDiff
+ZipPatch: src/zip_patch.o $(ZIPPATCH_OBJ)
+	$(CXX) src/zip_patch.o $(ZIPPATCH_OBJ) -lpthread -o ZipPatch
 
 clean:
 	-rm -f ApkNormalized ZipDiff ZipPatch src/zip_patch.o $(ZIPDIFF_OBJ) $(APKNORM_OBJ)

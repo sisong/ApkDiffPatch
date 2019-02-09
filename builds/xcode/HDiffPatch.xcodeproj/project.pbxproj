@@ -39,6 +39,10 @@
 		D62AA00C2054027100A61D43 /* patch_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D62A9FEC2054027100A61D43 /* patch_types.h */; };
 		D62AA00D2054027100A61D43 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D62A9FED2054027100A61D43 /* patch.c */; };
 		D62AA00E2054027100A61D43 /* patch.h in Headers */ = {isa = PBXBuildFile; fileRef = D62A9FEE2054027100A61D43 /* patch.h */; };
+		D69EECED220EC7CB001EF085 /* parallel_channel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D69EECE9220EC7CB001EF085 /* parallel_channel.cpp */; };
+		D69EECEE220EC7CB001EF085 /* parallel_import.h in Headers */ = {isa = PBXBuildFile; fileRef = D69EECEA220EC7CB001EF085 /* parallel_import.h */; };
+		D69EECEF220EC7CB001EF085 /* parallel_import.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D69EECEB220EC7CB001EF085 /* parallel_import.cpp */; };
+		D69EECF0220EC7CB001EF085 /* parallel_channel.h in Headers */ = {isa = PBXBuildFile; fileRef = D69EECEC220EC7CB001EF085 /* parallel_channel.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +79,10 @@
 		D62A9FEC2054027100A61D43 /* patch_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch_types.h; sourceTree = "<group>"; };
 		D62A9FED2054027100A61D43 /* patch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = patch.c; sourceTree = "<group>"; };
 		D62A9FEE2054027100A61D43 /* patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch.h; sourceTree = "<group>"; };
+		D69EECE9220EC7CB001EF085 /* parallel_channel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parallel_channel.cpp; sourceTree = "<group>"; };
+		D69EECEA220EC7CB001EF085 /* parallel_import.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parallel_import.h; sourceTree = "<group>"; };
+		D69EECEB220EC7CB001EF085 /* parallel_import.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parallel_import.cpp; sourceTree = "<group>"; };
+		D69EECEC220EC7CB001EF085 /* parallel_channel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parallel_channel.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +99,7 @@
 		D62A9FB92054020C00A61D43 = {
 			isa = PBXGroup;
 			children = (
+				D69EECE8220EC7CB001EF085 /* libParallel */,
 				D62A9FCA2054027100A61D43 /* HDiff */,
 				D62A9FEB2054027100A61D43 /* HPatch */,
 				D62A9FC32054020C00A61D43 /* Products */,
@@ -177,6 +186,18 @@
 			path = ../../HDiffPatch/libHDiffPatch/HPatch;
 			sourceTree = "<group>";
 		};
+		D69EECE8220EC7CB001EF085 /* libParallel */ = {
+			isa = PBXGroup;
+			children = (
+				D69EECE9220EC7CB001EF085 /* parallel_channel.cpp */,
+				D69EECEA220EC7CB001EF085 /* parallel_import.h */,
+				D69EECEB220EC7CB001EF085 /* parallel_import.cpp */,
+				D69EECEC220EC7CB001EF085 /* parallel_channel.h */,
+			);
+			name = libParallel;
+			path = ../../HDiffPatch/libParallel;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -197,9 +218,11 @@
 				D62A9FFA2054027100A61D43 /* trsort.c.inc.h in Headers */,
 				D62A9FF32054027100A61D43 /* sssort.c.inc.h in Headers */,
 				D62A9FFE2054027100A61D43 /* sais.hxx in Headers */,
+				D69EECF0220EC7CB001EF085 /* parallel_channel.h in Headers */,
 				D62A9FF12054027100A61D43 /* suffix_string.h in Headers */,
 				D62A9FF42054027100A61D43 /* divsufsort64.h in Headers */,
 				D62A9FF62054027100A61D43 /* utils.c.inc.h in Headers */,
+				D69EECEE220EC7CB001EF085 /* parallel_import.h in Headers */,
 				D62A9FEF2054027100A61D43 /* diff_types.h in Headers */,
 				D62A9FF02054027100A61D43 /* diff.h in Headers */,
 				D62AA0022054027100A61D43 /* digest_matcher.h in Headers */,
@@ -269,6 +292,8 @@
 				D62A9FFF2054027100A61D43 /* suffix_string.cpp in Sources */,
 				D62A9FFB2054027100A61D43 /* divsufsort64.c in Sources */,
 				D62AA00B2054027100A61D43 /* diff.cpp in Sources */,
+				D69EECEF220EC7CB001EF085 /* parallel_import.cpp in Sources */,
+				D69EECED220EC7CB001EF085 /* parallel_channel.cpp in Sources */,
 				D62A9FF72054027100A61D43 /* divsufsort.c in Sources */,
 				D62A9FFC2054027100A61D43 /* compress_detect.cpp in Sources */,
 				D62AA0002054027100A61D43 /* digest_matcher.cpp in Sources */,

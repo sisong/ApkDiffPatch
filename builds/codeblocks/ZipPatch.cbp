@@ -56,10 +56,13 @@
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatch/patch.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../../HDiffPatch/libParallel/parallel_channel.cpp" />
+		<Unit filename="../../HDiffPatch/libParallel/parallel_channel.h" />
+		<Unit filename="../../HDiffPatch/libParallel/parallel_import.cpp" />
+		<Unit filename="../../HDiffPatch/libParallel/parallel_import.h" />
 		<Unit filename="../../lzma/C/LzmaDec.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../src/parallel/parallel.cpp" />
 		<Unit filename="../../src/patch/NewStream.cpp" />
 		<Unit filename="../../src/patch/OldStream.cpp" />
 		<Unit filename="../../src/patch/Patcher.cpp" />

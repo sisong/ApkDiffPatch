@@ -46,6 +46,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-D_IS_USED_MULTITHREAD=0" />
 		</Compiler>
 		<Unit filename="../../HDiffPatch/file_for_patch.c">
 			<Option compilerVar="CC" />

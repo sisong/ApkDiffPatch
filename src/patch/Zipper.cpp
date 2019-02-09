@@ -25,19 +25,19 @@
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
  */
-#include "../parallel/parallel.h"
 #include "Zipper.h"
 #include <string.h>
 #include <ctype.h> //for isspace
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 #include "patch_types.h"
-#include "../parallel/parallel.h"
+#include "../../HDiffPatch/libParallel/parallel_channel.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
 static const TCompressPlugin_zlib zipCompatibleCompressPlugin={
-    {_zlib_compressType,_default_maxCompressedSize,_zlib_compress}, 9,MAX_MEM_LEVEL,(-MAX_WBITS),hpatch_FALSE};
+    {_zlib_compressType,_default_maxCompressedSize,_default_setParallelThreadNumber,_zlib_compress},
+            9,MAX_MEM_LEVEL,-MAX_WBITS,hpatch_FALSE};
 static const hdiff_TCompress*   compressPlugin  =&zipCompatibleCompressPlugin.base;
 static hpatch_TDecompress*      decompressPlugin=&zlibDecompressPlugin;
 
@@ -554,7 +554,7 @@ clear:
     return result;
 }
 
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
 //----
 struct TZipThreadWork {
     TByte*  inputData;
@@ -641,7 +641,7 @@ private:
 #else
     struct TZipThreadWork{};
     struct TZipThreadWorks{};
-#endif //IS_USED_MULTITHREAD
+#endif //_IS_USED_MULTITHREAD
 
 
 void Zipper_init(Zipper* self){
@@ -649,7 +649,7 @@ void Zipper_init(Zipper* self){
 }
 
 bool Zipper_close(Zipper* self){
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
     if (self->_append_stream.threadWork){
         freeThreadWork(self->_append_stream.threadWork);
         self->_append_stream.threadWork=0;
@@ -712,7 +712,7 @@ void Zipper_by_multi_thread(Zipper* self,int threadNum){
     assert(self->_fileEntryCount==0);
     assert(self->_threadNum<=1);
     assert(self->_threadWorks==0);
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
     threadNum=(threadNum<=self->_fileEntryMaxCount)?threadNum:self->_fileEntryMaxCount;
     self->_threadNum=(threadNum>=1)?threadNum:1;
     if (isUsedMT(self)){
@@ -768,7 +768,7 @@ static bool _write(Zipper* self,const TByte* data,size_t len){
     return true;
 }
 
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
 inline static bool _writeSkip(Zipper* self,size_t skipLen){
     check(_writeFlush(self));
     self->_curFilePos+=(ZipFilePos_t)skipLen;
@@ -879,7 +879,7 @@ hpatch_BOOL Zipper_file_append_stream::_append_part_input(const hpatch_TStreamOu
     append_state->inputPos+=partSize;
     if (append_state->inputPos>append_state->streamSize) return hpatch_FALSE;//error
     int is_data_end=(append_state->inputPos==append_state->streamSize);
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
     if (append_state->threadWork){
         memcpy(append_state->threadWork->inputData+append_state->inputPos-partSize,part_data,partSize);
         return hpatch_TRUE;
@@ -948,7 +948,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     assert(append_state->compressHandle==0);
     assert(append_state->threadWork==0);
     if (isCompressed&&(!dataIsCompressed)){//compress data
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
         if (isUsedMT(self)){
             self->_threadWorks->waitCanFastDispatchWork();
             append_state->threadWork=newThreadWork(dataUncompressedSize,dataCompressedSize,self->_curFilePos,
@@ -993,7 +993,7 @@ bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,uint32_t c
     return true;
 }
 
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
 static bool _dispose_filishedThreadWork(Zipper* self,bool isWait){
     while (true) {
         TZipThreadWork* work=self->_threadWorks->haveFinishWork(isWait);
@@ -1017,7 +1017,7 @@ bool Zipper_file_append_end(Zipper* self){
     }
     
     check_clear(append_state->inputPos==append_state->streamSize);
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
     if (isUsedMT(self)) {
         if (append_state->threadWork){
             self->_threadWorks->dispatchWork(append_state->threadWork);
@@ -1091,7 +1091,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(_writeUInt16(self,endCommentLen));
     check(_write(self,srcZip->_endCentralDirectory+22,endCommentLen));//Zip文件注释;
     check(_writeFlush(self));
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
     if (isUsedMT(self)){
         self->_threadWorks->finishDispatchWork();
         check(_dispose_filishedThreadWork(self,true));

@@ -17,7 +17,8 @@
 		D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B768204E82F4002D17A7 /* zip_patch.cpp */; };
 		D688888D204688640042E2B3 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6888889204688640042E2B3 /* Zipper.cpp */; };
 		D68B02D3205A44B0001F3C40 /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = D68B02D2205A44B0001F3C40 /* LzmaDec.c */; };
-		D6EF751621BB95CA000EBBCC /* parallel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6EF751421BB95CA000EBBCC /* parallel.cpp */; };
+		D69EECE6220EC4DE001EF085 /* parallel_channel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D69EECE2220EC4DD001EF085 /* parallel_channel.cpp */; };
+		D69EECE7220EC4DE001EF085 /* parallel_import.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D69EECE4220EC4DD001EF085 /* parallel_import.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -52,8 +53,10 @@
 		D6888888204688640042E2B3 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
 		D6888889204688640042E2B3 /* Zipper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Zipper.cpp; sourceTree = "<group>"; };
 		D68B02D2205A44B0001F3C40 /* LzmaDec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzmaDec.c; path = ../../lzma/C/LzmaDec.c; sourceTree = "<group>"; };
-		D6EF751421BB95CA000EBBCC /* parallel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parallel.cpp; sourceTree = "<group>"; };
-		D6EF751521BB95CA000EBBCC /* parallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parallel.h; sourceTree = "<group>"; };
+		D69EECE2220EC4DD001EF085 /* parallel_channel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parallel_channel.cpp; sourceTree = "<group>"; };
+		D69EECE3220EC4DD001EF085 /* parallel_import.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parallel_import.h; sourceTree = "<group>"; };
+		D69EECE4220EC4DD001EF085 /* parallel_import.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parallel_import.cpp; sourceTree = "<group>"; };
+		D69EECE5220EC4DD001EF085 /* parallel_channel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parallel_channel.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +82,7 @@
 		D6126BBC2047B65E00183A42 /* HDiffPatch */ = {
 			isa = PBXGroup;
 			children = (
+				D69EECE1220EC4DD001EF085 /* libParallel */,
 				D6126BE22047B98500183A42 /* HPatch */,
 			);
 			name = HDiffPatch;
@@ -101,7 +105,6 @@
 				D65A440E22056EC6001638A6 /* file_for_patch.c */,
 				D671B768204E82F4002D17A7 /* zip_patch.cpp */,
 				D6888887204688640042E2B3 /* patch */,
-				D6EF751321BB95CA000EBBCC /* parallel */,
 				D66B49CF205A3534002BF30A /* lzma */,
 				D6126BBC2047B65E00183A42 /* HDiffPatch */,
 				D65119062041A9B400805001 /* Products */,
@@ -144,14 +147,16 @@
 			path = ../../src/patch;
 			sourceTree = "<group>";
 		};
-		D6EF751321BB95CA000EBBCC /* parallel */ = {
+		D69EECE1220EC4DD001EF085 /* libParallel */ = {
 			isa = PBXGroup;
 			children = (
-				D6EF751421BB95CA000EBBCC /* parallel.cpp */,
-				D6EF751521BB95CA000EBBCC /* parallel.h */,
+				D69EECE2220EC4DD001EF085 /* parallel_channel.cpp */,
+				D69EECE3220EC4DD001EF085 /* parallel_import.h */,
+				D69EECE4220EC4DD001EF085 /* parallel_import.cpp */,
+				D69EECE5220EC4DD001EF085 /* parallel_channel.h */,
 			);
-			name = parallel;
-			path = ../../src/parallel;
+			name = libParallel;
+			path = ../../HDiffPatch/libParallel;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -217,9 +222,10 @@
 				D68B02D3205A44B0001F3C40 /* LzmaDec.c in Sources */,
 				D688888D204688640042E2B3 /* Zipper.cpp in Sources */,
 				D6126BEC2047BFC900183A42 /* NewStream.cpp in Sources */,
-				D6EF751621BB95CA000EBBCC /* parallel.cpp in Sources */,
+				D69EECE6220EC4DE001EF085 /* parallel_channel.cpp in Sources */,
 				D6126BE92047BF8C00183A42 /* OldStream.cpp in Sources */,
 				D6126B91204697FC00183A42 /* ZipDiffData.cpp in Sources */,
+				D69EECE7220EC4DE001EF085 /* parallel_import.cpp in Sources */,
 				D671B767204E82CD002D17A7 /* Patcher.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
