@@ -143,7 +143,11 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     
     const int           myBestMatchScore=3;
 #ifdef _CompressPlugin_lzma
-    const hdiff_TCompress*  compressPlugin=&lzmaCompressPlugin.base;
+    TCompressPlugin_lzma myLzmaCompressPlugin=lzmaCompressPlugin;
+    myLzmaCompressPlugin.compress_level=9;
+    myLzmaCompressPlugin.dict_size=(1<<20)*4;
+    myLzmaCompressPlugin.thread_num=2; //not Windows need use: https://github.com/sisong/lzma/tree/pthread
+    const hdiff_TCompress*  compressPlugin=&myLzmaCompressPlugin.base;
     hpatch_TDecompress*     decompressPlugin=&lzmaDecompressPlugin;
 #else
     const hdiff_TCompress*  compressPlugin=&zlibCompressPlugin.base;

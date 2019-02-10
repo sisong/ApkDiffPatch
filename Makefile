@@ -46,10 +46,12 @@ ZIPDIFF_OBJ := \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort.o \
     lzma/C/LzmaEnc.o \
     lzma/C/LzFind.o \
+    lzma/C/LzFindMt.o \
+    lzma/C/ThreadsP.o \
     $(ZIPPATCH_OBJ)
 
-CFLAGS      += -O3 -DNDEBUG -D_7ZIP_ST
-CXXFLAGS   += -O3 -DNDEBUG -D_7ZIP_ST
+CFLAGS      += -O3 -DNDEBUG
+CXXFLAGS   += -O3 -DNDEBUG
 
 .PHONY: all clean
 
