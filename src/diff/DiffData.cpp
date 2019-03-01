@@ -100,20 +100,20 @@ clear:
     return result;}
 
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath,bool* out_isOldHaveApkV2Sign){
-    TFileStreamInput    oldZipStream;
-    TFileStreamInput    newZipStream;
+    hpatch_TFileStreamInput    oldZipStream;
+    hpatch_TFileStreamInput    newZipStream;
     bool            result=true;
     bool            _isInClear=false;
     
-    TFileStreamInput_init(&oldZipStream);
-    TFileStreamInput_init(&newZipStream);
-    check_clear(TFileStreamInput_open(&oldZipStream,oldZipPath));
-    check_clear(TFileStreamInput_open(&newZipStream,newZipPath));
+    hpatch_TFileStreamInput_init(&oldZipStream);
+    hpatch_TFileStreamInput_init(&newZipStream);
+    check_clear(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath));
+    check_clear(hpatch_TFileStreamInput_open(&newZipStream,newZipPath));
     result=getZipIsSameWithStream(&oldZipStream.base,&newZipStream.base);
 clear:
     _isInClear=true;
-    check_clear(TFileStreamInput_close(&newZipStream));
-    check_clear(TFileStreamInput_close(&oldZipStream));
+    check_clear(hpatch_TFileStreamInput_close(&newZipStream));
+    check_clear(hpatch_TFileStreamInput_close(&oldZipStream));
     return result;
 }
 
@@ -307,7 +307,7 @@ bool readZipStreamData(UnZipper* zip,const std::vector<uint32_t>& refList,
     outSize=(size_t)stream.stream->streamSize;
     assert(outSize==stream.stream->streamSize);
     out_data.resize(outSize);
-    check(outSize==(size_t)stream.stream->read(stream.stream->streamHandle,0,out_data.data(),out_data.data()+outSize));
+    check(stream.stream->read(stream.stream,0,out_data.data(),out_data.data()+outSize));
     return true;
 }
 
@@ -323,7 +323,7 @@ static void pushIncList(std::vector<TByte>& out_data,const uint32_t* list,size_t
 
 static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData*  data,
                                   const std::vector<TByte>& hdiffzData,
-                                  hdiff_TCompress* compressPlugin,const UnZipper* newZip){
+                                  const hdiff_TCompress* compressPlugin,const UnZipper* newZip){
     std::vector<TByte> headData;
     {//head data
         uint32_t backPairNew=~(uint32_t)0;
@@ -348,10 +348,9 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     }
     std::vector<TByte> headCode;
     {
-        headCode.resize(compressPlugin->maxCompressedSize(compressPlugin,headData.size()));
-        size_t codeSize=compressPlugin->compress(compressPlugin,
-                                                 headCode.data(),headCode.data()+headCode.size(),
-                                                 headData.data(),headData.data()+headData.size());
+        headCode.resize((size_t)compressPlugin->maxCompressedSize(headData.size()));
+        size_t codeSize=hdiff_compress_mem(compressPlugin,headCode.data(),headCode.data()+headCode.size(),
+                                           headData.data(),headData.data()+headData.size());
         if ((0<codeSize)&(codeSize<=headCode.size()))
             headCode.resize(codeSize);
         else
@@ -363,9 +362,9 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
         pushBack(out_data,(const TByte*)kVersionType,(const TByte*)kVersionType+strlen(kVersionType));
     }
     {//compressType
-        const char* compressType=compressPlugin->compressType(compressPlugin);
+        const char* compressType=compressPlugin->compressType();
         size_t compressTypeLen=strlen(compressType);
-        if (compressTypeLen>hpatch_kMaxCompressTypeLength) return false;
+        if (compressTypeLen>hpatch_kMaxPluginTypeLength) return false;
         pushBack(out_data,(const TByte*)compressType,(const TByte*)compressType+compressTypeLen+1); //'\0'
     }
     //head info
@@ -415,7 +414,7 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
                           const std::vector<TByte>&    hdiffzData,
-                          hdiff_TCompress* compressPlugin){
+                          const hdiff_TCompress* compressPlugin){
     ZipDiffData  data;
     memset(&data,0,sizeof(ZipDiffData));
     data.PatchModel=0; //now must 0

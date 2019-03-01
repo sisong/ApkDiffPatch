@@ -71,8 +71,8 @@ static bool stream_copy(hpatch_TStreamOutput* dst,hpatch_StreamPos_t dstPos,
     while (dstPos<endPos) {
         size_t clen=bufSize;
         if (clen>(endPos-dstPos)) clen=(size_t)(endPos-dstPos);
-        check((long)clen==src->read(src->streamHandle,srcPos,buf,buf+clen));
-        check((long)clen==dst->write(dst->streamHandle,dstPos,buf,buf+clen));
+        check(src->read(src,srcPos,buf,buf+clen));
+        check(dst->write(dst,dstPos,buf,buf+clen));
         srcPos+=clen;
         dstPos+=clen;
     }
@@ -92,8 +92,8 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
                        const TByte* appendData,size_t dataLen){
     TByte*                      buf=0;
     const size_t                bufSize=64*1024;
-    TFileStreamInput            zipat;
-    TFileStreamOutput           output_file;
+    hpatch_TFileStreamInput     zipat;
+    hpatch_TFileStreamOutput    output_file;
     hpatch_StreamPos_t          out_file_length;
     hpatch_StreamPos_t          editExtraPos=0;
     uint32_t                    oldExtraSize=0;
@@ -102,20 +102,19 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     bool                        isV2SignExtra=false;
     bool        result=true;
     bool        _isInClear=false;
-    TFileStreamInput_init(&zipat);
-    TFileStreamOutput_init(&output_file);
+    hpatch_TFileStreamInput_init(&zipat);
+    hpatch_TFileStreamOutput_init(&output_file);
     
     buf=(TByte*)malloc(bufSize);
     check(buf!=0);
     
-    check(TFileStreamInput_open(&zipat,srcZiPatPath));
+    check(hpatch_TFileStreamInput_open(&zipat,srcZiPatPath));
     
     check(zipat.base.streamSize>=4+kExtraEditLen);
     {//find Extra
         unsigned char buf4s[4+kExtraEditLen];
         const unsigned char * srcZiPatTag=buf4s+4;
-        check(4+kExtraEditLen==zipat.base.read(zipat.base.streamHandle,
-                                               zipat.base.streamSize-4-kExtraEditLen,buf4s,buf4s+4+kExtraEditLen));
+        check(zipat.base.read(&zipat.base,zipat.base.streamSize-4-kExtraEditLen,buf4s,buf4s+4+kExtraEditLen));
         check(isExtraEdit(srcZiPatTag));//check tag
         oldExtraSize=readUInt32(buf4s);
         
@@ -125,7 +124,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     
     newExtraSize=oldExtraSize+(uint32_t)dataLen;
     out_file_length=zipat.base.streamSize+dataLen;
-    check(TFileStreamOutput_open(&output_file,outZiPatPath,out_file_length));
+    check(hpatch_TFileStreamOutput_open(&output_file,outZiPatPath,out_file_length));
     //copy front
     check(stream_copy(&output_file.base,0,&zipat.base,0,editExtraPos,buf,bufSize));
     
@@ -137,7 +136,7 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
     }
     if (!isV2SignExtra){//insert data
         //insert example
-        check(dataLen==output_file.base.write(output_file.base.streamHandle,editExtraPos,appendData,appendData+dataLen));
+        check(output_file.base.write(&output_file.base,editExtraPos,appendData,appendData+dataLen));
         //old Extra
         check(stream_copy(&output_file.base,editExtraPos+dataLen,&zipat.base,editExtraPos,oldExtraSize,buf,bufSize));
     }else{ //insert data to Apk V2 Sign
@@ -145,16 +144,16 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
         hpatch_StreamPos_t oldV2BlockDataSize=oldV2BlockSize-8-APKSigningTagLen;
         hpatch_StreamPos_t writePos=editExtraPos;
         writeUInt64_to(buf,oldV2BlockSize+dataLen);
-        check(8==output_file.base.write(output_file.base.streamHandle,writePos,buf,buf+8)); //update high BlockSize
+        check(output_file.base.write(&output_file.base,writePos,buf,buf+8)); //update high BlockSize
         writePos+=8;
         //copy Apk V2 Sign Block data
         check(stream_copy(&output_file.base,writePos,&zipat.base,editExtraPos+8,oldV2BlockDataSize,buf,bufSize));
         writePos+=oldV2BlockDataSize;
         //insert example   NOTE: You may have your own method of insert
-        check(dataLen==output_file.base.write(output_file.base.streamHandle,writePos,appendData,appendData+dataLen));
+        check(output_file.base.write(&output_file.base,writePos,appendData,appendData+dataLen));
         writePos+=dataLen;
         writeUInt64_to(buf,oldV2BlockSize+dataLen);
-        check(8==output_file.base.write(output_file.base.streamHandle,writePos,buf,buf+8));//update low BlockSize
+        check(output_file.base.write(&output_file.base,writePos,buf,buf+8));//update low BlockSize
         writePos+=8;
         //copy Apk V2 Sign tag
         check(stream_copy(&output_file.base,writePos,&zipat.base,editExtraPos+8+oldV2BlockDataSize+8,
@@ -165,14 +164,14 @@ static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
 
     {//write end
         writeUInt32_to(buf,newExtraSize);
-        check(4==output_file.base.write(output_file.base.streamHandle,editExtraPos+newExtraSize,buf,buf+4));
-        check(kExtraEditLen==output_file.base.write(output_file.base.streamHandle,editExtraPos+newExtraSize+4,
-                                                    (const TByte*)kExtraEdit,(const TByte*)kExtraEdit+kExtraEditLen));
+        check(output_file.base.write(&output_file.base,editExtraPos+newExtraSize,buf,buf+4));
+        check(output_file.base.write(&output_file.base,editExtraPos+newExtraSize+4,
+                                     (const TByte*)kExtraEdit,(const TByte*)kExtraEdit+kExtraEditLen));
     }
 clear:
     _isInClear=true;
-    check(TFileStreamOutput_close(&output_file));
-    check(TFileStreamInput_close(&zipat));
+    check(hpatch_TFileStreamOutput_close(&output_file));
+    check(hpatch_TFileStreamInput_close(&zipat));
     if (buf) free(buf);
     return result;
 }

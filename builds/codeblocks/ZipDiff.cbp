@@ -46,7 +46,11 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-D_7ZIP_ST" />
+			<Add option="-D_IS_USED_MULTITHREAD=0" />
 		</Compiler>
+		<Unit filename="../../HDiffPatch/file_for_patch.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/diff.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/bytes_rle.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/compress_detect.cpp" />

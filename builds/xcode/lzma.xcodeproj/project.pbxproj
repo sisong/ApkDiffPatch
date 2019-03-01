@@ -7,12 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D676B255220FB46900874D63 /* ThreadsP.c in Sources */ = {isa = PBXBuildFile; fileRef = D676B253220FB46900874D63 /* ThreadsP.c */; };
+		D676B256220FB46900874D63 /* LzFindMt.c in Sources */ = {isa = PBXBuildFile; fileRef = D676B254220FB46900874D63 /* LzFindMt.c */; };
 		D68B02D5205A452D001F3C40 /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = D68B02D4205A452D001F3C40 /* LzmaDec.c */; };
 		D68B02D7205A4551001F3C40 /* LzmaEnc.c in Sources */ = {isa = PBXBuildFile; fileRef = D68B02D6205A4551001F3C40 /* LzmaEnc.c */; };
 		D68B02D9205A4626001F3C40 /* LzFind.c in Sources */ = {isa = PBXBuildFile; fileRef = D68B02D8205A4626001F3C40 /* LzFind.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D676B253220FB46900874D63 /* ThreadsP.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ThreadsP.c; path = ../../lzma/C/ThreadsP.c; sourceTree = "<group>"; };
+		D676B254220FB46900874D63 /* LzFindMt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzFindMt.c; path = ../../lzma/C/LzFindMt.c; sourceTree = "<group>"; };
 		D68B02C7205A4409001F3C40 /* liblzma.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblzma.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D68B02D4205A452D001F3C40 /* LzmaDec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzmaDec.c; path = ../../lzma/C/LzmaDec.c; sourceTree = "<group>"; };
 		D68B02D6205A4551001F3C40 /* LzmaEnc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzmaEnc.c; path = ../../lzma/C/LzmaEnc.c; sourceTree = "<group>"; };
@@ -33,6 +37,8 @@
 		D68B02BE205A4409001F3C40 = {
 			isa = PBXGroup;
 			children = (
+				D676B254220FB46900874D63 /* LzFindMt.c */,
+				D676B253220FB46900874D63 /* ThreadsP.c */,
 				D68B02D8205A4626001F3C40 /* LzFind.c */,
 				D68B02D6205A4551001F3C40 /* LzmaEnc.c */,
 				D68B02D4205A452D001F3C40 /* LzmaDec.c */,
@@ -117,6 +123,8 @@
 			files = (
 				D68B02D7205A4551001F3C40 /* LzmaEnc.c in Sources */,
 				D68B02D9205A4626001F3C40 /* LzFind.c in Sources */,
+				D676B255220FB46900874D63 /* ThreadsP.c in Sources */,
+				D676B256220FB46900874D63 /* LzFindMt.c in Sources */,
 				D68B02D5205A452D001F3C40 /* LzmaDec.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -221,6 +229,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = _7ZIP_ST;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;

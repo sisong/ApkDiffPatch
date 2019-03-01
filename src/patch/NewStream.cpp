@@ -33,7 +33,7 @@ void NewStream_init(NewStream* self){
 }
 void NewStream_close(NewStream* self){
     bool ret=UnZipper_close(&self->_newZipVCE);
-    assert(ret);
+    if (!ret) assert(ret);
 }
 
 static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex);
@@ -47,20 +47,20 @@ inline static void _update_compressedSize(NewStream* self,int newFileIndex,uint3
     if (!(value)){ printf(#value" ERROR!\n");  \
         assert(false); return 0; } }
 
-static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
-                             const hpatch_StreamPos_t _writeToPos,
-                             const unsigned char* data,const unsigned char* data_end){
-    long result=(long)(data_end-data);
+static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
+                                    const hpatch_StreamPos_t _writeToPos,
+                                    const unsigned char* data,const unsigned char* data_end){
+    size_t result=(size_t)(data_end-data);
     hpatch_StreamPos_t writeToPos=_writeToPos;
-    NewStream* self=(NewStream*)streamHandle;
+    NewStream* self=(NewStream*)stream->streamImport;
     check(!self->isFinish);
     assert(result>0);
     assert(writeToPos<self->_curWriteToPosEnd);
     if (writeToPos+result>self->_curWriteToPosEnd){
-        long leftLen=(long)(self->_curWriteToPosEnd-writeToPos);
-        check(leftLen==_NewStream_write(streamHandle,writeToPos,data,data+leftLen));
-        check((result-leftLen)==_NewStream_write(streamHandle,writeToPos+leftLen,data+leftLen,data_end));
-        return result;
+        size_t leftLen=(size_t)(self->_curWriteToPosEnd-writeToPos);
+        check(_NewStream_write(stream,writeToPos,data,data+leftLen));
+        check(_NewStream_write(stream,writeToPos+leftLen,data+leftLen,data_end));
+        return hpatch_TRUE;
     }
     
     //write data
@@ -72,7 +72,7 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
     }
     
     if (writeToPos+result<self->_curWriteToPosEnd)//write continue
-        return result;
+        return hpatch_TRUE;
     
     //write one end
     if (self->_curFileIndex<0){//vce ok
@@ -129,12 +129,12 @@ static long _NewStream_write(hpatch_TStreamOutputHandle streamHandle,
                                            isWriteOtherCompressedData,uncompressedSize,compressedSize));
             self->_curWriteToPosEnd+=isWriteOtherCompressedData?compressedSize:uncompressedSize;
         }
-        return result;
+        return hpatch_TRUE;
     }
     
     //file entry end
     check(_file_entry_end(self));
-    return result;
+    return hpatch_TRUE;
 }
 
 #undef   check
@@ -167,7 +167,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_fileCount=out_newZip->_fileEntryMaxCount;
     self->_threadNum=threadNum;
     
-    self->_stream.streamHandle=self;
+    self->_stream.streamImport=self;
     self->_stream.streamSize=newDataSize;
     self->_stream.write=_NewStream_write;
     self->stream=&self->_stream;
@@ -175,8 +175,8 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_extraEditSize=(size_t)extraEdit->streamSize;
     check(UnZipper_openVirtualVCE(&self->_newZipVCE,(ZipFilePos_t)(newZipCESize+self->_extraEditSize),self->_fileCount));
     if (self->_extraEditSize>0){
-        check((long)self->_extraEditSize==extraEdit->read(extraEdit->streamHandle,0,self->_newZipVCE._cache_fvce,
-                                                      self->_newZipVCE._cache_fvce+self->_extraEditSize));
+        check(extraEdit->read(extraEdit,0,self->_newZipVCE._cache_fvce,
+                              self->_newZipVCE._cache_fvce+self->_extraEditSize));
     }
     
     self->_curFileIndex=-1;

@@ -30,7 +30,7 @@
 #include "../HDiffPatch/_clock_for_demo.h"
 #include "../HDiffPatch/_atosize.h"
 #include "patch/Patcher.h"
-#include "parallel/parallel.h"
+#include "../HDiffPatch/libParallel/parallel_import.h"
 #include "patch/patch_types.h"
 
 #ifndef PRSizeT
@@ -44,7 +44,7 @@
 static void printUsage(){
     printf("usage: ZipPatch oldZipFile zipDiffFile outNewZipFile"
            " [maxUncompressMemory tempUncompressFileName] [-v]"
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
            " [-p-parallelThreadNumber]"
 #endif
            "\noptions:\n"
@@ -52,9 +52,9 @@ static void printUsage(){
            "    if it's size > maxUncompressMemory then save it into file tempUncompressFileName;\n"
            "    maxUncompressMemory can like 8388608 8m 40m 120m 1g etc... \n"
            "  -v  output Version info. \n"
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
            "  -p-parallelThreadNumber\n"
-           "    parallelThreadNumber DEFAULT 1, if parallelThreadNumber>1 (recommended 3 etc...)\n"
+           "    parallelThreadNumber DEFAULT 1 (recommended 3 etc...), if parallelThreadNumber>1\n"
            "    and used ApkV2Sign then start multi-thread Parallel compress zip; requires more memory!\n"
 #endif
            );
@@ -64,9 +64,9 @@ static void printUsage(){
 #define _options_check(value,errorInfo){ \
     if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return PATCH_OPTIONS_ERROR; } }
 
-#define THREAD_NUMBER_NULL      0
-#define THREAD_NUMBER_DEFAULT   1
-#define THREAD_NUMBER_MAX       (1<<20)
+#define _THREAD_NUMBER_NULL     0
+#define _THREAD_NUMBER_MIN      1
+#define _THREAD_NUMBER_MAX      (1<<8)
 
 #define _kNULL_VALUE (-1)
 
@@ -77,7 +77,7 @@ int main(int argc, const char * argv[]) {
     size_t      maxUncompressMemory=0;
     const char* tempUncompressFileName=0;
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
-    size_t      threadNum = THREAD_NUMBER_NULL;
+    size_t      threadNum = _THREAD_NUMBER_NULL;
     #define kMax_arg_values_size 5
     const char * arg_values[kMax_arg_values_size]={0};
     int          arg_values_size=0;
@@ -97,12 +97,12 @@ int main(int argc, const char * argv[]) {
                 _options_check((isOutputVersion==_kNULL_VALUE)&&(op[2]=='\0'),"-v");
                 isOutputVersion=hpatch_TRUE;
             } break;
-#if (IS_USED_MULTITHREAD)
+#if (_IS_USED_MULTITHREAD)
             case 'p':{
-                _options_check((threadNum==THREAD_NUMBER_NULL)&&((op[2]=='-')),"-p-?");
+                _options_check((threadNum==_THREAD_NUMBER_NULL)&&((op[2]=='-')),"-p-?");
                 const char* pnum=op+3;
                 _options_check(a_to_size(pnum,strlen(pnum),&threadNum),"-p-?");
-                _options_check(threadNum>=THREAD_NUMBER_DEFAULT,"-p-?");
+                _options_check(threadNum>=_THREAD_NUMBER_MIN,"-p-?");
             } break;
 #endif
             default: {
@@ -117,10 +117,10 @@ int main(int argc, const char * argv[]) {
         if (arg_values_size==0)
             return 0; //ok
     }
-    if (threadNum==THREAD_NUMBER_NULL)
-        threadNum=THREAD_NUMBER_DEFAULT;
-    else if (threadNum>THREAD_NUMBER_MAX)
-        threadNum=THREAD_NUMBER_MAX;
+    if (threadNum==_THREAD_NUMBER_NULL)
+        threadNum=_THREAD_NUMBER_MIN;
+    else if (threadNum>_THREAD_NUMBER_MAX)
+        threadNum=_THREAD_NUMBER_MAX;
     
     if(arg_values_size==3){
         oldZipPath   =arg_values[0];

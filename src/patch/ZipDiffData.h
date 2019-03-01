@@ -27,20 +27,11 @@
  */
 #ifndef ZipPatch_ZipDiffData_h
 #define ZipPatch_ZipDiffData_h
-#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "patch_types.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
-typedef struct TStreamInputClip{
-    hpatch_TStreamInput         base;
-    const hpatch_TStreamInput*  srcStream;
-    hpatch_StreamPos_t          clipBeginPos;
-} TStreamInputClip;
-
-void inputStreamClip(TStreamInputClip* dst,const hpatch_TStreamInput*  srcStream,
-                     hpatch_StreamPos_t clipBeginPos,hpatch_StreamPos_t clipEndPos);
 
 //解析补丁文件,获得diff元信息 和 HDiffZ数据(模拟成一个输入流);
 typedef struct ZipDiffData{

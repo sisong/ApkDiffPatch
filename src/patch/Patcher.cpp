@@ -43,26 +43,26 @@
 
 TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
                       size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum){
-    TFileStreamInput    oldZipStream;
-    TFileStreamInput    zipDiffStream;
-    TFileStreamOutput   outNewZipStream;
+    hpatch_TFileStreamInput    oldZipStream;
+    hpatch_TFileStreamInput    zipDiffStream;
+    hpatch_TFileStreamOutput   outNewZipStream;
     TPatchResult    result=PATCH_SUCCESS;
     bool            _isInClear=false;
 
-    TFileStreamInput_init(&zipDiffStream);
-    TFileStreamInput_init(&oldZipStream);
-    TFileStreamOutput_init(&outNewZipStream);
-    check(TFileStreamInput_open(&oldZipStream,oldZipPath),PATCH_OPENREAD_ERROR);
-    check(TFileStreamInput_open(&zipDiffStream,zipDiffPath),PATCH_OPENREAD_ERROR);
-    check(TFileStreamOutput_open(&outNewZipStream,outNewZipPath,(hpatch_StreamPos_t)(-1)),PATCH_OPENWRITE_ERROR);
-    TFileStreamOutput_setRandomOut(&outNewZipStream,hpatch_TRUE);
+    hpatch_TFileStreamInput_init(&zipDiffStream);
+    hpatch_TFileStreamInput_init(&oldZipStream);
+    hpatch_TFileStreamOutput_init(&outNewZipStream);
+    check(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath),PATCH_OPENREAD_ERROR);
+    check(hpatch_TFileStreamInput_open(&zipDiffStream,zipDiffPath),PATCH_OPENREAD_ERROR);
+    check(hpatch_TFileStreamOutput_open(&outNewZipStream,outNewZipPath,(hpatch_StreamPos_t)(-1)),PATCH_OPENWRITE_ERROR);
+    hpatch_TFileStreamOutput_setRandomOut(&outNewZipStream,hpatch_TRUE);
     result=ZipPatchWithStream(&oldZipStream.base,&zipDiffStream.base,&outNewZipStream.base,
                               maxUncompressMemory,tempUncompressFileName,threadNum);
 clear:
     _isInClear=true;
-    check(TFileStreamOutput_close(&outNewZipStream),PATCH_CLOSEFILE_ERROR);
-    check(TFileStreamInput_close(&oldZipStream),PATCH_CLOSEFILE_ERROR);
-    check(TFileStreamInput_close(&zipDiffStream),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamOutput_close(&outNewZipStream),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamInput_close(&oldZipStream),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamInput_close(&zipDiffStream),PATCH_CLOSEFILE_ERROR);
     return result;
 }
 
@@ -77,8 +77,8 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
     NewStream           newStream;
     hpatch_compressedDiffInfo   diffInfo;
     TByte*                      ref_cache=0;
-    TFileStreamInput            input_refFile;
-    TFileStreamOutput           output_refFile;
+    hpatch_TFileStreamInput     input_refFile;
+    hpatch_TFileStreamOutput    output_refFile;
     hpatch_TStreamInput         input_ref_cache;
     hpatch_TStreamOutput        output_ref_cache;
     hpatch_TStreamInput*        input_ref=0;
@@ -95,8 +95,8 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
     ZipDiffData_init(&zipDiffData);
     OldStream_init(&oldStream);
     NewStream_init(&newStream);
-    TFileStreamInput_init(&input_refFile);
-    TFileStreamOutput_init(&output_refFile);
+    hpatch_TFileStreamInput_init(&input_refFile);
+    hpatch_TFileStreamOutput_init(&output_refFile);
     
 #ifdef _CompressPlugin_lzma
     if (decompressPlugin==0){
@@ -117,14 +117,15 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
     
     check(getCompressedDiffInfo(&diffInfo,zipDiffData.hdiffzData),PATCH_HDIFFINFO_ERROR);
     if (strlen(diffInfo.compressType) > 0)
-        check(decompressPlugin->is_can_open(decompressPlugin,&diffInfo),PATCH_COMPRESSTYPE_ERROR);
+        check(decompressPlugin->is_can_open(diffInfo.compressType),PATCH_COMPRESSTYPE_ERROR);
     
     decompressSumSize=OldStream_getDecompressSumSize(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount);
     
     isUsedTempFile=(decompressSumSize > maxUncompressMemory)&&(tempUncompressFileName!=0);
     if (isUsedTempFile){
-        check(TFileStreamOutput_open(&output_refFile,tempUncompressFileName,decompressSumSize),PATCH_OPENWRITE_ERROR);
-        check(TFileStreamInput_open(&input_refFile,tempUncompressFileName),PATCH_OPENREAD_ERROR);
+        check(hpatch_TFileStreamOutput_open(&output_refFile,tempUncompressFileName,decompressSumSize),
+              PATCH_OPENWRITE_ERROR);
+        check(hpatch_TFileStreamInput_open(&input_refFile,tempUncompressFileName),PATCH_OPENREAD_ERROR);
         input_refFile.base.streamSize=decompressSumSize;
         output_ref=&output_refFile.base;
         input_ref=&input_refFile.base;
@@ -139,7 +140,7 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
     
     check(OldStream_getDecompressData(&oldZip,zipDiffData.oldRefList,
                                       zipDiffData.oldRefCount,output_ref),PATCH_OLDDECOMPRESS_ERROR);
-    check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(OldStream_open(&oldStream,&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
                          0,0,input_ref), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
@@ -169,8 +170,8 @@ clear:
     OldStream_close(&oldStream);
     check(UnZipper_close(&oldZip),PATCH_CLOSEFILE_ERROR);
     ZipDiffData_close(&zipDiffData);
-    check(TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
-    check(TFileStreamInput_close(&input_refFile),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamInput_close(&input_refFile),PATCH_CLOSEFILE_ERROR);
     if (isUsedTempFile) remove(tempUncompressFileName);
     if (temp_cache) free(temp_cache);
     if (ref_cache) free(ref_cache);

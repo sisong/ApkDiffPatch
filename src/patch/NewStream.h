@@ -27,7 +27,7 @@
  */
 #ifndef ZipPatch_NewStream_h
 #define ZipPatch_NewStream_h
-#include "../../HDiffPatch/libHDiffPatch/HPatch/patch_types.h"
+#include "patch_types.h"
 #include "Zipper.h"
 
 //对外模拟成一个输出流;

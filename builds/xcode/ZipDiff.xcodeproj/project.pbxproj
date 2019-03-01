@@ -11,6 +11,7 @@
 		D62AA00F2054035600A61D43 /* libHDiffPatch.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D62AA0102054035600A61D43 /* libHDiffPatch.a */; };
 		D62AA0152056649900A61D43 /* Patcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D62AA0142056649900A61D43 /* Patcher.cpp */; };
 		D62AA0182057621F00A61D43 /* OldRef.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D62AA0172057621F00A61D43 /* OldRef.cpp */; };
+		D65A4418220579B2001638A6 /* file_for_patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D65A4417220579B2001638A6 /* file_for_patch.c */; };
 		D671B6592047DD30002D17A7 /* Differ.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B6582047DD30002D17A7 /* Differ.cpp */; };
 		D671B72A204E7649002D17A7 /* OldStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B720204E7649002D17A7 /* OldStream.cpp */; };
 		D671B72B204E7649002D17A7 /* ZipDiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B721204E7649002D17A7 /* ZipDiffData.cpp */; };
@@ -42,6 +43,7 @@
 		D62AA0162057621F00A61D43 /* OldRef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OldRef.h; sourceTree = "<group>"; };
 		D62AA0172057621F00A61D43 /* OldRef.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = OldRef.cpp; sourceTree = "<group>"; };
 		D651191B2041ADA900805001 /* ZipDiff */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ZipDiff; sourceTree = BUILT_PRODUCTS_DIR; };
+		D65A4417220579B2001638A6 /* file_for_patch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = file_for_patch.c; path = ../../HDiffPatch/file_for_patch.c; sourceTree = "<group>"; };
 		D671B6572047DD30002D17A7 /* Differ.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Differ.h; sourceTree = "<group>"; };
 		D671B6582047DD30002D17A7 /* Differ.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Differ.cpp; sourceTree = "<group>"; };
 		D671B71F204E7649002D17A7 /* Zipper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Zipper.h; sourceTree = "<group>"; };
@@ -85,6 +87,7 @@
 		D65119122041ADA900805001 = {
 			isa = PBXGroup;
 			children = (
+				D65A4417220579B2001638A6 /* file_for_patch.c */,
 				D671B76A204E8346002D17A7 /* zip_diff.cpp */,
 				D671B75E204E81D1002D17A7 /* diff */,
 				D671B71E204E7649002D17A7 /* patch */,
@@ -191,6 +194,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D65A4418220579B2001638A6 /* file_for_patch.c in Sources */,
 				D671B6592047DD30002D17A7 /* Differ.cpp in Sources */,
 				D671B72D204E7649002D17A7 /* Zipper.cpp in Sources */,
 				D671B72A204E7649002D17A7 /* OldStream.cpp in Sources */,
@@ -238,7 +242,6 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
-				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -296,12 +299,14 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
-				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_POSTPROCESSING = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
