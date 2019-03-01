@@ -76,14 +76,6 @@ int main(int argc, const char * argv[]) {
                 _options_check((isPatchCheck==_kNULL_VALUE)&&(op[2]=='\0'),"-t");
                 isPatchCheck=hpatch_TRUE; //test diffFile
             } break;
-#if (_IS_USED_MULTITHREAD)
-            case 'p':{
-                _options_check((threadNum==THREAD_NUMBER_NULL)&&((op[2]=='-')),"-p-?");
-                const char* pnum=op+3;
-                _options_check(a_to_size(pnum,strlen(pnum),&threadNum),"-p-?");
-                _options_check(threadNum>=THREAD_NUMBER_DEFAULT,"-p-?");
-            } break;
-#endif
             default: {
                 _options_check(hpatch_FALSE,"-?");
             } break;

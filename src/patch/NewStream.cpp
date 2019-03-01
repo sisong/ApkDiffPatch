@@ -33,7 +33,7 @@ void NewStream_init(NewStream* self){
 }
 void NewStream_close(NewStream* self){
     bool ret=UnZipper_close(&self->_newZipVCE);
-    assert(ret);
+    if (!ret) assert(ret);
 }
 
 static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex);
