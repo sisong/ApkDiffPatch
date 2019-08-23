@@ -50,8 +50,8 @@ ZIPDIFF_OBJ := \
     lzma/C/ThreadsP.o \
     $(ZIPPATCH_OBJ)
 
-CFLAGS      += -O3 -DNDEBUG
-CXXFLAGS   += -O3 -DNDEBUG
+CFLAGS      += -O3 -DNDEBUG -D_IS_USED_PTHREAD=1
+CXXFLAGS   += -O3 -DNDEBUG -D_IS_USED_PTHREAD=1
 
 .PHONY: all clean
 
