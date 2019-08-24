@@ -348,13 +348,17 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
     }
     std::vector<TByte> headCode;
     {
-        headCode.resize((size_t)compressPlugin->maxCompressedSize(headData.size()));
-        size_t codeSize=hdiff_compress_mem(compressPlugin,headCode.data(),headCode.data()+headCode.size(),
-                                           headData.data(),headData.data()+headData.size());
-        if ((0<codeSize)&(codeSize<=headCode.size()))
-            headCode.resize(codeSize);
-        else
-            return false;//error
+        if (headData.empty()){
+            headCode.clear();
+        }else{
+            headCode.resize((size_t)compressPlugin->maxCompressedSize(headData.size()));
+            size_t codeSize=hdiff_compress_mem(compressPlugin,headCode.data(),headCode.data()+headCode.size(),
+                                               headData.data(),headData.data()+headData.size());
+            if ((0<codeSize)&(codeSize<=headCode.size()))
+                headCode.resize(codeSize);
+            else
+                return false;//error
+        }
     }
     
     {//type version
