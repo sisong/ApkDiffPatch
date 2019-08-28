@@ -9,7 +9,7 @@ extern "C" {
     JNIEXPORT int
     Java_com_github_sisong_ApkPatch_patch(JNIEnv* jenv,jobject jobj,
                                           jstring oldApkPath,jstring patchFilePath,jstring outNewApkPath,
-                                          long maxUncompressMemory,jstring tempUncompressFilePath,int threadNum){
+                                          jlong maxUncompressMemory,jstring tempUncompressFilePath,int threadNum){
         const char* cOldApkPath     = jenv->GetStringUTFChars(oldApkPath, NULL);
         const char* cPatchFilePath  = jenv->GetStringUTFChars(patchFilePath, NULL);
         const char* cOutNewApkPath  = jenv->GetStringUTFChars(outNewApkPath, NULL);
@@ -22,7 +22,7 @@ extern "C" {
             }
         }
         size_t cMaxUncompressMemory=(size_t)maxUncompressMemory;
-        assert((long)cMaxUncompressMemory==maxUncompressMemory);
+        assert((jlong)cMaxUncompressMemory==maxUncompressMemory);
         TPatchResult result=ApkPatch(cOldApkPath,cPatchFilePath,cOutNewApkPath,
                                      cMaxUncompressMemory,cTempFilePath,threadNum);
         if (cTempFilePath!=NULL) jenv->ReleaseStringUTFChars(tempUncompressFilePath,cTempFilePath);
