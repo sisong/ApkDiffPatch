@@ -1,7 +1,12 @@
 **ApkDiffPatch**
 ================
-[![release](https://img.shields.io/badge/release-v1.2.4-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases)  [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE)  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
-[![Build Status](https://travis-ci.org/sisong/ApkDiffPatch.svg?branch=master)](https://travis-ci.org/sisong/ApkDiffPatch) [![Build status](https://ci.appveyor.com/api/projects/status/u5tbrqwl72875r6h/branch/master?svg=true)](https://ci.appveyor.com/project/sisong/apkdiffpatch/branch/master)   
+[![release](https://img.shields.io/badge/release-v1.2.4-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) 
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE) 
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
+
+[![Build Status](https://travis-ci.org/sisong/ApkDiffPatch.svg?branch=master)](https://travis-ci.org/sisong/ApkDiffPatch) 
+[![Build status](https://ci.appveyor.com/api/projects/status/u5tbrqwl72875r6h/branch/master?svg=true)](https://ci.appveyor.com/project/sisong/apkdiffpatch/branch/master)   
+
 a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta; support [Jar sign](Apk v1 sign) & [Apk v2 sign] & [Apk v3 sign] .   
 You can use this library (and Android NDK) to delta update your Apk.   
 ( not support zip64, and only support decode Deflated code; dependent libraries [HDiffPatch], [zlib], [lzma]. )   
@@ -31,10 +36,10 @@ usage:
 *  **Why** need **ApkDiffPatch** or archive-patcher after have BsDiff or HDiffPatch **?**
 ```
 ApkDiffPatch: v1.0
-BsDiff: v4.3
-HDiffPatch: v2.2.6   
-Google Play patches: https://github.com/andrewhayden/archive-patcher  v1.0 
+Google Play patches: v1.0  https://github.com/andrewhayden/archive-patcher
                      (test by https://github.com/googlesamples/apk-patch-size-estimator )
+BsDiff: v4.3
+HDiffPatch: v2.2.6
 =========================================================================================================
                                                           BsDiff HDiffPatch archive-patcher ApkDiffPatch
           oldVersion              newVersion      newSize  (bzip2)  (+zlib)    (+gzip)   (+zlib)  (+lzma)
