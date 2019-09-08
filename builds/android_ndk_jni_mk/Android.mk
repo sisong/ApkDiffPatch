@@ -34,6 +34,6 @@ Src_Files := $(LOCAL_PATH)/apk_patch_jni.cpp \
 LOCAL_SRC_FILES  := $(Src_Files) $(Lzma_Files) $(Zlib_Files) $(Hdp_Files) $(Adp_Files)
 
 LOCAL_LDLIBS     := -llog -landroid
-LOCAL_CFLAGS     := -DANDROID_NDK  -D_7ZIP_ST  -D_IS_USED_CPP11THREAD=1
+LOCAL_CFLAGS     := -DANDROID_NDK -D_7ZIP_ST -D_IS_USED_MULTITHREAD=1 -D_IS_USED_PTHREAD=1
 include $(BUILD_SHARED_LIBRARY)
 
