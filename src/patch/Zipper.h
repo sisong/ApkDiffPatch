@@ -142,6 +142,10 @@ typedef struct Zipper{
     unsigned char*  _buf; //file out buf
     size_t          _curBufLen;
     
+    //update crc32
+    bool            _isUpdateCrc32;
+    uint32_t        _newCrc32;
+    
     //thread
     int                 _threadNum;
     TZipThreadWorks*    _threadWorks;
@@ -154,17 +158,19 @@ bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fi
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
+    
+bool Zipper_file_append_set_new_crc32(Zipper* self,uint32_t newCrc32);
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                                   bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
                                   int curFileCompressLevel,int curFileCompressMemLevel);
-
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);
 bool Zipper_file_append_end(Zipper* self);
     
 bool Zipper_copyExtra_before_fileHeader(Zipper* self,UnZipper* srcZip);
+bool Zipper_fileHeader_append_set_new_crc32(Zipper* self,uint32_t newCrc32);
 bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex);
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip);
     

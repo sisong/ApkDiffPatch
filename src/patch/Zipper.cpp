@@ -41,7 +41,7 @@ static const TCompressPlugin_zlib zipCompatibleCompressPlugin={
 static const hdiff_TCompress*   compressPlugin  =&zipCompatibleCompressPlugin.base;
 static hpatch_TDecompress*      decompressPlugin=&zlibDecompressPlugin;
 
-#define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
+#   define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
@@ -830,7 +830,13 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
     if (isFullInfo)
         check(_write(self,headBuf+4,2));//压缩版本;
-    check(_write(self,headBuf+6,20-6));//解压缩版本--CRC-32校验;//其中 标志 中已经去掉了Data descriptor标识;
+    check(_write(self,headBuf+6,16-6));//解压缩版本--文件最后修改日期;//其中 标志 中已经去掉了Data descriptor标识;
+    if (self->_isUpdateCrc32){
+        self->_isUpdateCrc32=false;
+        check(_writeUInt32(self,self->_newCrc32));//更新CRC-32校验;
+    }else{
+        check(_write(self,headBuf+16,4));//CRC-32校验;
+    }
     check(_writeUInt32(self,compressedSize));//压缩后大小;
     check(_write(self,headBuf+24,30-24));//压缩前大小--文件名称长度;
     check(_writeUInt16(self,extraFieldLen));//扩展字段长度;
@@ -1079,6 +1085,7 @@ bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
 
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(self->_fileEntryCount==self->_fileHeaderCount);
+    check(!self->_isUpdateCrc32);
     const TByte* endBuf=srcZip->_endCentralDirectory;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
     
@@ -1100,3 +1107,15 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     return true;
 }
 
+
+
+bool Zipper_file_append_set_new_crc32(Zipper* self,uint32_t newCrc32){
+    check(!self->_isUpdateCrc32);
+    self->_isUpdateCrc32=true;
+    self->_newCrc32=newCrc32;
+    return true;
+}
+
+bool Zipper_fileHeader_append_set_new_crc32(Zipper* self,uint32_t newCrc32){
+    return Zipper_file_append_set_new_crc32(self,newCrc32);
+}
