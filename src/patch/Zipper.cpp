@@ -41,7 +41,12 @@ static const TCompressPlugin_zlib zipCompatibleCompressPlugin={
 static const hdiff_TCompress*   compressPlugin  =&zipCompatibleCompressPlugin.base;
 static hpatch_TDecompress*      decompressPlugin=&zlibDecompressPlugin;
 
+#ifndef _IS_NEED_FIXED_ZLIB_VERSION
+#   define _IS_NEED_FIXED_ZLIB_VERSION 1
+#endif
+#if (_IS_NEED_FIXED_ZLIB_VERSION)
 #   define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
+#endif
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
 
@@ -680,7 +685,9 @@ bool Zipper_close(Zipper* self){
 
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
                        int ZipAlignSize,int compressLevel,int compressMemLevel){
-    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fiexd zlib version
+#if (_IS_NEED_FIXED_ZLIB_VERSION)
+    check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fixed zlib version
+#endif
     assert(ZipAlignSize>0);
     if (ZipAlignSize<=0) ZipAlignSize=1;
     checkCompressSet(compressLevel,compressMemLevel);
