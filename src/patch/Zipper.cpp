@@ -463,24 +463,50 @@ bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCE
     return true;
 }
 
-
+inline static const unsigned char* _at_file_compressType(const UnZipper* self,int fileIndex){
+    return fileHeaderBuf(self,fileIndex)+10;
+}
 inline static uint16_t _file_compressType(const UnZipper* self,int fileIndex){
-    return readUInt16(fileHeaderBuf(self,fileIndex)+10);
+    return readUInt16(_at_file_compressType(self,fileIndex));
 }
 bool  UnZipper_file_isCompressed(const UnZipper* self,int fileIndex){
     uint16_t compressType=_file_compressType(self,fileIndex);
     return compressType!=0;
 }
+inline static const unsigned char* _at_file_uncompressedSize(const UnZipper* self,int fileIndex){
+    return fileHeaderBuf(self,fileIndex)+24;
+}
+ZipFilePos_t UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex){
+    return readUInt32(_at_file_uncompressedSize(self,fileIndex));
+}
 ZipFilePos_t UnZipper_file_compressedSize(const UnZipper* self,int fileIndex){
     return self->_fileCompressedSizes[fileIndex];
 }
-ZipFilePos_t UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex){
-    return readUInt32(fileHeaderBuf(self,fileIndex)+24);
+inline static const unsigned char* _at_file_crc32(const UnZipper* self,int fileIndex){
+    return fileHeaderBuf(self,fileIndex)+16;
+}
+uint32_t UnZipper_file_crc32(const UnZipper* self,int fileIndex){
+    return readUInt32(_at_file_crc32(self,fileIndex));
 }
 
-uint32_t UnZipper_file_crc32(const UnZipper* self,int fileIndex){
-    return readUInt32(fileHeaderBuf(self,fileIndex)+16);
+#if (_IS_NEED_VIRTUAL_ZIP)
+inline static void writeUInt(unsigned char* buf,uint32_t v,int size){
+    for (int i=0;i<size;++i){
+        buf[i]=(unsigned char)v;
+        v>>=8;
+    }
 }
+#endif
+
+#if (_IS_NEED_VIRTUAL_ZIP)
+bool UnZipper_updateVirtualFileInfo(UnZipper* self,int fileIndex,ZipFilePos_t uncompressedSize,
+                                    ZipFilePos_t compressedSize,uint32_t crc32){
+    writeUInt((unsigned char*)_at_file_uncompressedSize(self,fileIndex),uncompressedSize,4);
+    self->_fileCompressedSizes[fileIndex]=compressedSize;
+    writeUInt((unsigned char*)_at_file_crc32(self,fileIndex),crc32,4);
+    return true;
+}
+#endif
 
 ZipFilePos_t UnZipper_fileEntry_endOffset(const UnZipper* self,int fileIndex){
     ZipFilePos_t result=UnZipper_fileData_offset(self,fileIndex)
@@ -526,29 +552,19 @@ bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
 
 #define check_clear(v) { if (!(v)) { result=false; assert(false); goto clear; } }
 
-bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
-                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
-    if (!UnZipper_file_isCompressed(self,fileIndex)){
-        return UnZipper_fileData_copyTo(self,fileIndex,outStream,writeToPos);
-    }
-    
-    uint16_t compressType=_file_compressType(self,fileIndex);
-    check(Z_DEFLATED==compressType);
-    
+bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInput* codeStream,
+                                          hpatch_StreamPos_t code_begin,hpatch_StreamPos_t code_end,
+                                          hpatch_StreamPos_t uncompressedSize,
+                                          const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
     bool result=true;
-    ZipFilePos_t file_offset=UnZipper_fileData_offset(self,fileIndex);
-    ZipFilePos_t file_compressedSize=UnZipper_file_compressedSize(self,fileIndex);
-    ZipFilePos_t file_data_size=UnZipper_file_uncompressedSize(self,fileIndex);
-    
-    _zlib_TDecompress* decHandle=_zlib_decompress_open_by(decompressPlugin,self->stream,file_offset,
-                                                          file_offset+file_compressedSize,0,
-                                                          self->_buf,(kBufSize>>1));
+    _zlib_TDecompress* decHandle=_zlib_decompress_open_by(decompressPlugin,codeStream,code_begin,
+                                                          code_end,0,self->_buf,(kBufSize>>1));
     TByte* dataBuf=self->_buf+(kBufSize>>1);
-    ZipFilePos_t  curWritePos=0;
+    hpatch_StreamPos_t  curWritePos=0;
     check_clear(decHandle!=0);
-    while (curWritePos<file_data_size){
-        ZipFilePos_t readLen=(kBufSize>>1);
-        if (readLen>(file_data_size-curWritePos)) readLen=file_data_size-curWritePos;
+    while (curWritePos<uncompressedSize){
+        hpatch_StreamPos_t readLen=(kBufSize>>1);
+        if (readLen>(uncompressedSize-curWritePos)) readLen=uncompressedSize-curWritePos;
         check_clear(_zlib_decompress_part(decHandle,dataBuf,dataBuf+readLen));
         check_clear(outStream->write(outStream,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
         curWritePos+=readLen;
@@ -557,6 +573,24 @@ bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
 clear:
     _zlib_decompress_close_by(decompressPlugin,decHandle);
     return result;
+}
+
+
+bool UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
+                                    const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
+    if (!UnZipper_file_isCompressed(self,fileIndex)){
+        return UnZipper_fileData_copyTo(self,fileIndex,outStream,writeToPos);
+    }
+    
+    uint16_t compressType=_file_compressType(self,fileIndex);
+    check(Z_DEFLATED==compressType);
+
+    ZipFilePos_t file_offset=UnZipper_fileData_offset(self,fileIndex);
+    ZipFilePos_t file_compressedSize=UnZipper_file_compressedSize(self,fileIndex);
+    ZipFilePos_t file_data_size=UnZipper_file_uncompressedSize(self,fileIndex);
+    
+    return UnZipper_compressedData_decompressTo(self,self->stream,file_offset,file_offset+file_compressedSize,
+                                                file_data_size,outStream,writeToPos);
 }
 
 #if (_IS_USED_MULTITHREAD)

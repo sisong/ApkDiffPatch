@@ -29,6 +29,8 @@
 #define ZipPatch_OldStream_h
 #include "patch_types.h"
 #include "Zipper.h"
+#include "VirtualZipIO.h"
+
 
 //利用oldZip、refList模拟成一个输入流;
 typedef struct OldStream{
@@ -45,18 +47,26 @@ typedef struct OldStream{
     int                         _curRangeIndex;
     //mem
     unsigned char*              _buf;
+    //
+#if (_IS_NEED_VIRTUAL_ZIP)
+    VirtualZip_in*              _vin;
+    unsigned char*              _rangIsInVirtualBuf;
+#endif
 } OldStream;
 
-int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
-ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
+int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,
+                                     size_t refCount _VIRTUAL_IN_D(virtual_in));
+ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,
+                                            size_t refCount _VIRTUAL_IN_D(virtual_in));
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                                 hpatch_TStreamOutput* output_refStream);
-uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount);
+                                 hpatch_TStreamOutput* output_refStream _VIRTUAL_IN_D(virtual_in));
+uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,
+                             size_t refCount _VIRTUAL_IN_D(virtual_in));
 
 void OldStream_init(OldStream* self);
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                     const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
-                    const hpatch_TStreamInput* input_decompressedStream);
+                    const hpatch_TStreamInput* input_decompressedStream _VIRTUAL_IN_D(virtual_in));
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

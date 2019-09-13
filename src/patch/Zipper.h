@@ -71,25 +71,35 @@ int                 UnZipper_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
 const char*         UnZipper_file_nameBegin(const UnZipper* self,int fileIndex);
 bool                UnZipper_file_isCompressed(const UnZipper* self,int fileIndex);
-ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_file_uncompressedSize(const UnZipper* self,int fileIndex);
+ZipFilePos_t        UnZipper_file_compressedSize(const UnZipper* self,int fileIndex);
 uint32_t            UnZipper_file_crc32(const UnZipper* self,int fileIndex);
 ZipFilePos_t        UnZipper_fileEntry_endOffset(const UnZipper* self,int fileIndex);
 
 
 ZipFilePos_t        UnZipper_fileData_offset(const UnZipper* self,int fileIndex);
-bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* buf,unsigned char* bufEnd);
-bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
-                                             const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
-bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,
-                                                   const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos=0);
+bool                UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,
+                                           unsigned char* buf,unsigned char* bufEnd);
+bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream,
+                                             hpatch_StreamPos_t writeToPos=0);
+bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream,
+                                                   hpatch_StreamPos_t writeToPos=0);
+bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInput* codeStream,
+                                          hpatch_StreamPos_t code_begin,hpatch_StreamPos_t code_end,
+                                          hpatch_StreamPos_t uncompressedSize,
+                                          const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos);
     
 bool UnZipper_openVirtualVCE(UnZipper* self,ZipFilePos_t fvce_size,int fileCount);
 bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
+#if (_IS_NEED_VIRTUAL_ZIP)
+bool UnZipper_updateVirtualFileInfo(UnZipper* self,int fileIndex,ZipFilePos_t uncompressedSize,
+                                    ZipFilePos_t compressedSize,uint32_t crc32);
+#endif
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_vce < self->_centralDirectory; }
 static inline size_t UnZipper_ApkV2SignSize(const UnZipper* self) { return self->_centralDirectory-self->_vce; }
 static inline size_t UnZipper_CESize(const UnZipper* self) {
-                                            return (self->_cache_fvce+self->_fvce_size)-self->_centralDirectory; }
+                                        return (self->_cache_fvce+self->_fvce_size)-self->_centralDirectory; }
+static inline const unsigned char* UnZipper_CEData(const UnZipper* self) { return self->_centralDirectory; }
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
                               ZipFilePos_t* v2sign_topPos,ZipFilePos_t* out_blockSize=0,bool* out_isHaveV3Sign=0);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
