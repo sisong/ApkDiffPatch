@@ -55,18 +55,18 @@ typedef struct OldStream{
 } OldStream;
 
 int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,
-                                     size_t refCount _VIRTUAL_IN_D(virtual_in));
+                                     size_t refCount _VIRTUAL_IN_D(virtual_in=0));
 ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,
-                                            size_t refCount _VIRTUAL_IN_D(virtual_in));
+                                            size_t refCount _VIRTUAL_IN_D(virtual_in=0));
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                                 hpatch_TStreamOutput* output_refStream _VIRTUAL_IN_D(virtual_in));
+                                 hpatch_TStreamOutput* output_refStream _VIRTUAL_IN_D(virtual_in=0));
 uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,
-                             size_t refCount _VIRTUAL_IN_D(virtual_in));
+                             size_t refCount _VIRTUAL_IN_D(virtual_in=0));
 
 void OldStream_init(OldStream* self);
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                     const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
-                    const hpatch_TStreamInput* input_decompressedStream _VIRTUAL_IN_D(virtual_in));
+                    const hpatch_TStreamInput* input_decompressedStream _VIRTUAL_IN_D(virtual_in=0));
 void OldStream_close(OldStream* self);
 
 #endif //ZipPatch_OldStream_h

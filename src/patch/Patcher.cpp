@@ -47,7 +47,7 @@ static
 TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* zipDiffStream,
                                        const hpatch_TStreamOutput* outNewZipStream,size_t maxUncompressMemory,
                                        const char* tempUncompressFileName,int threadNum,
-                                       IVirtualZip_in* _virtual_in,IVirtualZip_out* _virtual_out){
+                                       IVirtualZip_in* _virtual_in,IVirtualZip_out* virtual_out){
 #define HPATCH_CACHE_SIZE  (128*1024)
     UnZipper            oldZip;
     Zipper              out_newZip;
@@ -149,7 +149,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
                          zipDiffData.newRefOtherCompressedList,zipDiffData.newRefOtherCompressedCount,
                          (int)zipDiffData.newOtherCompressLevel,(int)zipDiffData.newOtherCompressMemLevel,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount,
-                         threadNum),PATCH_NEWSTREAM_ERROR);
+                         threadNum _VIRTUAL_OUT(virtual_out)),PATCH_NEWSTREAM_ERROR);
     
     temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);

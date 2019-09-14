@@ -36,7 +36,6 @@ struct IVirtualZip_in;
 struct IVirtualZip_out;
 
 typedef struct TZipEntryData {
-    void*           entryImport;
     const hpatch_TStreamInput*    dataStream;
     ZipFilePos_t    uncompressedSize;
     bool            isCompressed;
@@ -45,16 +44,28 @@ typedef struct TZipEntryData {
 typedef struct IVirtualZip_in{
     void*  virtualImport;
     //if no virtual, set out_entryDatas[i]=0; return false when error;
-    bool (*beginVirtual)(struct IVirtualZip_in* self,const UnZipper* zip,TZipEntryData* out_entryDatas[]);
-    uint32_t (*getCrc32)(const struct IVirtualZip_in* virtual_in,const UnZipper* zip,int fileIndex,
+    bool (*beginVirtual)(IVirtualZip_in* self,const UnZipper* zip,TZipEntryData* out_entryDatas[]);
+    uint32_t (*getCrc32)(const IVirtualZip_in* virtual_in,const UnZipper* zip,int fileIndex,
                          const TZipEntryData* entryData);
-    bool   (*endVirtual)(IVirtualZip_in* self,TZipEntryData* entryDatas[]);
+    bool   (*endVirtual)(IVirtualZip_in* self);
 } IVirtualZip_in;
 
+typedef enum TVirtualZip_out_type{
+    kVirtualZip_out_error=0,
+    kVirtualZip_out_void,                   // not need virtual out
+    kVirtualZip_out_emptyFile_cast,         // 0fileSize in zip,not change crc; and virtual out but not need data
+    kVirtualZip_out_emptyFile_uncompressed, // 0fileSize in zip,not change crc; and virtual out uncompressed data
+    //other type now unsupport
+} TVirtualZip_out_type;
 typedef struct IVirtualZip_out{
-    void*  virtualImport;
-    //bool (*virtualData)(const char* entryFileName,bool isCompressed,ZipFilePos_t uncompressedSize,
-    //                    ZipFilePos_t* compressedSize,uint32_t crc32,?);
+    void*       virtualImport;
+    hpatch_TStreamOutput* virtualStream; //stream for virtual out
+    //if need out data, must open virtualStream
+    TVirtualZip_out_type     (*beginVirtual)(IVirtualZip_out* self,const UnZipper* newInfoZip,int newFileIndex);
+    TVirtualZip_out_type (*beginVirtualCopy)(IVirtualZip_out* self,const UnZipper* newInfoZip,int newFileIndex,
+                                             const UnZipper* oldZip,int oldFileIndex);
+    //when out data end, can close virtualStream and virtualStream==0
+    bool                       (*endVirtual)(IVirtualZip_out* self);
 } IVirtualZip_out;
 
 
@@ -95,7 +106,7 @@ inline static bool VirtualZip_in_close(VirtualZip_in* vin){
     bool result=UnZipper_close(&vin->virtualZip);
     if (vin->entryDatas){
         if (vin->import){
-            if (!vin->import->endVirtual(vin->import,vin->entryDatas))
+            if (!vin->import->endVirtual(vin->import))
                 result=false;
         }
         free(vin->entryDatas);
@@ -105,14 +116,18 @@ inline static bool VirtualZip_in_close(VirtualZip_in* vin){
     return result;
 }
 
-#define _VIRTUAL_IN_D(p)  ,VirtualZip_in* p
-#define _VIRTUAL_IN(p)    ,p
+#define _VIRTUAL_IN_D(p)    ,VirtualZip_in* p
+#define _VIRTUAL_IN(p)      ,p
+#define _VIRTUAL_OUT_D(p)   ,IVirtualZip_out* p
+#define _VIRTUAL_OUT(p)     ,p
 
 #else
 #   define IVirtualZip_in   void
 #   define IVirtualZip_out  void
 #   define _VIRTUAL_IN_D(p)
 #   define _VIRTUAL_IN(p)
+#   define _VIRTUAL_OUT_D(p)
+#   define _VIRTUAL_OUT(p)
 #endif
 
 #endif /* VirtualZipIO_h */
