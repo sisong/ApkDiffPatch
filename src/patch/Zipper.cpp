@@ -41,9 +41,6 @@ static const TCompressPlugin_zlib zipCompatibleCompressPlugin={
 static const hdiff_TCompress*   compressPlugin  =&zipCompatibleCompressPlugin.base;
 static hpatch_TDecompress*      decompressPlugin=&zlibDecompressPlugin;
 
-#ifndef _IS_NEED_FIXED_ZLIB_VERSION
-#   define _IS_NEED_FIXED_ZLIB_VERSION 1
-#endif
 #if (_IS_NEED_FIXED_ZLIB_VERSION)
 #   define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
 #endif
@@ -499,12 +496,11 @@ inline static void writeUInt(unsigned char* buf,uint32_t v,int size){
 #endif
 
 #if (_IS_NEED_VIRTUAL_ZIP)
-bool UnZipper_updateVirtualFileInfo(UnZipper* self,int fileIndex,ZipFilePos_t uncompressedSize,
+void UnZipper_updateVirtualFileInfo(UnZipper* self,int fileIndex,ZipFilePos_t uncompressedSize,
                                     ZipFilePos_t compressedSize,uint32_t crc32){
     writeUInt((unsigned char*)_at_file_uncompressedSize(self,fileIndex),uncompressedSize,4);
     self->_fileCompressedSizes[fileIndex]=compressedSize;
     writeUInt((unsigned char*)_at_file_crc32(self,fileIndex),crc32,4);
-    return true;
 }
 #endif
 
@@ -969,8 +965,9 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
         return false;       // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
     }
     if (0==dataCompressedSize){
-        check(!dataIsCompressed);
-        dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
+        check((!dataIsCompressed)||(dataUncompressedSize==0));
+        if (dataUncompressedSize!=0)
+            dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
     }
     Zipper_file_append_stream* append_state=&self->_append_stream;
     if (append_state->self!=0){

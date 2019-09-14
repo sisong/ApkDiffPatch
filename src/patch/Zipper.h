@@ -92,7 +92,7 @@ bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInp
 bool UnZipper_openVirtualVCE(UnZipper* self,ZipFilePos_t fvce_size,int fileCount);
 bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
 #if (_IS_NEED_VIRTUAL_ZIP)
-bool UnZipper_updateVirtualFileInfo(UnZipper* self,int fileIndex,ZipFilePos_t uncompressedSize,
+void UnZipper_updateVirtualFileInfo(UnZipper* self,int fileIndex,ZipFilePos_t uncompressedSize,
                                     ZipFilePos_t compressedSize,uint32_t crc32);
 #endif
 static inline bool UnZipper_isHaveApkV2Sign(const UnZipper* self) { return self->_vce < self->_centralDirectory; }

@@ -41,10 +41,22 @@
 #define APKDIFFPATCH_VERSION_STRING _APKDIFFPATCH_EXPAND_AND_QUOTE(_APKDIFFPATCH_VERSION)
 
 
-#define _IsNeedIncludeDefaultCompressHead 0
+#ifndef _IS_NEED_FIXED_ZLIB_VERSION
+#   define _IS_NEED_FIXED_ZLIB_VERSION 1  // for compress zip file used fixed zlib version
+#endif
+#ifndef _IsNeedIncludeDefaultCompressHead
+#   define _IsNeedIncludeDefaultCompressHead 0 //for include by self for (de)compressPlugin
+#endif
 
-#define _CompressPlugin_zlib
-#include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
+#define _CompressPlugin_zlib   // for decompress zip file
+
+#if (!_IsNeedIncludeDefaultCompressHead)
+#   if (_IS_NEED_FIXED_ZLIB_VERSION)
+#       include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
+#   else
+#       include "zlib.h" //default by compiler environment
+#   endif
+#endif
 
 inline static uint32_t readUInt32(const unsigned char* buf){
     return buf[0]|(buf[1]<<8)|(buf[2]<<16)|(buf[3]<<24);

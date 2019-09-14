@@ -96,8 +96,8 @@ inline static bool VirtualZip_in_open(VirtualZip_in* vin,IVirtualZip_in* import,
         TZipEntryData* entryData=vin->entryDatas[i];
         if (entryData==0) continue;
         uint32_t newCrc32=import->getCrc32(import,oldZip,i,entryData);
-        if (!UnZipper_updateVirtualFileInfo(&vin->virtualZip,i,entryData->uncompressedSize,
-                                            (ZipFilePos_t)entryData->dataStream->streamSize,newCrc32)) return false;
+        UnZipper_updateVirtualFileInfo(&vin->virtualZip,i,entryData->uncompressedSize,
+                                       (ZipFilePos_t)entryData->dataStream->streamSize,newCrc32);
     }
     return true;
 }
