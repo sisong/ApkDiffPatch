@@ -84,6 +84,10 @@ bool                UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,const 
                                              hpatch_StreamPos_t writeToPos=0);
 bool                UnZipper_fileData_decompressTo(UnZipper* self,int fileIndex,const hpatch_TStreamOutput* outStream,
                                                    hpatch_StreamPos_t writeToPos=0);
+    
+bool UnZipper_dataStream_copyTo(UnZipper* self,const hpatch_TStreamInput* dataStream,
+                                hpatch_StreamPos_t data_begin,hpatch_StreamPos_t data_end,
+                                const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos);
 bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInput* codeStream,
                                           hpatch_StreamPos_t code_begin,hpatch_StreamPos_t code_end,
                                           hpatch_StreamPos_t uncompressedSize,
@@ -171,9 +175,9 @@ bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
     
 bool Zipper_file_append_set_new_crc32(Zipper* self,uint32_t newCrc32);
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                              bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
+                              bool appendDataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize);
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                                  bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
+                                  bool appendDataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
                                   int curFileCompressLevel,int curFileCompressMemLevel);
 const hpatch_TStreamOutput* Zipper_file_append_part_as_stream(Zipper* self);
 bool Zipper_file_append_part(Zipper* self,const unsigned char* part_data,size_t partSize);

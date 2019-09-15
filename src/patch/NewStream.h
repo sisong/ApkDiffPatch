@@ -63,6 +63,7 @@ typedef struct NewStream{
     bool                    _isAlwaysReCompress;
 #if (_IS_NEED_VIRTUAL_ZIP)
     IVirtualZip_out*        _vout;
+    VirtualZip_in*          _vin;
 #endif
 
     UnZipper                _newZipVCE;
@@ -76,7 +77,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
                     int newOtherCompressLevel,int newOtherCompressMemLevel,
                     const uint32_t* reCompressList,size_t reCompressCount,
-                    int threadNum=1 _VIRTUAL_OUT_D(virtual_out=0));
+                    int threadNum=1 _VIRTUAL_IN_D(virtual_in=0) _VIRTUAL_OUT_D(virtual_out=0));
 void NewStream_close(NewStream* self);
 
 #endif //ZipPatch_NewStream_h

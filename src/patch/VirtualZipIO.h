@@ -90,7 +90,7 @@ inline static bool VirtualZip_in_open(VirtualZip_in* vin,IVirtualZip_in* import,
 
     const ZipFilePos_t CESize=(ZipFilePos_t)UnZipper_CESize(oldZip);
     if (!UnZipper_openVirtualVCE(&vin->virtualZip,CESize,fCount)) return false;
-    memcpy(vin->virtualZip._centralDirectory,oldZip->_centralDirectory,CESize);
+    memcpy(vin->virtualZip._cache_fvce,oldZip->_centralDirectory,CESize);
     if (!UnZipper_updateVirtualVCE(&vin->virtualZip,oldZip->_isDataNormalized,CESize)) return false;
     for (int i=0; i<fCount; ++i) {
         TZipEntryData* entryData=vin->entryDatas[i];

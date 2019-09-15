@@ -211,7 +211,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
                     int newOtherCompressLevel,int newOtherCompressMemLevel,
                     const uint32_t* reCompressList,size_t reCompressCount,
-                    int threadNum _VIRTUAL_OUT_D(virtual_out)){
+                    int threadNum _VIRTUAL_IN_D(virtual_in) _VIRTUAL_OUT_D(virtual_out)){
     assert(self->_out_newZip==0);
     self->isFinish=false;
     self->_out_newZip=out_newZip;
@@ -249,6 +249,7 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_curNewReCompressSizeIndex=0;
     self->_isAlwaysReCompress=false;
 #if (_IS_NEED_VIRTUAL_ZIP)
+    self->_vin=virtual_in;
     self->_vout=virtual_out;
 #endif
     return true;
@@ -272,12 +273,27 @@ static bool _file_entry_end(NewStream* self){
 }
 
 static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
-    uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
+    bool oldIsCompress;
+    uint32_t uncompressedSize, compressedSize, crc32;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    TZipEntryData* entryData=0;
+    if ((self->_vin)&&(self->_vin->entryDatas[oldFileIndex])){
+        entryData=self->_vin->entryDatas[oldFileIndex];
+        oldIsCompress=entryData->isCompressed;
+        uncompressedSize=entryData->uncompressedSize;
+        compressedSize=(uint32_t)entryData->dataStream->streamSize;
+        crc32=self->_vin->import->getCrc32(self->_vin->import,self->_oldZip,oldFileIndex,entryData);
+    }else
+#endif
+    {
+        oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
+        uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
+        compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
+        crc32=UnZipper_file_crc32(self->_oldZip,oldFileIndex);
+    }
     check(UnZipper_file_uncompressedSize(&self->_newZipVCE,newFileIndex)==uncompressedSize);
-    check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==UnZipper_file_crc32(self->_oldZip,oldFileIndex));
-    uint32_t compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
+    check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==crc32);
     bool newIsCompress=UnZipper_file_isCompressed(&self->_newZipVCE,newFileIndex);
-    bool oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
     bool isNeedDecompress=self->_isAlwaysReCompress|((oldIsCompress)&(!newIsCompress));
     _update_compressedSize(self,newFileIndex,newIsCompress?compressedSize:uncompressedSize);
     bool  appendDataIsCompressed=(!isNeedDecompress)&&oldIsCompress;
@@ -321,10 +337,24 @@ static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFi
     outStream=Zipper_file_append_part_as_stream(self->_out_newZip);
 #endif
     if (outStream){
-        if (isNeedDecompress){
-            check(UnZipper_fileData_decompressTo(self->_oldZip,oldFileIndex,outStream));
-        }else{
-            check(UnZipper_fileData_copyTo(self->_oldZip,oldFileIndex,outStream));
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if (entryData){
+            if (isNeedDecompress){
+                check(UnZipper_compressedData_decompressTo(self->_oldZip,entryData->dataStream,
+                                                           0,entryData->dataStream->streamSize,
+                                                           entryData->uncompressedSize,outStream,0));
+            }else{
+                check(UnZipper_dataStream_copyTo(self->_oldZip,entryData->dataStream,
+                                                 0,entryData->dataStream->streamSize,outStream,0));
+            }
+        }else
+#endif
+        {
+            if (isNeedDecompress){
+                check(UnZipper_fileData_decompressTo(self->_oldZip,oldFileIndex,outStream));
+            }else{
+                check(UnZipper_fileData_copyTo(self->_oldZip,oldFileIndex,outStream));
+            }
         }
     }
     

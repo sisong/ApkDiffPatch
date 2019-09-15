@@ -149,7 +149,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
                          zipDiffData.newRefOtherCompressedList,zipDiffData.newRefOtherCompressedCount,
                          (int)zipDiffData.newOtherCompressLevel,(int)zipDiffData.newOtherCompressMemLevel,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount,
-                         threadNum _VIRTUAL_OUT(virtual_out)),PATCH_NEWSTREAM_ERROR);
+                         threadNum _VIRTUAL_IN(virtual_in) _VIRTUAL_OUT(virtual_out)),PATCH_NEWSTREAM_ERROR);
     
     temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);

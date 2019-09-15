@@ -532,18 +532,10 @@ bool UnZipper_fileData_read(UnZipper* self,ZipFilePos_t file_pos,unsigned char* 
 
 bool UnZipper_fileData_copyTo(UnZipper* self,int fileIndex,
                               const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
-    TByte* buf=self->_buf;
     ZipFilePos_t fileSavedSize=UnZipper_file_compressedSize(self,fileIndex);
     ZipFilePos_t fileDataOffset=UnZipper_fileData_offset(self,fileIndex);
-    ZipFilePos_t curWritePos=0;
-    while (curWritePos<fileSavedSize) {
-        ZipFilePos_t readLen=kBufSize;
-        if (readLen>(fileSavedSize-curWritePos)) readLen=fileSavedSize-curWritePos;
-        check(UnZipper_fileData_read(self,fileDataOffset+curWritePos,buf,buf+readLen));
-        check(outStream->write(outStream,writeToPos+curWritePos,buf,buf+readLen));
-        curWritePos+=readLen;
-    }
-    return true;
+    return UnZipper_dataStream_copyTo(self,self->stream,fileDataOffset,
+                                      fileDataOffset+fileSavedSize,outStream,writeToPos);
 }
 
 #define check_clear(v) { if (!(v)) { result=false; assert(false); goto clear; } }
@@ -569,6 +561,23 @@ bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInp
 clear:
     _zlib_decompress_close_by(decompressPlugin,decHandle);
     return result;
+}
+
+bool UnZipper_dataStream_copyTo(UnZipper* self,const hpatch_TStreamInput* dataStream,
+                                hpatch_StreamPos_t data_begin,hpatch_StreamPos_t data_end,
+                                const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos){
+    TByte* buf=self->_buf;
+    assert(data_begin<=data_end);
+    assert(data_end<=dataStream->streamSize);
+    while (data_begin<data_end) {
+        ZipFilePos_t readLen=kBufSize;
+        if (readLen>(data_end-data_begin)) readLen=(ZipFilePos_t)(data_end-data_begin);
+        check(dataStream->read(dataStream,data_begin,buf,buf+readLen));
+        check(outStream->write(outStream,writeToPos,buf,buf+readLen));
+        writeToPos+=readLen;
+        data_begin+=readLen;
+    }
+    return true;
 }
 
 
@@ -950,22 +959,22 @@ hpatch_BOOL Zipper_file_append_stream::_append_part_output(const hpatch_TStreamO
 }
 
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                              bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize){
-    return Zipper_file_append_beginWith(self,srcZip,srcFileIndex,dataIsCompressed,dataUncompressedSize,
+                              bool appendDataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize){
+    return Zipper_file_append_beginWith(self,srcZip,srcFileIndex,appendDataIsCompressed,dataUncompressedSize,
                                         dataCompressedSize,self->_compressLevel,self->_compressMemLevel);
 }
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
-                                  bool dataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
+                                  bool appendDataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
                                   int curFileCompressLevel,int curFileCompressMemLevel){
     const bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    if (isCompressed&&(!dataIsCompressed))
+    if (isCompressed&&(!appendDataIsCompressed))
         checkCompressSet(curFileCompressLevel,curFileCompressMemLevel);
-    if ((!isCompressed)&&(dataIsCompressed)){
+    if ((!isCompressed)&&(appendDataIsCompressed)){
         assert(false);  //now need input decompressed data;
         return false;       // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
     }
     if (0==dataCompressedSize){
-        check((!dataIsCompressed)||(dataUncompressedSize==0));
+        check((!appendDataIsCompressed)||(dataUncompressedSize==0));
         if (dataUncompressedSize!=0)
             dataCompressedSize=UnZipper_file_compressedSize(srcZip,srcFileIndex);//temp value
     }
@@ -987,11 +996,11 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     append_state->outputPos=0;
     append_state->curFileIndex=curFileIndex;
     append_state->streamImport=append_state;
-    append_state->streamSize=dataIsCompressed?dataCompressedSize:dataUncompressedSize; //finally value
+    append_state->streamSize=appendDataIsCompressed?dataCompressedSize:dataUncompressedSize; //finally value
     append_state->write=Zipper_file_append_stream::_append_part_input;
     assert(append_state->compressHandle==0);
     assert(append_state->threadWork==0);
-    if (isCompressed&&(!dataIsCompressed)){//compress data
+    if (isCompressed&&(!appendDataIsCompressed)){//compress data
 #if (_IS_USED_MULTITHREAD)
         if (isUsedMT(self)){
             self->_threadWorks->waitCanFastDispatchWork();
