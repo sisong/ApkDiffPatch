@@ -83,7 +83,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     if (_virtual_in) { VirtualZip_in_init(&_virtual_in_); virtual_in=&_virtual_in_; }
 #else
     assert(_virtual_in==0);
-    assert(_virtual_out==0);
+    assert(virtual_out==0);
 #endif
 
 #ifdef _CompressPlugin_lzma
