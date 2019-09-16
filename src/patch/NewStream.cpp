@@ -339,7 +339,7 @@ static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFi
     if (outStream){
 #if (_IS_NEED_VIRTUAL_ZIP)
         if (entryData){
-            if (isNeedDecompress){
+            if (entryData->isCompressed){
                 check(UnZipper_compressedData_decompressTo(self->_oldZip,entryData->dataStream,
                                                            0,entryData->dataStream->streamSize,
                                                            entryData->uncompressedSize,outStream,0));
