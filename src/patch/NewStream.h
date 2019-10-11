@@ -29,6 +29,7 @@
 #define ZipPatch_NewStream_h
 #include "patch_types.h"
 #include "Zipper.h"
+#include "VirtualZipIO.h"
 
 //对外模拟成一个输出流;
 //利用samePairList、CHEqs数据对需要输出的数据进行加工生成newZip;
@@ -59,8 +60,13 @@ typedef struct NewStream{
     size_t                  _curSamePairIndex;
     size_t                  _curNewOtherCompressIndex;
     size_t                  _curNewReCompressSizeIndex;
-    UnZipper                _newZipVCE;
     bool                    _isAlwaysReCompress;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    IVirtualZip_out*        _vout;
+    VirtualZip_in*          _vin;
+#endif
+
+    UnZipper                _newZipVCE;
 } NewStream;
 
 void NewStream_init(NewStream* self);
@@ -70,7 +76,8 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
                     int newOtherCompressLevel,int newOtherCompressMemLevel,
-                    const uint32_t* reCompressList,size_t reCompressCount,int threadNum=1);
+                    const uint32_t* reCompressList,size_t reCompressCount,
+                    int threadNum=1 _VIRTUAL_IN_D(virtual_in=0) _VIRTUAL_OUT_D(virtual_out=0));
 void NewStream_close(NewStream* self);
 
 #endif //ZipPatch_NewStream_h

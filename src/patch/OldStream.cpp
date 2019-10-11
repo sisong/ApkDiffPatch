@@ -30,30 +30,57 @@
 #include "patch_types.h"
 
 
-int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
+int OldStream_getDecompressFileCount(const UnZipper* oldZip,const uint32_t* refList,
+                                     size_t refCount _VIRTUAL_IN_D(virtual_in)){
     int result=0;
     for (size_t i=0; i<refCount; ++i){
-        if (UnZipper_file_isCompressed(oldZip,(int)refList[i]))
+        int fileIndex=(int)refList[i];
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if ((virtual_in)&&(virtual_in->entryDatas[fileIndex])) {
+            if (virtual_in->entryDatas[fileIndex]->isCompressed)
+                ++result;
+        } else
+#endif
+        if (UnZipper_file_isCompressed(oldZip,fileIndex))
             ++result;
     }
     return result;
 }
 
-ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
+ZipFilePos_t OldStream_getDecompressSumSize(const UnZipper* oldZip,const uint32_t* refList,
+                                            size_t refCount _VIRTUAL_IN_D(virtual_in)){
     ZipFilePos_t decompressSumSize=0;
     for (size_t i=0; i<refCount; ++i) {
         int fileIndex=(int)refList[i];
-        if (UnZipper_file_isCompressed(oldZip,fileIndex))
-            decompressSumSize+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if ((virtual_in)&&(virtual_in->entryDatas[fileIndex])) {
+            if (virtual_in->entryDatas[fileIndex]->isCompressed)
+                decompressSumSize+=virtual_in->entryDatas[fileIndex]->uncompressedSize;
+        } else
+#endif
+            if (UnZipper_file_isCompressed(oldZip,fileIndex))
+                decompressSumSize+=UnZipper_file_uncompressedSize(oldZip,fileIndex);
     }
     return decompressSumSize;
 }
 
 bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t refCount,
-                                 hpatch_TStreamOutput* output_refStream){
+                                 hpatch_TStreamOutput* output_refStream _VIRTUAL_IN_D(virtual_in)){
     hpatch_StreamPos_t writeToPos=0;
     for (size_t i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if ((virtual_in)&&(virtual_in->entryDatas[fileIndex])) {
+            TZipEntryData* entryData=virtual_in->entryDatas[fileIndex];
+            if (entryData->isCompressed){
+                if (!UnZipper_compressedData_decompressTo(oldZip,entryData->dataStream, 0,
+                                                          entryData->dataStream->streamSize,
+                                                          entryData->uncompressedSize,
+                                                          output_refStream,writeToPos)) return false;
+                writeToPos+=entryData->uncompressedSize;
+            }
+        } else
+#endif
         if (UnZipper_file_isCompressed(oldZip,fileIndex)){
             if (!UnZipper_fileData_decompressTo(oldZip,fileIndex,output_refStream,writeToPos))
                 return false;
@@ -63,13 +90,27 @@ bool OldStream_getDecompressData(UnZipper* oldZip,const uint32_t* refList,size_t
     return true;
 }
 
-uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,size_t refCount){
+uint32_t OldStream_getOldCrc(const UnZipper* oldZip,const uint32_t* refList,
+                             size_t refCount _VIRTUAL_IN_D(virtual_in)){
     unsigned char buf4[4];
     uLong crc=0;
-    crc=crc32(crc,oldZip->_centralDirectory,(uInt)UnZipper_CESize(oldZip));
+    const unsigned char* CE;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if (virtual_in)
+        CE=UnZipper_CEData(&virtual_in->virtualZip);
+    else
+#endif
+        CE=UnZipper_CEData(oldZip);
+    crc=crc32(crc,CE,(uInt)UnZipper_CESize(oldZip));
     for (size_t i=0;i<refCount;++i){
         int fileIndex=(int)refList[i];
-        uint32_t fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
+        uint32_t fileCrc;
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if ((virtual_in)&&(virtual_in->entryDatas[fileIndex]))
+            fileCrc=UnZipper_file_crc32(&virtual_in->virtualZip,fileIndex);
+        else
+#endif
+            fileCrc=UnZipper_file_crc32(oldZip,fileIndex);
         writeUInt32_to(buf4,fileCrc);
         crc=crc32(crc,buf4,4);
     }
@@ -91,10 +132,24 @@ void OldStream_close(OldStream* self){
 
 static bool _OldStream_read_do(OldStream* self,hpatch_StreamPos_t readFromPos,
                                  unsigned char* out_data,unsigned char* out_data_end,int curRangeIndex){
-    hpatch_StreamPos_t readPos=readFromPos - self->_rangeEndList[curRangeIndex-1]
-                                + self->_rangeFileOffsets[curRangeIndex];
+    hpatch_StreamPos_t readPos=readFromPos - self->_rangeEndList[curRangeIndex-1];
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if ((self->_vin)&&(self->_rangIsInVirtualBuf[curRangeIndex])){
+        int fileIndex=self->_rangeFileOffsets[curRangeIndex];
+        TZipEntryData* entryData=self->_vin->entryDatas[fileIndex];
+        return hpatch_FALSE!=entryData->dataStream->read(entryData->dataStream,
+                                                         readPos,out_data,out_data_end);
+    }
+#endif
+    readPos+=self->_rangeFileOffsets[curRangeIndex];
     if (curRangeIndex==0){
-        unsigned char* src=self->_oldZip->_centralDirectory;
+        const unsigned char* src;
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if (self->_vin)
+            src=UnZipper_CEData(&self->_vin->virtualZip);
+        else
+#endif
+            src=UnZipper_CEData(self->_oldZip);
         memcpy(out_data,src+readPos,out_data_end-out_data);
         return true;
     }else if (self->_rangIsInDecBuf[curRangeIndex]){
@@ -151,6 +206,7 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount,
                   const uint32_t* refNotDecompressList,size_t refNotDecompressCount){
     bool result=true;
     assert(self->_buf==0);
+    const int fileCount=UnZipper_fileCount(self->_oldZip);
     size_t   rangIndex;
     uint32_t curSumSize=0;
     uint32_t curDecompressPos=0;
@@ -158,29 +214,56 @@ bool _createRange(OldStream* self,const uint32_t* refList,size_t refCount,
     size_t noti=0;
     
     self->_rangeCount= 1 + refCount + refNotDecompressCount;
-    self->_buf=(unsigned char*)malloc(sizeof(uint32_t)*(self->_rangeCount*2+1)
-                                      +self->_rangeCount*sizeof(unsigned char));
+    size_t _memSize=sizeof(uint32_t)*(self->_rangeCount*2+1)+self->_rangeCount*sizeof(unsigned char);
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if (self->_vin)
+        _memSize+=self->_rangeCount*sizeof(unsigned char);
+#endif
+    self->_buf=(unsigned char*)malloc(_memSize);
     check(self->_buf!=0);
     self->_rangeEndList=((uint32_t*)self->_buf)+1; //+1 for _rangeEndList[-1] safe
     self->_rangeFileOffsets=self->_rangeEndList+self->_rangeCount;
     self->_rangIsInDecBuf=(unsigned char*)(self->_rangeFileOffsets+self->_rangeCount);
-    
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if (self->_vin){
+        self->_rangIsInVirtualBuf=self->_rangIsInDecBuf+self->_rangeCount;
+        memset(self->_rangIsInVirtualBuf,0,self->_rangeCount);
+    }
+#endif
     curSumSize=(uint32_t)UnZipper_CESize(self->_oldZip);
     self->_rangeEndList[-1]=0;
     self->_rangeEndList[0]=curSumSize;
     self->_rangeFileOffsets[0]=0;
     self->_rangIsInDecBuf[0]=0;
     rangIndex=1;
-    for (int fileIndex=0; fileIndex<UnZipper_fileCount(self->_oldZip); ++fileIndex) {
+    for (int fileIndex=0; fileIndex<fileCount; ++fileIndex) {
         if ((refi<refCount)&&((int)refList[refi]==fileIndex)){
-            ZipFilePos_t rangeSize=UnZipper_file_uncompressedSize(self->_oldZip,fileIndex);
-            if (UnZipper_file_isCompressed(self->_oldZip,fileIndex)){
+            ZipFilePos_t rangeSize;
+            bool         isCompressed;
+#if (_IS_NEED_VIRTUAL_ZIP)
+            if ((self->_vin)&&(self->_vin->entryDatas[fileIndex])){
+                TZipEntryData* entryData=self->_vin->entryDatas[fileIndex];
+                rangeSize=entryData->uncompressedSize;
+                isCompressed=entryData->isCompressed;
+                if (!isCompressed) self->_rangIsInVirtualBuf[rangIndex]=1;
+            } else
+#endif
+            {
+                rangeSize=UnZipper_file_uncompressedSize(self->_oldZip,fileIndex);
+                isCompressed=UnZipper_file_isCompressed(self->_oldZip,fileIndex);
+            }
+            if (isCompressed){
                 self->_rangIsInDecBuf[rangIndex]=1;
                 self->_rangeFileOffsets[rangIndex]=curDecompressPos;
                 curDecompressPos+=rangeSize;
             }else{
                 self->_rangIsInDecBuf[rangIndex]=0;
-                self->_rangeFileOffsets[rangIndex]=UnZipper_fileData_offset(self->_oldZip,fileIndex);
+#if (_IS_NEED_VIRTUAL_ZIP)
+                if ((self->_vin)&&(self->_rangIsInVirtualBuf[rangIndex]))
+                    self->_rangeFileOffsets[rangIndex]=fileIndex;
+                else
+#endif
+                    self->_rangeFileOffsets[rangIndex]=UnZipper_fileData_offset(self->_oldZip,fileIndex);
             }
             curSumSize+=rangeSize;
             self->_rangeEndList[rangIndex]=curSumSize;
@@ -206,13 +289,18 @@ clear:
 
 bool OldStream_open(OldStream* self,UnZipper* oldZip,const uint32_t* refList,size_t refCount,
                     const uint32_t* refNotDecompressList,size_t refNotDecompressCount,
-                    const hpatch_TStreamInput* input_decompressedStream){
+                    const hpatch_TStreamInput* input_decompressedStream _VIRTUAL_IN_D(virtual_in)){
     bool result=true;
     uint32_t oldDataSize;
     check(self->stream==0);
     
     self->_oldZip=oldZip;
     self->_input_decompressedStream=input_decompressedStream;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    self->_vin=virtual_in;
+    if (virtual_in!=0)
+        check(refNotDecompressCount==0);
+#endif
     check(_createRange(self,refList,refCount,refNotDecompressList,refNotDecompressCount));
     assert(self->_rangeCount>0);
     oldDataSize=self->_rangeEndList[self->_rangeCount-1];

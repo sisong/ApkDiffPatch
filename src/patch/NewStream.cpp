@@ -28,8 +28,7 @@
 #include "NewStream.h"
 
 void NewStream_init(NewStream* self){
-    memset(self,0,sizeof(NewStream)-sizeof(UnZipper));
-    UnZipper_init(&self->_newZipVCE);
+    memset(self,0,sizeof(NewStream));
 }
 void NewStream_close(NewStream* self){
     bool ret=UnZipper_close(&self->_newZipVCE);
@@ -42,6 +41,13 @@ static bool _file_entry_end(NewStream* self);
 inline static void _update_compressedSize(NewStream* self,int newFileIndex,uint32_t compressedSize){
     self->_newZipVCE._fileCompressedSizes[newFileIndex]=compressedSize;
 }
+#if (_IS_NEED_VIRTUAL_ZIP)
+inline static void _update_fileSize(NewStream* self,int newFileIndex,
+                                    uint32_t uncompressedSize,uint32_t compressedSize){
+    uint32_t oldCrc32=UnZipper_file_crc32(&self->_newZipVCE,newFileIndex);
+    UnZipper_updateVirtualFileInfo(&self->_newZipVCE,newFileIndex,uncompressedSize,compressedSize,oldCrc32);
+}
+#endif
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -50,13 +56,13 @@ inline static void _update_compressedSize(NewStream* self,int newFileIndex,uint3
 static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
                                     const hpatch_StreamPos_t _writeToPos,
                                     const unsigned char* data,const unsigned char* data_end){
-    size_t result=(size_t)(data_end-data);
+    size_t dataSize=(size_t)(data_end-data);
     hpatch_StreamPos_t writeToPos=_writeToPos;
     NewStream* self=(NewStream*)stream->streamImport;
     check(!self->isFinish);
-    assert(result>0);
+    assert(dataSize>0);
     assert(writeToPos<self->_curWriteToPosEnd);
-    if (writeToPos+result>self->_curWriteToPosEnd){
+    if (writeToPos+dataSize>self->_curWriteToPosEnd){
         size_t leftLen=(size_t)(self->_curWriteToPosEnd-writeToPos);
         check(_NewStream_write(stream,writeToPos,data,data+leftLen));
         check(_NewStream_write(stream,writeToPos+leftLen,data+leftLen,data_end));
@@ -65,13 +71,20 @@ static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
     
     //write data
     if (self->_curFileIndex<0){//fvce
-        memcpy(self->_newZipVCE._cache_fvce+self->_extraEditSize+writeToPos,data,result);
+        memcpy(self->_newZipVCE._cache_fvce+self->_extraEditSize+writeToPos,data,dataSize);
     }else{
         check(self->_curFileIndex<self->_fileCount);
-        check(Zipper_file_append_part(self->_out_newZip,data,result));
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if ((self->_vout)&&(self->_vout->virtualStream)){
+            hpatch_TStreamOutput* stream=self->_vout->virtualStream;
+            hpatch_StreamPos_t wpos=stream->streamSize-(self->_curWriteToPosEnd-writeToPos);
+            check(stream->write(stream,wpos,data,data+dataSize));
+        }else
+#endif
+            check(Zipper_file_append_part(self->_out_newZip,data,dataSize));
     }
     
-    if (writeToPos+result<self->_curWriteToPosEnd)//write continue
+    if (writeToPos+dataSize<self->_curWriteToPosEnd)//write continue
         return hpatch_TRUE;
     
     //write one end
@@ -84,6 +97,10 @@ static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
             Zipper_by_multi_thread(self->_out_newZip,self->_threadNum);
     }else{
         check(Zipper_file_append_end(self->_out_newZip));
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if ((self->_vout)&&(self->_vout->virtualStream))
+            check(self->_vout->endVirtual(self->_vout));
+#endif
     }
     ++self->_curFileIndex;
     
@@ -97,8 +114,26 @@ static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
         }else if ((0==UnZipper_file_uncompressedSize(&self->_newZipVCE,self->_curFileIndex))
                   &&(!UnZipper_file_isCompressed(&self->_newZipVCE,self->_curFileIndex))){
             _update_compressedSize(self,self->_curFileIndex,0);
+#if (_IS_NEED_VIRTUAL_ZIP)
+            if (self->_vout){
+                TVirtualZip_out_type ty=self->_vout->beginVirtual(self->_vout,&self->_newZipVCE,self->_curFileIndex);
+                switch (ty) {
+                    case kVirtualZip_out_void: { //ok, do nothing
+                        assert(self->_vout->virtualStream==0); } break;
+                    case kVirtualZip_out_emptyFile_cast: { //ok, already fileSize==0, do nothing
+                        assert(self->_vout->virtualStream==0); } break;
+                    case kVirtualZip_out_emptyFile_uncompressed: { //already fileSize==0, need endVirtual
+                        assert(self->_vout->virtualStream!=0); } break;
+                    default: { check(false); } break; //error, or unknow as error
+                }
+            }
+#endif
             check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,false,0,0));
             check(Zipper_file_append_end(self->_out_newZip));
+#if (_IS_NEED_VIRTUAL_ZIP)
+            if ((self->_vout)&&(self->_vout->virtualStream))
+                check(self->_vout->endVirtual(self->_vout));
+#endif
             ++self->_curFileIndex;
         }else{
             break;
@@ -119,14 +154,41 @@ static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
                 &&((int)self->_newRefOtherCompressedList[self->_curNewOtherCompressIndex]==self->_curFileIndex);
         if (isWriteOtherCompressedData)
             ++self->_curNewOtherCompressIndex;
+
+        bool is0FileSize=false; //in zip
+#if (_IS_NEED_VIRTUAL_ZIP)
+        TVirtualZip_out_type ty=kVirtualZip_out_void;
+        if (self->_vout){
+            ty=self->_vout->beginVirtual(self->_vout,&self->_newZipVCE,self->_curFileIndex);
+            switch (ty) {
+                case kVirtualZip_out_void: { //ok, do nothing
+                    assert(self->_vout->virtualStream==0); } break;
+                case kVirtualZip_out_emptyFile_cast: { // set fileSize==0
+                    assert(self->_vout->virtualStream==0);
+                    _update_fileSize(self,self->_curFileIndex,0,0);
+                    is0FileSize=true; } break;
+                case kVirtualZip_out_emptyFile_uncompressed: { //set fileSize==0, need out and endVirtual
+                    assert(self->_vout->virtualStream!=0);
+                    _update_fileSize(self,self->_curFileIndex,0,0);
+                    is0FileSize=true; } break;
+                default: { check(false); } break; //error, or unknow as error
+            }
+        }
+#endif
         if (isWriteOtherCompressedData && self->_newOtherCompressIsValid){
             check(Zipper_file_append_beginWith(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
-                                               false,uncompressedSize,compressedSize,
+                                               false,is0FileSize?0:uncompressedSize,is0FileSize?0:compressedSize,
                                                self->_newOtherCompressLevel,self->_newOtherCompressMemLevel));
             self->_curWriteToPosEnd+=uncompressedSize;
         }else{
+#if (_IS_NEED_VIRTUAL_ZIP)
+            if (ty==kVirtualZip_out_emptyFile_uncompressed){
+                check(!isWriteOtherCompressedData); //now unsupport auto decompress data
+            }
+#endif
             check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,self->_curFileIndex,
-                                           isWriteOtherCompressedData,uncompressedSize,compressedSize));
+                                           isWriteOtherCompressedData,
+                                           is0FileSize?0:uncompressedSize,is0FileSize?0:compressedSize));
             self->_curWriteToPosEnd+=isWriteOtherCompressedData?compressedSize:uncompressedSize;
         }
         return hpatch_TRUE;
@@ -148,7 +210,8 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
                     const uint32_t* samePairList,size_t samePairCount,
                     uint32_t* newRefOtherCompressedList,size_t newRefOtherCompressedCount,
                     int newOtherCompressLevel,int newOtherCompressMemLevel,
-                    const uint32_t* reCompressList,size_t reCompressCount,int threadNum){
+                    const uint32_t* reCompressList,size_t reCompressCount,
+                    int threadNum _VIRTUAL_IN_D(virtual_in) _VIRTUAL_OUT_D(virtual_out)){
     assert(self->_out_newZip==0);
     self->isFinish=false;
     self->_out_newZip=out_newZip;
@@ -185,6 +248,10 @@ bool NewStream_open(NewStream* self,Zipper* out_newZip,UnZipper* oldZip,
     self->_curNewOtherCompressIndex=0;
     self->_curNewReCompressSizeIndex=0;
     self->_isAlwaysReCompress=false;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    self->_vin=virtual_in;
+    self->_vout=virtual_out;
+#endif
     return true;
 }
 
@@ -206,24 +273,96 @@ static bool _file_entry_end(NewStream* self){
 }
 
 static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
-    uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
+    bool oldIsCompress;
+    uint32_t uncompressedSize, compressedSize, crc32;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    TZipEntryData* entryData=0;
+    if ((self->_vin)&&(self->_vin->entryDatas[oldFileIndex])){
+        entryData=self->_vin->entryDatas[oldFileIndex];
+        oldIsCompress=entryData->isCompressed;
+        uncompressedSize=entryData->uncompressedSize;
+        compressedSize=(uint32_t)entryData->dataStream->streamSize;
+        crc32=self->_vin->import->getCrc32(self->_vin->import,self->_oldZip,oldFileIndex,entryData);
+    }else
+#endif
+    {
+        oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
+        uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
+        compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
+        crc32=UnZipper_file_crc32(self->_oldZip,oldFileIndex);
+    }
     check(UnZipper_file_uncompressedSize(&self->_newZipVCE,newFileIndex)==uncompressedSize);
-    check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==UnZipper_file_crc32(self->_oldZip,oldFileIndex));
-    uint32_t compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
+    check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==crc32);
     bool newIsCompress=UnZipper_file_isCompressed(&self->_newZipVCE,newFileIndex);
-    bool oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
     bool isNeedDecompress=self->_isAlwaysReCompress|((oldIsCompress)&(!newIsCompress));
     _update_compressedSize(self,newFileIndex,newIsCompress?compressedSize:uncompressedSize);
     bool  appendDataIsCompressed=(!isNeedDecompress)&&oldIsCompress;
-    check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,newFileIndex,
-                                   appendDataIsCompressed,uncompressedSize,compressedSize));
-    const hpatch_TStreamOutput* outStream=Zipper_file_append_part_as_stream(self->_out_newZip);
-    if (isNeedDecompress){
-        check(UnZipper_fileData_decompressTo(self->_oldZip,oldFileIndex,outStream));
-    }else{
-        check(UnZipper_fileData_copyTo(self->_oldZip,oldFileIndex,outStream));
+    
+    bool is0FileSize=false; // in zip
+#if (_IS_NEED_VIRTUAL_ZIP)
+    TVirtualZip_out_type ty=kVirtualZip_out_void;
+    if (self->_vout){
+        ty=self->_vout->beginVirtualCopy(self->_vout,&self->_newZipVCE,newFileIndex,
+                                         self->_oldZip,oldFileIndex);
+        switch (ty) {
+            case kVirtualZip_out_void: { //ok, do nothing
+                assert(self->_vout->virtualStream==0); } break;
+            case kVirtualZip_out_emptyFile_cast: { // set fileSize==0
+                assert(self->_vout->virtualStream==0);
+                _update_fileSize(self,newFileIndex,0,0);
+                is0FileSize=true; } break;
+            case kVirtualZip_out_emptyFile_uncompressed: { //set fileSize==0, need out and endVirtual
+                assert(self->_vout->virtualStream!=0);
+                _update_fileSize(self,newFileIndex,0,0);
+                is0FileSize=true;
+                isNeedDecompress=true; } break;
+            default: { check(false); } break; //error, or unknow as error
+        }
     }
+#endif
+    check(Zipper_file_append_begin(self->_out_newZip,&self->_newZipVCE,newFileIndex,
+                                   appendDataIsCompressed,
+                                   is0FileSize?0:uncompressedSize,is0FileSize?0:compressedSize));
+    const hpatch_TStreamOutput* outStream=0;
+#if (_IS_NEED_VIRTUAL_ZIP)
+    switch (ty) {
+        case kVirtualZip_out_void: { //copy to zip
+            outStream=Zipper_file_append_part_as_stream(self->_out_newZip); } break;
+        case kVirtualZip_out_emptyFile_cast: { } break; //nothing out
+        case kVirtualZip_out_emptyFile_uncompressed: { //copy to virtualStream
+            outStream=self->_vout->virtualStream; } break;
+        default: { check(false); } break; //error, or unknow as error
+    }
+#else //copy to zip
+    outStream=Zipper_file_append_part_as_stream(self->_out_newZip);
+#endif
+    if (outStream){
+#if (_IS_NEED_VIRTUAL_ZIP)
+        if (entryData){
+            if (entryData->isCompressed){
+                check(UnZipper_compressedData_decompressTo(self->_oldZip,entryData->dataStream,
+                                                           0,entryData->dataStream->streamSize,
+                                                           entryData->uncompressedSize,outStream,0));
+            }else{
+                check(UnZipper_dataStream_copyTo(self->_oldZip,entryData->dataStream,
+                                                 0,entryData->dataStream->streamSize,outStream,0));
+            }
+        }else
+#endif
+        {
+            if (isNeedDecompress){
+                check(UnZipper_fileData_decompressTo(self->_oldZip,oldFileIndex,outStream));
+            }else{
+                check(UnZipper_fileData_copyTo(self->_oldZip,oldFileIndex,outStream));
+            }
+        }
+    }
+    
     check(Zipper_file_append_end(self->_out_newZip));
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if ((self->_vout)&&(self->_vout->virtualStream))
+        check(self->_vout->endVirtual(self->_vout));
+#endif
     return true;
 }
 

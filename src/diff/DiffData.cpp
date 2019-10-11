@@ -253,7 +253,7 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                         continue;
                     findSame=true;
                     oldSameIndex=oldIndex;
-                    break;
+                    if (zipFile_name(newZip,i)==zipFile_name(oldZip,oldIndex)) break;
                 }else{
                     printf("WARNING: crc32 equal but data not equal! file index: %d,%d\n",i,oldIndex);
                     printf("   name:\"%s\"\n        \"%s\"\n",zipFile_name(newZip,i).c_str(),

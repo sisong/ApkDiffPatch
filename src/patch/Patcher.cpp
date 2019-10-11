@@ -41,34 +41,13 @@
     if (!(value)){ printf(#value" "#error"!\n");  \
         if (result==PATCH_SUCCESS) result=error; if (!_isInClear){ goto clear; } } }
 
-TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
-                      size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum){
-    hpatch_TFileStreamInput    oldZipStream;
-    hpatch_TFileStreamInput    zipDiffStream;
-    hpatch_TFileStreamOutput   outNewZipStream;
-    TPatchResult    result=PATCH_SUCCESS;
-    bool            _isInClear=false;
-
-    hpatch_TFileStreamInput_init(&zipDiffStream);
-    hpatch_TFileStreamInput_init(&oldZipStream);
-    hpatch_TFileStreamOutput_init(&outNewZipStream);
-    check(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath),PATCH_OPENREAD_ERROR);
-    check(hpatch_TFileStreamInput_open(&zipDiffStream,zipDiffPath),PATCH_OPENREAD_ERROR);
-    check(hpatch_TFileStreamOutput_open(&outNewZipStream,outNewZipPath,(hpatch_StreamPos_t)(-1)),PATCH_OPENWRITE_ERROR);
-    hpatch_TFileStreamOutput_setRandomOut(&outNewZipStream,hpatch_TRUE);
-    result=ZipPatchWithStream(&oldZipStream.base,&zipDiffStream.base,&outNewZipStream.base,
-                              maxUncompressMemory,tempUncompressFileName,threadNum);
-clear:
-    _isInClear=true;
-    check(hpatch_TFileStreamOutput_close(&outNewZipStream),PATCH_CLOSEFILE_ERROR);
-    check(hpatch_TFileStreamInput_close(&oldZipStream),PATCH_CLOSEFILE_ERROR);
-    check(hpatch_TFileStreamInput_close(&zipDiffStream),PATCH_CLOSEFILE_ERROR);
-    return result;
-}
-
-TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* zipDiffStream,
-                                const hpatch_TStreamOutput* outNewZipStream,
-                                size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum){
+#if (!_IS_NEED_VIRTUAL_ZIP)
+static
+#endif
+TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* zipDiffStream,
+                                       const hpatch_TStreamOutput* outNewZipStream,size_t maxUncompressMemory,
+                                       const char* tempUncompressFileName,int threadNum,
+                                       IVirtualZip_in* _virtual_in,IVirtualZip_out* virtual_out){
 #define HPATCH_CACHE_SIZE  (128*1024)
     UnZipper            oldZip;
     Zipper              out_newZip;
@@ -98,6 +77,15 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
     hpatch_TFileStreamInput_init(&input_refFile);
     hpatch_TFileStreamOutput_init(&output_refFile);
     
+#if (_IS_NEED_VIRTUAL_ZIP)
+    VirtualZip_in*  virtual_in=0;
+    VirtualZip_in   _virtual_in_;
+    if (_virtual_in) { VirtualZip_in_init(&_virtual_in_); virtual_in=&_virtual_in_; }
+#else
+    assert(_virtual_in==0);
+    assert(virtual_out==0);
+#endif
+
 #ifdef _CompressPlugin_lzma
     if (decompressPlugin==0){
         if (ZipDiffData_isCanDecompress(zipDiffStream,&lzmaDecompressPlugin))
@@ -113,13 +101,19 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
     check(UnZipper_openStream(&oldZip,oldZipStream,zipDiffData.oldZipIsDataNormalized!=0,
                             zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
     check(zipDiffData.oldZipCESize==UnZipper_CESize(&oldZip),PATCH_OLDDATA_ERROR);
-    check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount), PATCH_OLDDATA_ERROR);
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if (virtual_in)
+        check(VirtualZip_in_open(virtual_in,_virtual_in,&oldZip),PATCH_VIRTUAL_IN_BEGIN_ERROR);
+#endif
+    check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount
+                                                  _VIRTUAL_IN(virtual_in)), PATCH_OLDDATA_ERROR);
     
     check(getCompressedDiffInfo(&diffInfo,zipDiffData.hdiffzData),PATCH_HDIFFINFO_ERROR);
     if (strlen(diffInfo.compressType) > 0)
         check(decompressPlugin->is_can_open(diffInfo.compressType),PATCH_COMPRESSTYPE_ERROR);
     
-    decompressSumSize=OldStream_getDecompressSumSize(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount);
+    decompressSumSize=OldStream_getDecompressSumSize(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount
+                                                     _VIRTUAL_IN(virtual_in));
     
     isUsedTempFile=(decompressSumSize > maxUncompressMemory)&&(tempUncompressFileName!=0);
     if (isUsedTempFile){
@@ -138,11 +132,11 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
         input_ref=&input_ref_cache;
     }
     
-    check(OldStream_getDecompressData(&oldZip,zipDiffData.oldRefList,
-                                      zipDiffData.oldRefCount,output_ref),PATCH_OLDDECOMPRESS_ERROR);
+    check(OldStream_getDecompressData(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
+                                      output_ref _VIRTUAL_IN(virtual_in)),PATCH_OLDDECOMPRESS_ERROR);
     check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(OldStream_open(&oldStream,&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
-                         0,0,input_ref), PATCH_OLDSTREAM_ERROR);
+                         0,0,input_ref _VIRTUAL_IN(virtual_in)), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
     
     check(Zipper_openStream(&out_newZip,outNewZipStream,(int)zipDiffData.newZipFileCount,
@@ -155,7 +149,7 @@ TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hp
                          zipDiffData.newRefOtherCompressedList,zipDiffData.newRefOtherCompressedCount,
                          (int)zipDiffData.newOtherCompressLevel,(int)zipDiffData.newOtherCompressMemLevel,
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount,
-                         threadNum),PATCH_NEWSTREAM_ERROR);
+                         threadNum _VIRTUAL_IN(virtual_in) _VIRTUAL_OUT(virtual_out)),PATCH_NEWSTREAM_ERROR);
     
     temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
     check(temp_cache!=0,PATCH_MEM_ERROR);
@@ -168,6 +162,9 @@ clear:
     check(Zipper_close(&out_newZip),PATCH_CLOSEFILE_ERROR);
     NewStream_close(&newStream);
     OldStream_close(&oldStream);
+#if (_IS_NEED_VIRTUAL_ZIP)
+    if (virtual_in) check(VirtualZip_in_close(virtual_in),PATCH_VIRTUAL_IN_END_ERROR);
+#endif
     check(UnZipper_close(&oldZip),PATCH_CLOSEFILE_ERROR);
     ZipDiffData_close(&zipDiffData);
     check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
@@ -176,4 +173,46 @@ clear:
     if (temp_cache) free(temp_cache);
     if (ref_cache) free(ref_cache);
     return result;
+}
+
+TPatchResult ZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* zipDiffStream,
+                                const hpatch_TStreamOutput* outNewZipStream,
+                                size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum){
+    return VirtualZipPatchWithStream(oldZipStream,zipDiffStream,outNewZipStream,
+                                     maxUncompressMemory,tempUncompressFileName,threadNum,0,0);
+}
+
+#if (!_IS_NEED_VIRTUAL_ZIP)
+static
+#endif
+TPatchResult VirtualZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
+                             size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum,
+                             IVirtualZip_in* virtual_in,IVirtualZip_out* virtual_out){
+    hpatch_TFileStreamInput    oldZipStream;
+    hpatch_TFileStreamInput    zipDiffStream;
+    hpatch_TFileStreamOutput   outNewZipStream;
+    TPatchResult    result=PATCH_SUCCESS;
+    bool            _isInClear=false;
+    
+    hpatch_TFileStreamInput_init(&zipDiffStream);
+    hpatch_TFileStreamInput_init(&oldZipStream);
+    hpatch_TFileStreamOutput_init(&outNewZipStream);
+    check(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath),PATCH_OPENREAD_ERROR);
+    check(hpatch_TFileStreamInput_open(&zipDiffStream,zipDiffPath),PATCH_OPENREAD_ERROR);
+    check(hpatch_TFileStreamOutput_open(&outNewZipStream,outNewZipPath,(hpatch_StreamPos_t)(-1)),PATCH_OPENWRITE_ERROR);
+    hpatch_TFileStreamOutput_setRandomOut(&outNewZipStream,hpatch_TRUE);
+    result=VirtualZipPatchWithStream(&oldZipStream.base,&zipDiffStream.base,&outNewZipStream.base,
+                                     maxUncompressMemory,tempUncompressFileName,threadNum,virtual_in,virtual_out);
+clear:
+    _isInClear=true;
+    check(hpatch_TFileStreamOutput_close(&outNewZipStream),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamInput_close(&oldZipStream),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamInput_close(&zipDiffStream),PATCH_CLOSEFILE_ERROR);
+    return result;
+}
+
+TPatchResult ZipPatch(const char* oldZipPath,const char* zipDiffPath,const char* outNewZipPath,
+                      size_t maxUncompressMemory,const char* tempUncompressFileName,int threadNum){
+    return VirtualZipPatch(oldZipPath,zipDiffPath,outNewZipPath,
+                           maxUncompressMemory,tempUncompressFileName,threadNum,0,0);
 }
