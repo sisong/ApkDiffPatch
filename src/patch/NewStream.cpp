@@ -281,16 +281,16 @@ static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFi
         entryData=self->_vin->entryDatas[oldFileIndex];
         oldIsCompress=entryData->isCompressed;
         uncompressedSize=entryData->uncompressedSize;
-        compressedSize=(uint32_t)entryData->dataStream->streamSize;
         crc32=self->_vin->import->getCrc32(self->_vin->import,self->_oldZip,oldFileIndex,entryData);
     }else
 #endif
     {
         oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
         uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
-        compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
         crc32=UnZipper_file_crc32(self->_oldZip,oldFileIndex);
     }
+    compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
+    
     check(UnZipper_file_uncompressedSize(&self->_newZipVCE,newFileIndex)==uncompressedSize);
     check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==crc32);
     bool newIsCompress=UnZipper_file_isCompressed(&self->_newZipVCE,newFileIndex);
