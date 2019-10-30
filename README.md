@@ -1,6 +1,6 @@
 **ApkDiffPatch**
 ================
-[![release](https://img.shields.io/badge/release-v1.3.0-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) 
+[![release](https://img.shields.io/badge/release-v1.3.1-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE) 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
 
