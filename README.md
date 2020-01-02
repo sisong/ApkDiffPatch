@@ -1,45 +1,54 @@
-**ApkDiffPatch**
-================
+# [ApkDiffPatch]
 [![release](https://img.shields.io/badge/release-v1.3.1-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE) 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls)   
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls) 
+[![+issue Welcome](https://img.shields.io/github/issues-raw/sisong/ApkDiffPatch?color=green&label=%2Bissue%20welcome)](https://github.com/sisong/ApkDiffPatch/issues)   
 
 [![Build Status](https://travis-ci.org/sisong/ApkDiffPatch.svg?branch=master)](https://travis-ci.org/sisong/ApkDiffPatch) 
 [![Build status](https://ci.appveyor.com/api/projects/status/u5tbrqwl72875r6h/branch/master?svg=true)](https://ci.appveyor.com/project/sisong/apkdiffpatch/branch/master)   
 
-a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta; support [Jar sign](Apk v1 sign) & [Apk v2 sign] & [Apk v3 sign] .   
+a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta/differential; support [Jar sign](Apk v1 sign) & [Apk v2 sign] & [Apk v3 sign] .   
 You can use this library (and Android NDK) to delta update your Apk.   
 ( not support zip64, and only support decode Deflated code; dependent libraries [HDiffPatch], [zlib], [lzma]. )   
 [[中文说明](https://blog.csdn.net/housisong/article/details/79768678)]
 
+[ApkDiffPatch]: https://github.com/sisong/ApkDiffPatch
 [HDiffPatch]: https://github.com/sisong/HDiffPatch
 [zlib]: https://github.com/madler/zlib
 [lzma]: https://www.7-zip.org/sdk.html
 [Apk v2 sign]: https://source.android.com/security/apksigning/v2
 [Apk v3 sign]: https://source.android.com/security/apksigning/v3
 [Jar sign]: https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
+[BsDiff]: http://www.daemonology.net/bsdiff/
+[archive-patcher]: https://github.com/google/archive-patcher
 
 ---
-usage:
+## Releases/Binaries
+[Download from last release](https://github.com/sisong/ApkDiffPatch/releases) : Command line app for Windows , Linux , MacOS; and .so .java for Android.   
 
-*  **ZipDiff(oldZip,newZip,out diffData)**
-   
-   release the diffData for update oldZip;    
-   your apk use V2Sign(or V3Sign or need ZipPatch result byte by byte equal)? `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff, AND You should not modify the zlib version (unless it is certified compatible).   
-   
-*  **ZipPatch(oldZip,diffData,out newZip)**
-  
-   ok , get the newZip;   
-   **ZipPatch()** requires 4*(decompress stream memory) + `ref old decompress` memory + O(1), also `ref old decompress` can use temp disk file without memory. 
+## usage:
+
+* **ZipDiff**(oldZip,newZip,out diffData)   
+release the diffData for update oldZip;   
+
+* **ZipPatch**(oldZip,diffData,out newZip)   
+ok , got the newZip;   
+ZipPatch() requires 4*(decompress stream memory) + `ref old decompress` memory + O(1), also `ref old decompress` can use temp disk file without memory;    
+ZipPatch() support multi-thread parallel compress mode when writing zip file, which requires more and more memory!   
+
+* NOTE:   
+if your need newZip(patch result) file byte by byte equal, `Released newZip` := **ApkNormalized**(newZip) before run ZipDiff, AND You should not modify the zlib version (unless it is certified compatible);   
+if your apk(or jar) file used [Jar sign](Apk v1 sign), is same as zip file;   
+if your apk used [Apk v2 sign](or [Apk v3 sign]), `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff;   
    
 ---
-*  **Why** need **ApkDiffPatch** or archive-patcher after have BsDiff or HDiffPatch **?**
+## Why [ApkDiffPatch]
+ Why need [ApkDiffPatch] or Google Play's [archive-patcher] after having [BsDiff] or [HDiffPatch]?
 ```
-ApkDiffPatch: v1.0
-Google Play patches: v1.0  https://github.com/andrewhayden/archive-patcher
-                     (test by https://github.com/googlesamples/apk-patch-size-estimator )
-BsDiff: v4.3
-HDiffPatch: v2.2.6
+ApkDiffPatch   : v1.0
+archive-patcher: v1.0  ( test by https://github.com/googlesamples/apk-patch-size-estimator )
+BsDiff         : v4.3
+HDiffPatch     : v2.2.6
 =========================================================================================================
                                                           BsDiff HDiffPatch archive-patcher ApkDiffPatch
           oldVersion              newVersion      newSize  (bzip2)  (+zlib)    (+gzip)   (+zlib)  (+lzma)
@@ -59,5 +68,6 @@ Average Compression                                100.0%    56.3%    55.8%     
 ```
    
 ---
-by housisong@gmail.com  
+## Contact
+housisong@gmail.com  
 
