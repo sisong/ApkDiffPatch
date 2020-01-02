@@ -242,7 +242,7 @@ static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& n
     double time0=clock_s();
     const size_t oldDataSize=oldData.size();
     const size_t newDataSize=newData.size();
-    std::cout<<"\nrun HDiffZ:\n";
+    std::cout<<"\nrun hdiffz:\n";
     std::cout<<"  oldDataSize : "<<oldDataSize<<"\n  newDataSize : "<<newDataSize<<"\n";
     
     std::vector<TByte>& diffData=out_diffData;
@@ -255,11 +255,11 @@ static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& n
     std::cout<<"  diff  time: "<<(time1-time0)<<" s\n";
     if (!check_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
                                diffData.data(),diffData.data()+diffData.size(),decompressPlugin)){
-        std::cout<<"\n  patch check HDiffZ result error!!!\n";
+        std::cout<<"\n  hpatchz check hdiffz result error!!!\n";
         return false;
     }else{
         double time2=clock_s();
-        std::cout<<"  patch check HDiffZ result ok!\n";
+        std::cout<<"  hpatchz check hdiffz result ok!\n";
         std::cout<<"  patch time: "<<(time2-time1)<<" s\n\n";
         return true;
     }
