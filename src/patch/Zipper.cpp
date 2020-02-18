@@ -911,7 +911,7 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     if (extraFieldLen_for_align>extraFieldLen) //对齐;
         check(_writeAlignSkip(self,extraFieldLen_for_align-extraFieldLen));
     if (fileCommentLen>0)
-        check(_write(self,headBuf+46+fileNameLen+extraFieldLen_for_align,fileCommentLen));//[+文件注释];
+        check(_write(self,headBuf+46+fileNameLen+extraFieldLen,fileCommentLen));//[+文件注释];
     if (isNeedAlign) assert_align(self);//对齐检查;
     return  true;
 }

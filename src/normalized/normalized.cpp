@@ -63,13 +63,11 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
         }
     }
     for (int i=0; i<fileCount; ++i) {
-        std::string name=UnZipper_file_nameBegin(&unzipper,i);
         if ((i!=firstCompressedFile)&&(!UnZipper_file_isApkV1_or_jarSign(&unzipper,i)))
             fileIndexs.push_back(i);
     }
     jarSignFileCount=fileCount-(int)fileIndexs.size();
     for (int i=0; i<fileCount; ++i) {
-        std::string name=UnZipper_file_nameBegin(&unzipper,i);
         if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
             fileIndexs.push_back(i);
     }
