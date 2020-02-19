@@ -871,7 +871,7 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
         size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);
         if (skipLen>0){
             if (fileIndex==0){//只能扩展第一个entry的extraField来对齐;
-                extraFieldLen_for_align+=skipLen;
+                extraFieldLen_for_align+=(uint16_t)skipLen;
                 //WARNING
                 char fileName[hpatch_kPathMaxSize];
                 if (fileNameLen+1>hpatch_kPathMaxSize) return false;
@@ -959,6 +959,7 @@ hpatch_BOOL Zipper_file_append_stream::_append_part_input(const hpatch_TStreamOu
         hpatch_StreamPos_t curWritedPos=append_state->outputPos;
         if(!_zlib_compress_part(append_state->compressHandle,part_data,part_data_end,
                                 is_data_end,&curWritedPos,&outStream_isCanceled)) return hpatch_FALSE;//error
+        assert(curWritedPos==append_state->outputPos);
         return hpatch_TRUE;
     }else{
         return _append_part_output(stream,append_state->outputPos,part_data,part_data_end);
