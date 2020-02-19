@@ -864,11 +864,24 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     uint32_t compressedSize=self->_fileCompressedSizes[fileIndex];
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     uint16_t extraFieldLen=readUInt16(headBuf+30);
+    uint16_t extraFieldLen_for_align=extraFieldLen;
     bool isNeedAlign=(!isFullInfo)&&(!isCompressed); //dir or 0 size file need align too, same AndroidSDK#zipalign
     if (isNeedAlign){
         size_t headInfoLen=30+fileNameLen+extraFieldLen;
         size_t skipLen=_getAlignSkipLen(self,self->_curFilePos+headInfoLen);
-        check(_writeAlignSkip(self,skipLen));
+        if (skipLen>0){
+            if (fileIndex==0){//只能扩展第一个entry的extraField来对齐;
+                extraFieldLen_for_align+=(uint16_t)skipLen;
+                //WARNING
+                char fileName[hpatch_kPathMaxSize];
+                if (fileNameLen+1>hpatch_kPathMaxSize) return false;
+                memcpy(fileName,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen+1);
+                printf("WARNING: \""); hpatch_printPath_utf8(fileName);
+                printf("\" file's extraField adding %d byte 0 for align!\n",(int)skipLen);
+            }else{
+                check(_writeAlignSkip(self,skipLen));//利用entry之间的空间对齐;
+            }
+        }
     }
     if (!isFullInfo){
         self->_fileEntryOffsets[fileIndex]=self->_curFilePos;
@@ -885,7 +898,7 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     }
     check(_writeUInt32(self,compressedSize));//压缩后大小;
     check(_write(self,headBuf+24,30-24));//压缩前大小--文件名称长度;
-    check(_writeUInt16(self,extraFieldLen));//扩展字段长度;
+    check(_writeUInt16(self,extraFieldLen_for_align));//扩展字段长度;
     
     uint16_t fileCommentLen=0;//文件注释长度;
     if (isFullInfo){
@@ -894,7 +907,11 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
         check(_write(self,headBuf+34,42-34));//文件开始的分卷号--文件外部属性;
         check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件在文件中的偏移;
     }
-    check(_write(self,headBuf+46,fileNameLen+extraFieldLen+fileCommentLen));//文件名称 + 扩展字段 [+文件注释];
+    check(_write(self,headBuf+46,fileNameLen+extraFieldLen));//文件名称 + 扩展字段;
+    if (extraFieldLen_for_align>extraFieldLen) //对齐;
+        check(_writeAlignSkip(self,extraFieldLen_for_align-extraFieldLen));
+    if (fileCommentLen>0)
+        check(_write(self,headBuf+46+fileNameLen+extraFieldLen,fileCommentLen));//[+文件注释];
     if (isNeedAlign) assert_align(self);//对齐检查;
     return  true;
 }
@@ -942,6 +959,7 @@ hpatch_BOOL Zipper_file_append_stream::_append_part_input(const hpatch_TStreamOu
         hpatch_StreamPos_t curWritedPos=append_state->outputPos;
         if(!_zlib_compress_part(append_state->compressHandle,part_data,part_data_end,
                                 is_data_end,&curWritedPos,&outStream_isCanceled)) return hpatch_FALSE;//error
+        assert(curWritedPos==append_state->outputPos);
         return hpatch_TRUE;
     }else{
         return _append_part_output(stream,append_state->outputPos,part_data,part_data_end);
