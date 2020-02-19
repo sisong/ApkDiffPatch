@@ -53,7 +53,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
     
     //sort file
-    
+    /*
     //get firstCompressedFile for align,because compressed file not need align;
     for (int i=0; i<fileCount; ++i) {
         if (UnZipper_file_isCompressed(&unzipper,i)&&(!UnZipper_file_isApkV1_or_jarSign(&unzipper,i))){
@@ -61,7 +61,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
             fileIndexs.push_back(i);
             break;
         }
-    }
+    }*/
     for (int i=0; i<fileCount; ++i) {
         if ((i!=firstCompressedFile)&&(!UnZipper_file_isApkV1_or_jarSign(&unzipper,i)))
             fileIndexs.push_back(i);

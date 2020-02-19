@@ -875,7 +875,8 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
                 //WARNING
                 char fileName[hpatch_kPathMaxSize];
                 if (fileNameLen+1>hpatch_kPathMaxSize) return false;
-                memcpy(fileName,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen+1);
+                memcpy(fileName,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen);
+                fileName[fileNameLen]='\0';
                 printf("WARNING: \""); hpatch_printPath_utf8(fileName);
                 printf("\" file's extraField adding %d byte 0 for align!\n",(int)skipLen);
             }else{
