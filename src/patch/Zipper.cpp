@@ -211,6 +211,20 @@ bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self){
     return false;
 }
 
+bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* fileName,int fileNameLen){
+    return (UnZipper_file_nameLen(self,fileIndex)==fileNameLen)&&
+           (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),fileName,fileNameLen));
+}
+
+int UnZipper_searchFileIndexByName(const UnZipper* self,const char* fileName,int fileNameLen){
+    int fCount=UnZipper_fileCount(self);
+    for (int i=0; i<fCount; ++i) {
+        if (UnZipper_file_is_sameName(self,i,fileName,fileNameLen))
+            return i;
+    }
+    return -1;
+}
+
     static bool _find_ApkV2orV3SignTag_in_c_string(const char* data){
         const char* kApkTag="X-Android-APK-Signed";
         const char* pos=strstr(data,kApkTag);
@@ -1021,7 +1035,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     assert(append_state->threadWork==0);
     if (isCompressed&&(!appendDataIsCompressed)){//compress data
 #if (_IS_USED_MULTITHREAD)
-        if (isUsedMT(self)){
+        if (isUsedMT(self)&&(dataCompressedSize>0)){
             self->_threadWorks->waitCanFastDispatchWork();
             append_state->threadWork=newThreadWork(dataUncompressedSize,dataCompressedSize,self->_curFilePos,
                                                    curFileCompressLevel,curFileCompressMemLevel);

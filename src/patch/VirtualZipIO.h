@@ -38,6 +38,7 @@ struct IVirtualZip_out;
 typedef struct TZipEntryData {
     const hpatch_TStreamInput*    dataStream;
     ZipFilePos_t    uncompressedSize;
+    ZipFilePos_t    savedCompressedSize;
     bool            isCompressed;
 } TZipEntryData;
 
@@ -76,7 +77,8 @@ struct VirtualZip_in{
 };
 
 inline static void VirtualZip_in_init(VirtualZip_in* vin){
-    memset(vin,0,sizeof(VirtualZip_in)-sizeof(UnZipper));
+    vin->import=0;
+    vin->entryDatas=0;
     UnZipper_init(&vin->virtualZip);
 }
 inline static bool VirtualZip_in_open(VirtualZip_in* vin,IVirtualZip_in* import,UnZipper* oldZip){
