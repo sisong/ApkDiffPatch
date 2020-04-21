@@ -274,7 +274,7 @@ static bool _file_entry_end(NewStream* self){
 
 static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex){
     bool oldIsCompress;
-    uint32_t uncompressedSize, compressedSize, crc32;
+    uint32_t uncompressedSize,compressedSize,crc32;
 #if (_IS_NEED_VIRTUAL_ZIP)
     TZipEntryData* entryData=0;
     if ((self->_vin)&&(self->_vin->entryDatas[oldFileIndex])){
@@ -282,19 +282,23 @@ static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFi
         oldIsCompress=entryData->isCompressed;
         uncompressedSize=entryData->uncompressedSize;
         crc32=self->_vin->import->getCrc32(self->_vin->import,self->_oldZip,oldFileIndex,entryData);
+        compressedSize=entryData->savedCompressedSize;
     }else
 #endif
     {
         oldIsCompress=UnZipper_file_isCompressed(self->_oldZip,oldFileIndex);
         uncompressedSize=UnZipper_file_uncompressedSize(self->_oldZip,oldFileIndex);
         crc32=UnZipper_file_crc32(self->_oldZip,oldFileIndex);
+        compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
     }
-    compressedSize=UnZipper_file_compressedSize(self->_oldZip,oldFileIndex);
     
     check(UnZipper_file_uncompressedSize(&self->_newZipVCE,newFileIndex)==uncompressedSize);
     check(UnZipper_file_crc32(&self->_newZipVCE,newFileIndex)==crc32);
     bool newIsCompress=UnZipper_file_isCompressed(&self->_newZipVCE,newFileIndex);
     bool isNeedDecompress=self->_isAlwaysReCompress|((oldIsCompress)&(!newIsCompress));
+    ZipFilePos_t newCompressedSize=UnZipper_file_compressedSize(&self->_newZipVCE,newFileIndex);
+    if (newCompressedSize>0)
+        compressedSize=newCompressedSize;
     _update_compressedSize(self,newFileIndex,newIsCompress?compressedSize:uncompressedSize);
     bool  appendDataIsCompressed=(!isNeedDecompress)&&oldIsCompress;
     
