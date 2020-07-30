@@ -28,6 +28,7 @@
 #include "normalized.h"
 #include <vector>
 #include <string>
+#include <algorithm> //sort
 #include "../patch/Zipper.h"
 #include "../diff/DiffData.h"
 
