@@ -132,7 +132,7 @@ int main(int argc, const char * argv[]) {
         outNewZipPath=arg_values[2];
         _options_check(kmg_to_size(arg_values[3],strlen(arg_values[3]),
                                    &maxUncompressMemory),"maxUncompressMemory");
-        tempUncompressFileName=argv[4];
+        tempUncompressFileName=arg_values[4];
         _options_check((tempUncompressFileName!=0)
                        &&(strlen(tempUncompressFileName)>0),"tempUncompressFileName");
     }else{

@@ -169,7 +169,7 @@ clear:
     ZipDiffData_close(&zipDiffData);
     check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(hpatch_TFileStreamInput_close(&input_refFile),PATCH_CLOSEFILE_ERROR);
-    if (isUsedTempFile) remove(tempUncompressFileName);
+    if (isUsedTempFile) hpatch_removeFile(tempUncompressFileName);
     if (temp_cache) free(temp_cache);
     if (ref_cache) free(ref_cache);
     return result;

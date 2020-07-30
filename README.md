@@ -1,5 +1,5 @@
 # [ApkDiffPatch]
-[![release](https://img.shields.io/badge/release-v1.3.3-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) 
+[![release](https://img.shields.io/badge/release-v1.3.4-blue.svg)](https://github.com/sisong/ApkDiffPatch/releases) 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sisong/ApkDiffPatch/blob/master/LICENSE) 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls) 
 [![+issue Welcome](https://img.shields.io/github/issues-raw/sisong/ApkDiffPatch?color=green&label=%2Bissue%20welcome)](https://github.com/sisong/ApkDiffPatch/issues)   
@@ -39,7 +39,7 @@ ZipPatch() support multi-thread parallel compress mode when writing zip file, wh
 * NOTE:   
 if your need newZip(patch result) file byte by byte equal, `Released newZip` := **ApkNormalized**(newZip) before run ZipDiff, AND You should not modify the zlib version (unless it is certified compatible);   
 if your apk(or jar) file used [Jar sign](Apk v1 sign), is same as zip file;   
-if your apk used [Apk v2 sign](or [Apk v3 sign]), `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(newZip))  before ZipDiff;   
+if your apk used [Apk v2 sign](or [Apk v3 sign]), `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(AndroidSDK#apksigner(newZip)))  before ZipDiff;   
    
 ---
 ## Why [ApkDiffPatch]

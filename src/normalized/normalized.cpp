@@ -35,6 +35,44 @@
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; if (!_isInClear){ goto clear; } } }
 
+struct TFileValue{
+    std::string fileName;
+    int         fileIndex;
+    struct TCmp{
+        inline TCmp(int fileCount):_fileCount(fileCount){}
+        static bool inline isInSignDir(const std::string& s){
+            return (s.find("META-INF/")==0)||(s.find("META-INF\\")==0);
+        }
+        static bool inline isEndWith(const std::string& s,const char* sub){
+            return (s.find(sub)==s.size()-strlen(sub));
+        }
+        size_t _v(const TFileValue& x)const{
+            size_t xi=x.fileIndex;
+            if (isInSignDir(x.fileName)){
+                xi+=_fileCount;
+                     if (isEndWith(x.fileName,".SF"))  xi+=_fileCount;
+                else if (isEndWith(x.fileName,".RSA")) xi+=_fileCount*2;
+                else if (isEndWith(x.fileName,".MF"))  xi+=_fileCount*3;
+            }
+            return  xi;
+        }
+        inline bool operator ()(const TFileValue& x,const TFileValue& y)const{
+            return _v(x)<_v(y);
+        }
+        int _fileCount;
+    };
+};
+static void getFiles(const UnZipper* zip,std::vector<TFileValue>& out_files){
+    int fileCount=UnZipper_fileCount(zip);
+    for (int i=0; i<fileCount; ++i) {
+        const char* fn=UnZipper_file_nameBegin(zip,i);
+        TFileValue fi;
+        fi.fileIndex=i;
+        fi.fileName.assign(std::string(fn,fn+UnZipper_file_nameLen(zip,i)));
+        out_files.push_back(fi);
+    }
+}
+
 bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel){
     bool result=true;
     bool _isInClear=false;
@@ -47,31 +85,24 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     UnZipper_init(&unzipper);
     Zipper_init(&zipper);
     
-    int firstCompressedFile=-1;
     check(UnZipper_openFile(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
     check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
     
-    //sort file
-    /*
-    //get firstCompressedFile for align,because compressed file not need align;
-    for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isCompressed(&unzipper,i)&&(!UnZipper_file_isApkV1_or_jarSign(&unzipper,i))){
-            firstCompressedFile=i;
-            fileIndexs.push_back(i);
-            break;
+    {//sort file
+        std::vector<TFileValue> files;
+        getFiles(&unzipper,files);
+        std::sort(files.begin(),files.end(),TFileValue::TCmp(fileCount));
+        for (int i=0; i<fileCount; ++i) {
+            fileIndexs.push_back(files[i].fileIndex);
         }
-    }*/
-    for (int i=0; i<fileCount; ++i) {
-        if ((i!=firstCompressedFile)&&(!UnZipper_file_isApkV1_or_jarSign(&unzipper,i)))
-            fileIndexs.push_back(i);
     }
-    jarSignFileCount=fileCount-(int)fileIndexs.size();
     for (int i=0; i<fileCount; ++i) {
         if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
-            fileIndexs.push_back(i);
+            ++jarSignFileCount;
     }
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
+    assert((size_t)fileCount==fileIndexs.size());
     
     printf("\n");
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
