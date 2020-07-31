@@ -134,7 +134,7 @@ int main(int argc, const char * argv[]) {
             } break;
             case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_ERROR:{
                 printf("  check ZipPatch result Byte By Byte Equal ERROR!\n");
-                printf("  (did newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before running ZipDiff?)\n");
+                printf("  (did newZip=AndroidSDK#apksigner(ApkNormalized(AndroidSDK#apksigner(newZip))) before running ZipDiff?)\n");
             } break;
             case CHECK_SAME_LIKE_ERROR:{
                 printf("  check ZipPatch result zip data ERROR!\n");

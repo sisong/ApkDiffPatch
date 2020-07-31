@@ -288,7 +288,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
         //maybe bring apk can't install ERROR!
         printf("  ERROR: newZip not Normalized, need do "
-               "newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before running ZipDiff!\n");
+               "newZip=AndroidSDK#apksigner(ApkNormalized(AndroidSDK#apksigner(newZip))) before running ZipDiff!\n");
         isOk=false;
     }
     if ((!newIsV2Sign)&&UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(newZip)){
