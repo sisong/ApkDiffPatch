@@ -30,18 +30,19 @@
 //该过程对zip\jar\apk包进行规范化处理:
 //   输入包文件,重新按固定压缩算法生成对齐的新包文件(扩展字段、注释、jar的签名和apk文件的v1签名会被保留,apk的v2签名数据会被删除)
 //   规范化后可以用Android签名工具对输出的apk文件执行v2签名,比如:
-//  apksigner sign --v1-signing-enabled true --v2-signing-enabled true --ks *.keystore --ks-pass pass:* --in normalized.apk --out result.apk
+//  $apksigner sign --v1-signing-enabled true --v2-signing-enabled true --ks *.keystore --ks-pass pass:* --in normalized.apk --out release.apk
 
 #include "normalized/normalized.h"
 #include "../HDiffPatch/_clock_for_demo.h"
+#include "../HDiffPatch/_atosize.h"
 #include "diff/DiffData.h"
 
 static void printUsage(){
-    printf("usage: ApkNormalized srcApk out_newApk [-nce-isNotCompressEmptyFile] [-v]\n"
+    printf("usage: ApkNormalized srcApk out_newApk [-nce-isNotCompressEmptyFile] [-cl-compressLevel] [-as-alignSize] [-v] \n"
            "options:\n"
            "  input srcApk file can *.zip *.jar *.apk file type;\n"
-           "    ApkNormalized normalized zip file: \n"
-           "      recompress all file data, \n"
+           "    ApkNormalized normalized zip file:\n"
+           "      recompress all compressed files's data by zlib,\n"
            "      align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
            "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
            "      compatible with jar sign(apk v1 sign), etc...\n"
@@ -51,6 +52,12 @@ static void printUsage(){
            "    if found compressed empty file in the zip, need change it to not compressed?\n"
            "      -nce-1        DEFAULT, not compress empty file;\n"
            "      -nce-0        keep the original compression setting for empty file.\n"
+           "  -cl-compressLevel\n"
+           "    set zlib compress level, 1<=compressLevel<=9, DEFAULT -cl-6;\n"
+           "    if set 9, compress rate is high, but compress speed is very slow when patching.\n"
+           "  -as-alignSize\n"
+           "    set align size for uncompressed file in zip for optimize app run speed,\n"
+           "    alignSize>=1, recommended 4,8, DEFAULT -as-8.\n"
            "  -v  output Version info. \n"
            );
 }
@@ -58,11 +65,14 @@ static void printUsage(){
 #define _options_check(value,errorInfo){ \
     if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return 1; } }
 
-#define _kNULL_VALUE (-1)
+#define _kNULL_VALUE    (-1)
+#define _kNULL_SIZE     (~(size_t)0)
 
 int main(int argc, const char * argv[]) {
     hpatch_BOOL isNotCompressEmptyFile=_kNULL_VALUE;
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
+    size_t      compressLevel = _kNULL_SIZE;
+    size_t      alignSize     = _kNULL_SIZE;
 #define kMax_arg_values_size 2
     const char * arg_values[kMax_arg_values_size]={0};
     int          arg_values_size=0;
@@ -90,6 +100,27 @@ int main(int argc, const char * argv[]) {
                     _options_check(hpatch_FALSE,"-nce?");
                 }
             } break;
+            case 'c':{
+                if ((op[2]=='l')&&(op[3]=='-')){
+                    _options_check(compressLevel==_kNULL_SIZE,"-cl-?")
+                    const char* pnum=op+4;
+                    _options_check(kmg_to_size(pnum,strlen(pnum),&compressLevel),"-cl-?");
+                    _options_check((1<=compressLevel)&&(compressLevel<=9),"-cl-?");
+                }else{
+                    _options_check(hpatch_FALSE,"-cl?");
+                }
+            } break;
+            case 'a':{
+                if ((op[2]=='s')&&(op[3]=='-')){
+                    _options_check(alignSize==_kNULL_SIZE,"-as-?")
+                    const char* pnum=op+4;
+                    _options_check(kmg_to_size(pnum,strlen(pnum),&alignSize),"-as-?");
+                    const size_t _kMaxAlignSize=(1<<20);
+                    _options_check((1<=alignSize)&&(alignSize<=_kMaxAlignSize),"-as-?");
+                }else{
+                    _options_check(hpatch_FALSE,"-as?");
+                }
+            } break;
             default: {
                 _options_check(hpatch_FALSE,"-?");
             } break;
@@ -97,6 +128,10 @@ int main(int argc, const char * argv[]) {
     }
     if (isNotCompressEmptyFile==_kNULL_VALUE)
         isNotCompressEmptyFile=hpatch_TRUE;
+    if (compressLevel==_kNULL_SIZE)
+        compressLevel=kDefaultZlibCompressLevel;
+    if (alignSize==_kNULL_SIZE)
+        alignSize=kDefaultZipAlignSize;
     if (isOutputVersion==_kNULL_VALUE)
         isOutputVersion=hpatch_FALSE;
     if (isOutputVersion){
@@ -110,8 +145,7 @@ int main(int argc, const char * argv[]) {
     const char* dstApk=arg_values[1];
     printf("src: \"%s\"\nout: \"%s\"\n",srcApk,dstApk);
     double time0=clock_s();
-    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize,kDefaultZlibCompressLevel,
-                       (bool)isNotCompressEmptyFile)){
+    if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,(bool)isNotCompressEmptyFile)){
         printf("\nrun ApkNormalized ERROR!\n");
         return 1;
     }
