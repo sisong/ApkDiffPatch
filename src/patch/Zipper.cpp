@@ -331,7 +331,7 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch,Z
         
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         if ((fileTag&(1<<3))!=0){//have descriptor?
-            writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉Data descriptor标识;
+            writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉data descriptor标识;
             uint32_t crc=UnZipper_file_crc32(self,i);
             uint32_t compressedSize=UnZipper_file_compressedSize(self,i);
             TByte buf[16];
@@ -876,6 +876,14 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     const TByte* headBuf=fileHeaderBuf(srcZip,srcFileIndex);
     bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
     uint32_t compressedSize=self->_fileCompressedSizes[fileIndex];
+    if (self->_isUpdateIsCompress){
+        self->_isUpdateIsCompress=false;
+        if (isCompressed!=self->_newIsCompress){
+            isCompressed=self->_newIsCompress;
+            if (!self->_newIsCompress)
+                compressedSize=UnZipper_file_uncompressedSize(srcZip,srcFileIndex);
+        }
+    }
     uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
     uint16_t extraFieldLen=readUInt16(headBuf+30);
     uint16_t extraFieldLen_for_align=extraFieldLen;
@@ -903,8 +911,10 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     }
     check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
     if (isFullInfo)
-        check(_write(self,headBuf+4,2));//压缩版本;
-    check(_write(self,headBuf+6,16-6));//解压缩版本--文件最后修改日期;//其中 标志 中已经去掉了Data descriptor标识;
+        check(_write(self,headBuf+4,2));//创建时版本;
+    check(_write(self,headBuf+6,4));//解开时需要的版本+标志;//其中 标志 中已经去掉了data descriptor标识;
+    check(_writeUInt16(self,isCompressed?Z_DEFLATED:0));//压缩方法;
+    check(_write(self,headBuf+12,4));//文件的最后修改时间+文件最后修改日期;
     if (self->_isUpdateCrc32){
         self->_isUpdateCrc32=false;
         check(_writeUInt32(self,self->_newCrc32));//更新CRC-32校验;
@@ -991,6 +1001,12 @@ hpatch_BOOL Zipper_file_append_stream::_append_part_output(const hpatch_TStreamO
     return _write(append_state->self,part_data,partSize);
 }
 
+
+inline static bool _zipper_curFile_isCompressed(const Zipper* self,UnZipper* srcZip,int srcFileIndex){
+    return self->_isUpdateIsCompress ? self->_newIsCompress :
+                            UnZipper_file_isCompressed(srcZip,srcFileIndex);
+}
+
 bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                               bool appendDataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize){
     return Zipper_file_append_beginWith(self,srcZip,srcFileIndex,appendDataIsCompressed,dataUncompressedSize,
@@ -999,12 +1015,12 @@ bool Zipper_file_append_begin(Zipper* self,UnZipper* srcZip,int srcFileIndex,
 bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                                   bool appendDataIsCompressed,size_t dataUncompressedSize,size_t dataCompressedSize,
                                   int curFileCompressLevel,int curFileCompressMemLevel){
-    const bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    if (isCompressed&&(!appendDataIsCompressed))
+    const bool dstFileIsCompressed=_zipper_curFile_isCompressed(self,srcZip,srcFileIndex);
+    if (dstFileIsCompressed&&(!appendDataIsCompressed))
         checkCompressSet(curFileCompressLevel,curFileCompressMemLevel);
-    if ((!isCompressed)&&(appendDataIsCompressed)){
-        assert(false);  //now need input decompressed data;
-        return false;       // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
+    if ((!dstFileIsCompressed)&&(appendDataIsCompressed)){
+        assert(false);//now need input decompressed data;
+        return false; // for example: UnZipper_fileData_decompressTo(Zipper_file_append_part_as_stream());
     }
     if (0==dataCompressedSize){
         check((!appendDataIsCompressed)||(dataUncompressedSize==0));
@@ -1020,7 +1036,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     int curFileIndex=self->_fileEntryCount;
     check(curFileIndex < self->_fileEntryMaxCount);
     self->_fileEntryCount=curFileIndex+1;
-    self->_fileCompressedSizes[curFileIndex]=(isCompressed)?(uint32_t)dataCompressedSize: //maybe temp value
+    self->_fileCompressedSizes[curFileIndex]=dstFileIsCompressed?(uint32_t)dataCompressedSize: //maybe temp value
                                             (uint32_t)dataUncompressedSize; //finally value
     check(_write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,false));//out file info
     
@@ -1033,7 +1049,7 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     append_state->write=Zipper_file_append_stream::_append_part_input;
     assert(append_state->compressHandle==0);
     assert(append_state->threadWork==0);
-    if (isCompressed&&(!appendDataIsCompressed)){//compress data
+    if (dstFileIsCompressed&&(!appendDataIsCompressed)){//compress data
 #if (_IS_USED_MULTITHREAD)
         if (isUsedMT(self)&&(dataCompressedSize>0)){
             self->_threadWorks->waitCanFastDispatchWork();
@@ -1099,6 +1115,10 @@ bool Zipper_file_append_end(Zipper* self){
     
     bool result=true;
     if (append_state->compressHandle!=0){
+        if ((append_state->inputPos==0)&&(append_state->outputPos==0)){
+            Byte emptyBuf=0; //compress empty file
+            check(append_state->write(append_state,0,&emptyBuf,&emptyBuf));
+        }
         check_clear(_zlib_compress_close_by(compressPlugin,append_state->compressHandle));
     }
     
@@ -1166,6 +1186,7 @@ bool Zipper_fileHeader_append(Zipper* self,UnZipper* srcZip,int srcFileIndex){
 bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(self->_fileEntryCount==self->_fileHeaderCount);
     check(!self->_isUpdateCrc32);
+    check(!self->_isUpdateIsCompress);
     const TByte* endBuf=srcZip->_endCentralDirectory;
     uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
     
@@ -1198,4 +1219,16 @@ bool Zipper_file_append_set_new_crc32(Zipper* self,uint32_t newCrc32){
 
 bool Zipper_fileHeader_append_set_new_crc32(Zipper* self,uint32_t newCrc32){
     return Zipper_file_append_set_new_crc32(self,newCrc32);
+}
+
+
+bool Zipper_file_append_set_new_isCompress(Zipper* self,bool newIsCompress){
+    check(!self->_isUpdateIsCompress);
+    self->_isUpdateIsCompress=true;
+    self->_newIsCompress=newIsCompress;
+    return true;
+}
+
+bool Zipper_fileHeader_append_set_new_isCompress(Zipper* self,bool newIsCompress){
+    return Zipper_file_append_set_new_isCompress(self,newIsCompress);
 }

@@ -33,7 +33,7 @@
 #include "../HDiffPatch/_clock_for_demo.h"
 
 static void printUsage(){
-    printf("diff usage: ZipDiff oldZipFile newZipFile outDiffFileName\n"
+    printf("diff usage: ZipDiff oldZipFile newZipFile outDiffFileName [-v]\n"
            "test usage: ZipDiff -t oldZipFile newZipFile testDiffFileName\n"
            "options:\n"
            "  input oldZipFile & newZipFile file can *.zip *.jar *.apk file type;\n"

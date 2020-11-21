@@ -74,7 +74,13 @@ static void getFiles(const UnZipper* zip,std::vector<TFileValue>& out_files){
     }
 }
 
-bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel){
+inline static bool isCompressedEmptyFile(const UnZipper* unzipper,int fileIndex) {
+    return (0==UnZipper_file_uncompressedSize(unzipper,fileIndex))
+            &&UnZipper_file_isCompressed(unzipper,fileIndex);
+}
+
+bool ZipNormalized(const char* srcApk,const char* dstApk,
+                   int ZipAlignSize,int compressLevel,bool isNotCompressEmptyFile){
     bool result=true;
     bool _isInClear=false;
     int  fileCount=0;
@@ -110,6 +116,14 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
         printf("\"%s\"\n",fileName.c_str());
+        if (isCompressedEmptyFile(&unzipper,fileIndex)){
+            if (isNotCompressEmptyFile){
+                check(Zipper_file_append_set_new_isCompress(&zipper,false));
+                printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed! compatible with old version ZipPatch.\n",fileName.c_str());
+            }else{
+                printf("WARNING: \"%s\" is a compressed empty file, can't patch by old ZipPatch(version<=v1.3.4)!)\n",fileName.c_str());
+            }
+        }
         bool isAlwaysReCompress=true;
         check(Zipper_file_append_copy(&zipper,&unzipper,fileIndex,isAlwaysReCompress));
     }
@@ -118,6 +132,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     //no run: check(Zipper_copyExtra_before_fileHeader(&zipper,&unzipper));
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
+        if (isNotCompressEmptyFile&&isCompressedEmptyFile(&unzipper,fileIndex))
+            check(Zipper_fileHeader_append_set_new_isCompress(&zipper,false));
         check(Zipper_fileHeader_append(&zipper,&unzipper,fileIndex));
     }
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));

@@ -37,15 +37,20 @@
 #include "diff/DiffData.h"
 
 static void printUsage(){
-    printf("usage: ApkNormalized srcApk out_newApk [-v]\n"
+    printf("usage: ApkNormalized srcApk out_newApk [-nce-isNotCompressEmptyFile] [-v]\n"
            "options:\n"
            "  input srcApk file can *.zip *.jar *.apk file type;\n"
-           "  ApkNormalized normalized zip file: recompress all file data, \n"
-           "    align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
-           "    remove all data descriptor, reserve & normalized Extra field and Comment,\n"
-           "    compatible with jar sign(apk v1 sign), etc...\n"
-           "  if apk file use apk v2 sign,must re sign newApk:=AndroidSDK#apksigner(out_newApk)\n"
-           "    after ApkNormalized;\n"
+           "    ApkNormalized normalized zip file: \n"
+           "      recompress all file data, \n"
+           "      align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
+           "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
+           "      compatible with jar sign(apk v1 sign), etc...\n"
+           "    if apk file used apk v2 sign, must re sign apk file after ApkNormalized;\n"
+           "      release newApk:=AndroidSDK#apksigner(out_newApk)\n"
+           "  -nce-isNotCompressEmptyFile\n"
+           "    if found compressed empty file in the zip, need change it to not compressed?\n"
+           "      -nce-1        DEFAULT, not compress empty file;\n"
+           "      -nce-0        keep the original compression setting for empty file.\n"
            "  -v  output Version info. \n"
            );
 }
@@ -56,6 +61,7 @@ static void printUsage(){
 #define _kNULL_VALUE (-1)
 
 int main(int argc, const char * argv[]) {
+    hpatch_BOOL isNotCompressEmptyFile=_kNULL_VALUE;
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
 #define kMax_arg_values_size 2
     const char * arg_values[kMax_arg_values_size]={0};
@@ -76,11 +82,21 @@ int main(int argc, const char * argv[]) {
                 _options_check((isOutputVersion==_kNULL_VALUE)&&(op[2]=='\0'),"-v");
                 isOutputVersion=hpatch_TRUE;
             } break;
+            case 'n':{
+                if ((op[2]=='c')&&(op[3]=='e')&&(op[4]=='-')&&((op[5]=='0')||(op[5]=='1'))){
+                    _options_check(isNotCompressEmptyFile==_kNULL_VALUE,"-nce-?");
+                    isNotCompressEmptyFile=(hpatch_BOOL)(op[5]=='1');
+                }else{
+                    _options_check(hpatch_FALSE,"-nce?");
+                }
+            } break;
             default: {
                 _options_check(hpatch_FALSE,"-?");
             } break;
         }//swich
     }
+    if (isNotCompressEmptyFile==_kNULL_VALUE)
+        isNotCompressEmptyFile=hpatch_TRUE;
     if (isOutputVersion==_kNULL_VALUE)
         isOutputVersion=hpatch_FALSE;
     if (isOutputVersion){
@@ -94,7 +110,8 @@ int main(int argc, const char * argv[]) {
     const char* dstApk=arg_values[1];
     printf("src: \"%s\"\nout: \"%s\"\n",srcApk,dstApk);
     double time0=clock_s();
-    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize,kDefaultZlibCompressLevel)){
+    if (!ZipNormalized(srcApk,dstApk,kDefaultZipAlignSize,kDefaultZlibCompressLevel,
+                       (bool)isNotCompressEmptyFile)){
         printf("\nrun ApkNormalized ERROR!\n");
         return 1;
     }
