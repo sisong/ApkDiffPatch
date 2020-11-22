@@ -40,22 +40,6 @@
 #include "DiffData.h"
 #include "../patch/patch_types.h"
 
-#define _CompressPlugin_lzma //default use lzma compress diffData
-#ifdef _CompressPlugin_lzma
-#include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
-#include "../../lzma/C/LzmaEnc.h"
-#endif
-#include "../../HDiffPatch/compress_plugin_demo.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
-
-//* for close some compiler warning :(
-#ifdef _CompressPlugin_lzma
-const hdiff_TCompress*  __not_used_for_compiler__null0 =&lzmaCompressPlugin.base;
-hpatch_TDecompress*     __not_used_for_compiler__null1 =&lzmaDecompressPlugin;
-#endif
-const hdiff_TCompress*  __not_used_for_compiler__null2 =&zlibCompressPlugin.base;
-hpatch_TDecompress*     __not_used_for_compiler__null3 =&zlibDecompressPlugin;
-//*/
 
 static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
                    const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
@@ -67,7 +51,8 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             bool* out_isNewZipApkV2SignNoError){
+             const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
+             int diffMatchScore,bool* out_isNewZipApkV2SignNoError){
     hpatch_TFileStreamInput    oldZipStream;
     hpatch_TFileStreamInput    newZipStream;
     hpatch_TFileStreamOutput   outDiffStream;
@@ -81,7 +66,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(hpatch_TFileStreamInput_open(&newZipStream,newZipPath));
     check(hpatch_TFileStreamOutput_open(&outDiffStream,outDiffFileName,(hpatch_StreamPos_t)(-1)));
     hpatch_TFileStreamOutput_setRandomOut(&outDiffStream,hpatch_TRUE);
-    result=ZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&outDiffStream.base,out_isNewZipApkV2SignNoError);
+    result=ZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&outDiffStream.base,
+                             compressPlugin,decompressPlugin,diffMatchScore,out_isNewZipApkV2SignNoError);
 clear:
     _isInClear=true;
     check(hpatch_TFileStreamOutput_close(&outDiffStream));
@@ -117,7 +103,9 @@ clear:
 }
 
 bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
-                       const hpatch_TStreamOutput* outDiffStream,bool* out_isNewZipApkV2SignNoError){
+                       const hpatch_TStreamOutput* outDiffStream,
+                       const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
+                       int diffMatchScore,bool* out_isNewZipApkV2SignNoError){
     UnZipper            oldZip;
     UnZipper            newZip;
     std::vector<TByte>  newData;
@@ -141,19 +129,9 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     int             newZip_otherCompressMemLevel=0;
     bool            newCompressedDataIsNormalized=false;
     
-    const int           myBestMatchScore=3;
-#ifdef _CompressPlugin_lzma
-    TCompressPlugin_lzma myLzmaCompressPlugin=lzmaCompressPlugin;
-    myLzmaCompressPlugin.compress_level=9;
-    myLzmaCompressPlugin.dict_size=(1<<20)*4;
-    myLzmaCompressPlugin.thread_num=2; //not Windows need use: https://github.com/sisong/lzma/tree/pthread
-    const hdiff_TCompress*  compressPlugin=&myLzmaCompressPlugin.base;
-    hpatch_TDecompress*     decompressPlugin=&lzmaDecompressPlugin;
-#else
-    const hdiff_TCompress*  compressPlugin=&zlibCompressPlugin.base;
-    hpatch_TDecompress*     decompressPlugin=&zlibDecompressPlugin;
-#endif
-    
+    check(compressPlugin!=0);
+    check(decompressPlugin!=0);
+
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
     check(UnZipper_openStream(&oldZip,oldZipStream));
@@ -218,7 +196,7 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
         check(readZipStreamData(&newZip,newRefList,newRefOtherCompressedList,newData));
     }
     check(readZipStreamData(&oldZip,oldRefList,std::vector<uint32_t>(),oldData));
-    check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,myBestMatchScore));
+    check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,diffMatchScore));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     

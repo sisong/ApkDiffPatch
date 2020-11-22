@@ -28,6 +28,7 @@
 #ifndef ZipDiff_Differ_h
 #define ZipDiff_Differ_h
 #include "../../HDiffPatch/file_for_patch.h"
+#include "../../HDiffPatch/libHDiffPatch/HDiff/diff_types.h"
 
 
 typedef enum TCheckZipDiffResult {
@@ -40,9 +41,12 @@ typedef enum TCheckZipDiffResult {
 } TCheckZipDiffResult;
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
-             bool* out_isNewZipApkV2SignNoError=0);
+             const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
+             int diffMatchScore,bool* out_isNewZipApkV2SignNoError=0);
 bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
-                       const hpatch_TStreamOutput* outDiffStream,bool* out_isNewZipApkV2SignNoError=0);
+                       const hpatch_TStreamOutput* outDiffStream,
+                       const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
+                       int diffMatchScore,bool* out_isNewZipApkV2SignNoError=0);
 
 TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName);
 TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,

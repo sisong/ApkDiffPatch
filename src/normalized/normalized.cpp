@@ -119,9 +119,9 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
         if (isCompressedEmptyFile(&unzipper,fileIndex)){
             if (isNotCompressEmptyFile){
                 check(Zipper_file_append_set_new_isCompress(&zipper,false));
-                printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed! compatible with old version ZipPatch.\n",fileName.c_str());
+                printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed!\n",fileName.c_str());
             }else{
-                printf("WARNING: \"%s\" is a compressed empty file, can't patch by old ZipPatch(version<=v1.3.4)!)\n",fileName.c_str());
+                printf("WARNING: \"%s\" is a compressed empty file, can't patch by old ZipPatch(version<v1.3.5)!)\n",fileName.c_str());
             }
         }
         bool isAlwaysReCompress=true;

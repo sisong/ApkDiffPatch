@@ -42,6 +42,7 @@
 #define  kDefaultZlibCompressLevel      6 // 1--9, for patch speed;
 #define  kDefaultZipAlignSize           8 // 4,8,... for app speed;
 #define  kDefaultZlibCompressMemLevel   DEF_MEM_LEVEL
+#define  kDefaultDiffMatchScore         3 // for hdiff
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath,bool* out_isOldHaveApkV2Sign=0);
