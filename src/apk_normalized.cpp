@@ -147,7 +147,7 @@ int main(int argc, const char * argv[]) {
     const char* dstApk=arg_values[1];
     printf("src: \"%s\"\nout: \"%s\"\n",srcApk,dstApk);
     double time0=clock_s();
-    if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,(bool)isNotCompressEmptyFile)){
+    if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,isNotCompressEmptyFile?true:false)){
         printf("\nrun ApkNormalized ERROR!\n");
         return 1;
     }

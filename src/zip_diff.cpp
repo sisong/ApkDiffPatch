@@ -60,8 +60,8 @@ static void printUsage(){
 
 #define _CompressPlugin_lzma //default use lzma compress diffData
 #ifdef _CompressPlugin_lzma
-#include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
-#include "../../lzma/C/LzmaEnc.h"
+#include "../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
+#include "../lzma/C/LzmaEnc.h"
 #endif
 #include "patch/patch_types.h"
 #include "../../HDiffPatch/compress_plugin_demo.h"
