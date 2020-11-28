@@ -64,8 +64,8 @@ static void printUsage(){
 #include "../lzma/C/LzmaEnc.h"
 #endif
 #include "patch/patch_types.h"
-#include "../../HDiffPatch/compress_plugin_demo.h"
-#include "../../HDiffPatch/decompress_plugin_demo.h"
+#include "../HDiffPatch/compress_plugin_demo.h"
+#include "../HDiffPatch/decompress_plugin_demo.h"
 
 #define  kDefaultLzmaDictSize         (1<<22)
 
