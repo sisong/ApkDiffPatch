@@ -60,8 +60,8 @@ static hpatch_BOOL _NewStream_write(const hpatch_TStreamOutput* stream,
     hpatch_StreamPos_t writeToPos=_writeToPos;
     NewStream* self=(NewStream*)stream->streamImport;
     check(!self->isFinish);
-    assert(dataSize>0);
-    assert(writeToPos<self->_curWriteToPosEnd);
+    assert(dataSize>=0);
+    assert(writeToPos<=self->_curWriteToPosEnd);
     if (writeToPos+dataSize>self->_curWriteToPosEnd){
         size_t leftLen=(size_t)(self->_curWriteToPosEnd-writeToPos);
         check(_NewStream_write(stream,writeToPos,data,data+leftLen));

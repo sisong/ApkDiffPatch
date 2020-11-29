@@ -34,6 +34,8 @@
 #include "../HDiffPatch/_clock_for_demo.h"
 #include "../HDiffPatch/_atosize.h"
 
+#define _CompressPlugin_lzma //default use lzma
+
 static void printUsage(){
     printf("diff usage: ZipDiff oldZipFile newZipFile outDiffFileName [-c-...] [-m-matchScore] [-v]\n"
            "test usage: ZipDiff -t oldZipFile newZipFile testDiffFileName\n"
@@ -58,7 +60,6 @@ static void printUsage(){
            "  -v  output Version info. \n");
 }
 
-#define _CompressPlugin_lzma //default use lzma compress diffData
 #ifdef _CompressPlugin_lzma
 #include "../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
 #include "../lzma/C/LzmaEnc.h"
