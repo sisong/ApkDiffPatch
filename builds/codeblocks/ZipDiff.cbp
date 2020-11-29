@@ -45,9 +45,11 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add option="-D_7ZIP_ST" />
-			<Add option="-D_IS_USED_MULTITHREAD=0" />
+			<Add option="-D_IS_USED_PTHREAD=1" />
 		</Compiler>
+		<Linker>
+			<Add library="pthread" />
+		</Linker>
 		<Unit filename="../../HDiffPatch/file_for_patch.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -69,13 +71,21 @@
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatch/patch.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../../HDiffPatch/libParallel/parallel_channel.cpp" />
+		<Unit filename="../../HDiffPatch/libParallel/parallel_import.cpp" />
 		<Unit filename="../../lzma/C/LzFind.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/LzFindMt.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../lzma/C/LzmaDec.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../lzma/C/LzmaEnc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/ThreadsP.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../src/diff/DiffData.cpp" />

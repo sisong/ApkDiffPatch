@@ -29,6 +29,7 @@
 #define ZipNormalized_normalized_h
 
 //规范化zip包;
-bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel);
+bool ZipNormalized(const char* srcApk,const char* dstApk,
+                   int ZipAlignSize,int compressLevel,bool isNotCompressEmptyFile=true);
 
 #endif //ZipNormalized_normalized_h
