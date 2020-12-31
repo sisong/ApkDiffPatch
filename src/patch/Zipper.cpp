@@ -786,7 +786,7 @@ void Zipper_by_multi_thread(Zipper* self,int threadNum){
     }
     if (isUsedMT(self)){
         try {
-            thread_parallel(self->_threadNum-1,TZipThreadWorks::run,self->_threadWorks,false);
+            thread_parallel(self->_threadNum-1,TZipThreadWorks::run,self->_threadWorks,false,0);
         } catch (...) {
             self->_threadNum=1; //close muti-thread
             self->_threadWorks->finishDispatchWork(); //for safe exit thread

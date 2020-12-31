@@ -74,12 +74,6 @@ static void printUsage(){
 #define _options_check(value,errorInfo){ \
     if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return ZIPDIFF_OPTIONS_ERROR; } }
 
-
-hpatch_inline static const char* findUntilEnd(const char* str,char c){
-    const char* result=strchr(str,c);
-    return (result!=0)?result:(str+strlen(str));
-}
-
 static bool _tryGetCompressSet(const char** isMatchedType,const char* ptype,const char* ptypeEnd,
                                const char* cmpType,const char* cmpType2=0,
                                size_t* compressLevel=0,size_t levelMin=0,size_t levelMax=0,size_t levelDefault=0,

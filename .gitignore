@@ -10,3 +10,7 @@ builds/codeblocks/obj/
 builds/android_ndk_jni_mk/obj
 builds/android_ndk_jni_mk/libs
 xcshareddata
+*.opensdf
+*.sdf
+*.ipch
+xcuserdata/

@@ -56,10 +56,8 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     NewStream           newStream;
     hpatch_compressedDiffInfo   diffInfo;
     TByte*                      ref_cache=0;
-    hpatch_TFileStreamInput     input_refFile;
-    hpatch_TFileStreamOutput    output_refFile;
-    hpatch_TStreamInput         input_ref_cache;
-    hpatch_TStreamOutput        output_ref_cache;
+    hpatch_TFileStreamOutput    io_refFile;
+    hpatch_TStreamOutput        io_ref_cache;
     hpatch_TStreamInput*        input_ref=0;
     hpatch_TStreamOutput*       output_ref=0;
     TPatchResult    result=PATCH_SUCCESS;
@@ -74,8 +72,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     ZipDiffData_init(&zipDiffData);
     OldStream_init(&oldStream);
     NewStream_init(&newStream);
-    hpatch_TFileStreamInput_init(&input_refFile);
-    hpatch_TFileStreamOutput_init(&output_refFile);
+    hpatch_TFileStreamOutput_init(&io_refFile);
     
 #if (_IS_NEED_VIRTUAL_ZIP)
     VirtualZip_in*  virtual_in=0;
@@ -117,24 +114,20 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     
     isUsedTempFile=(decompressSumSize > maxUncompressMemory)&&(tempUncompressFileName!=0);
     if (isUsedTempFile){
-        check(hpatch_TFileStreamOutput_open(&output_refFile,tempUncompressFileName,decompressSumSize),
+        check(hpatch_TFileStreamOutput_open(&io_refFile,tempUncompressFileName,decompressSumSize),
               PATCH_OPENWRITE_ERROR);
-        check(hpatch_TFileStreamInput_open(&input_refFile,tempUncompressFileName),PATCH_OPENREAD_ERROR);
-        input_refFile.base.streamSize=decompressSumSize;
-        output_ref=&output_refFile.base;
-        input_ref=&input_refFile.base;
+        output_ref=&io_refFile.base;
+        input_ref=(hpatch_TStreamInput*)&io_refFile.base;
     }else{
         ref_cache=(TByte*)malloc(decompressSumSize+1);//+1 not null
         check(ref_cache!=0, PATCH_MEM_ERROR);
-        mem_as_hStreamOutput(&output_ref_cache,ref_cache,ref_cache+decompressSumSize);
-        mem_as_hStreamInput(&input_ref_cache,ref_cache,ref_cache+decompressSumSize);
-        output_ref=&output_ref_cache;
-        input_ref=&input_ref_cache;
+        mem_as_hStreamOutput(&io_ref_cache,ref_cache,ref_cache+decompressSumSize);
+        output_ref=&io_ref_cache;
+        input_ref=(hpatch_TStreamInput*)&io_ref_cache;
     }
     
     check(OldStream_getDecompressData(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
                                       output_ref _VIRTUAL_IN(virtual_in)),PATCH_OLDDECOMPRESS_ERROR);
-    check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
     check(OldStream_open(&oldStream,&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount,
                          0,0,input_ref _VIRTUAL_IN(virtual_in)), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
@@ -167,8 +160,7 @@ clear:
 #endif
     check(UnZipper_close(&oldZip),PATCH_CLOSEFILE_ERROR);
     ZipDiffData_close(&zipDiffData);
-    check(hpatch_TFileStreamOutput_close(&output_refFile),PATCH_CLOSEFILE_ERROR);
-    check(hpatch_TFileStreamInput_close(&input_refFile),PATCH_CLOSEFILE_ERROR);
+    check(hpatch_TFileStreamOutput_close(&io_refFile),PATCH_CLOSEFILE_ERROR);
     if (isUsedTempFile) hpatch_removeFile(tempUncompressFileName);
     if (temp_cache) free(temp_cache);
     if (ref_cache) free(ref_cache);
