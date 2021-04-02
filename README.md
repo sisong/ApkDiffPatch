@@ -21,6 +21,7 @@ You can use this library (and Android NDK) to delta update your Apk.
 [Jar sign]: https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
 [BsDiff]: http://www.daemonology.net/bsdiff/
 [archive-patcher]: https://github.com/google/archive-patcher
+[sfpatcher]: https://github.com/sisong/sfpatcher
 
 ---
 ## Releases/Binaries
@@ -41,6 +42,10 @@ if your need newZip(patch result) file byte by byte equal, `Released newZip` := 
 if your apk(or jar) file used [Jar sign](Apk v1 sign), is same as zip file;   
 if your apk used [Apk v2 sign](or [Apk v3 sign]), `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(AndroidSDK#apksigner(newZip)))  before ZipDiff;   
    
+* NOTE:   
+ApkDiffPath can't be used in the Android app store, because it requires re-signing apk;      
+[sfpatcher] like [archive-patcher], is designed for Android app store, but patch is much faster than archive-patcher.
+
 ---
 ## Why [ApkDiffPatch]
  Why need [ApkDiffPatch] or Google Play's [archive-patcher] after having [BsDiff] or [HDiffPatch]?
