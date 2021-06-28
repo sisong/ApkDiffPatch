@@ -1,0 +1,1 @@
+ndk-build NDK_PROJECT_PATH=.  APP_BUILD_SCRIPT=Android_DEBUG.mk  NDK_APPLICATION_MK=Application_DEBUG.mk
