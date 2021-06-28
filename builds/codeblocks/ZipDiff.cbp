@@ -50,6 +50,7 @@
 		<Linker>
 			<Add library="pthread" />
 		</Linker>
+		<Unit filename="../../HDiffPatch/compress_parallel.cpp" />
 		<Unit filename="../../HDiffPatch/file_for_patch.c">
 			<Option compilerVar="CC" />
 		</Unit>

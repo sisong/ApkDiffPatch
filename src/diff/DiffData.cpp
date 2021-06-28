@@ -251,6 +251,8 @@ bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                 if (zipFileData_isSame(newZip,i,oldZip,oldIndex)){
                     if (UnZipper_file_isReCompressedByApkV2Sign(oldZip,oldIndex))
                         continue;
+                    if ((!UnZipper_file_isCompressed(oldZip,oldIndex))&&
+                        UnZipper_file_isCompressed(newZip,i)) continue;
                     findSame=true;
                     oldSameIndex=oldIndex;
                     if (zipFile_name(newZip,i)==zipFile_name(oldZip,oldIndex)) break;

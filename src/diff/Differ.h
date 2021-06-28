@@ -48,9 +48,9 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
                        const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
                        int diffMatchScore,bool* out_isNewZipApkV2SignNoError=0);
 
-TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName);
+TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName,int threadNum);
 TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,
                                            const hpatch_TStreamInput* newZipStream,
-                                           const hpatch_TStreamInput* diffStream);
+                                           const hpatch_TStreamInput* diffStream,int threadNum);
 
 #endif //ZipDiff_Differ_h

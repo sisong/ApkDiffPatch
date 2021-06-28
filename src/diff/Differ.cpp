@@ -80,7 +80,7 @@ clear:
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=CHECK_OTHER_ERROR; if (!_isInClear){ goto clear; } } }
 
-TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName){
+TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName,int threadNum){
     hpatch_TFileStreamInput    oldZipStream;
     hpatch_TFileStreamInput    newZipStream;
     hpatch_TFileStreamInput    diffStream;
@@ -93,7 +93,7 @@ TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,c
     checkC(hpatch_TFileStreamInput_open(&oldZipStream,oldZipPath));
     checkC(hpatch_TFileStreamInput_open(&newZipStream,newZipPath));
     checkC(hpatch_TFileStreamInput_open(&diffStream,diffFileName));
-    result=checkZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&diffStream.base);
+    result=checkZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&diffStream.base,threadNum);
 clear:
     _isInClear=true;
     checkC(hpatch_TFileStreamInput_close(&diffStream));
@@ -326,11 +326,11 @@ static bool getIsEqual(const hpatch_TStreamInput* x,const hpatch_TStreamInput* y
 
 TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,
                                            const hpatch_TStreamInput* newZipStream,
-                                           const hpatch_TStreamInput* diffStream){
+                                           const hpatch_TStreamInput* diffStream,int threadNum){
     assert((size_t)newZipStream->streamSize==newZipStream->streamSize);
     std::vector<TByte>      temp_newZip;
     TVectorStreamOutput     temp_outNewZipStream(temp_newZip);
-    if (PATCH_SUCCESS!=ZipPatchWithStream(oldZipStream,diffStream,&temp_outNewZipStream,0,0))
+    if (PATCH_SUCCESS!=ZipPatchWithStream(oldZipStream,diffStream,&temp_outNewZipStream,0,0,threadNum))
         return CHECK_ZIPPATCH_ERROR;
     //else
         
