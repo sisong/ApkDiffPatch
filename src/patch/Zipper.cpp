@@ -1100,8 +1100,11 @@ static bool _dispose_filishedThreadWork(Zipper* self,bool isWait){
     while (true) {
         TZipThreadWork* work=self->_threadWorks->haveFinishWork(isWait);
         if (work){
-            check(_writeBack(self,work->writePos,work->code,work->codeSize));
+            bool ret=(work->codeSize>0);
+            if (ret) check(_writeBack(self,work->writePos,work->code,work->codeSize));
             freeThreadWork(work);
+            if (!ret) 
+                return false;
         }else{
             return true;
         }

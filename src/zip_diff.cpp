@@ -56,6 +56,7 @@ static void printUsage(){
 #endif
            "  -m-matchScore\n"
            "      matchScore>=0, DEFAULT -m-3.\n"
+           "  -d  Diff only, do't run patch check, DEFAULT run patch check.\n"
            "  -t  Test only, run patch check, ZipPatch(oldZipFile,testDiffFile)==newZipFile ? \n"
            "  -v  output Version info. \n");
 }
@@ -152,6 +153,7 @@ int main(int argc, const char * argv[]) {
     const char* oldZipPath     =0;
     const char* newZipPath     =0;
     const char* outDiffFileName=0;
+    hpatch_BOOL isDiff=_kNULL_VALUE;
     hpatch_BOOL isPatchCheck   = _kNULL_VALUE;
     hpatch_BOOL isOutputVersion= _kNULL_VALUE;
     size_t      diffMatchScore = _kNULL_SIZE;
@@ -199,6 +201,10 @@ int main(int argc, const char * argv[]) {
                 _options_check((isPatchCheck==_kNULL_VALUE)&&(op[2]=='\0'),"-t");
                 isPatchCheck=hpatch_TRUE; //test diffFile
             } break;
+            case 'd':{
+                _options_check((isDiff==_kNULL_VALUE)&&(op[2]=='\0'),"-d");
+                isDiff=hpatch_TRUE; //diff only
+            } break;
             default: {
                 _options_check(hpatch_FALSE,"-?");
             } break;
@@ -229,7 +235,6 @@ int main(int argc, const char * argv[]) {
             return 0; //ok
     }
     
-    hpatch_BOOL isDiff=_kNULL_VALUE;
     if ((isDiff==hpatch_TRUE)&&(isPatchCheck==_kNULL_VALUE))
         isPatchCheck=hpatch_FALSE;
     if ((isDiff==_kNULL_VALUE)&&(isPatchCheck==hpatch_TRUE))
@@ -262,32 +267,34 @@ int main(int argc, const char * argv[]) {
     
     int exitCode=0;
     if (isPatchCheck){
-        double time2=clock_s();
         printf("\nrun ZipPatch:\n");
-        TCheckZipDiffResult rt=checkZipDiff(oldZipPath,newZipPath,outDiffFileName);
-        exitCode=((rt==CHECK_BYTE_BY_BYTE_EQUAL_TRUE)||(rt==CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE))?0:1;
-        switch (rt) {
-            case CHECK_BYTE_BY_BYTE_EQUAL_TRUE:{
-                printf("  check ZipPatch result Byte By Byte Equal ok!\n");
-            } break;
-            case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE:{
-                printf("  check ZipPatch result Same Like ok! (but not Byte By Byte Equal)\n");
-            } break;
-            case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_ERROR:{
-                printf("  check ZipPatch result Byte By Byte Equal ERROR!\n");
-                printf("  (did newZip=AndroidSDK#apksigner(ApkNormalized(AndroidSDK#apksigner(newZip))) before running ZipDiff?)\n");
-            } break;
-            case CHECK_SAME_LIKE_ERROR:{
-                printf("  check ZipPatch result zip data ERROR!\n");
-            } break;
-            case CHECK_ZIPPATCH_ERROR:{
-                printf("  run ZipPatch ERROR!\n");
-            } break;
-            default: { //CHECK_OTHER_ERROR
-                printf("  run check ZipPatch result ERROR!\n");
+        for (int threadNum=1;threadNum<=4;threadNum*=4){
+            double time2=clock_s();
+            TCheckZipDiffResult rt=checkZipDiff(oldZipPath,newZipPath,outDiffFileName,threadNum);
+            exitCode=((rt==CHECK_BYTE_BY_BYTE_EQUAL_TRUE)||(rt==CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE))?0:1;
+            switch (rt) {
+                case CHECK_BYTE_BY_BYTE_EQUAL_TRUE:{
+                    printf("  check ZipPatch result Byte By Byte Equal ok!\n");
+                } break;
+                case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE:{
+                    printf("  check ZipPatch result Same Like ok! (but not Byte By Byte Equal)\n");
+                } break;
+                case CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_ERROR:{
+                    printf("  check ZipPatch result Byte By Byte Equal ERROR!\n");
+                    printf("  (did newZip=AndroidSDK#apksigner(ApkNormalized(AndroidSDK#apksigner(newZip))) before running ZipDiff?)\n");
+                } break;
+                case CHECK_SAME_LIKE_ERROR:{
+                    printf("  check ZipPatch result zip data ERROR!\n");
+                } break;
+                case CHECK_ZIPPATCH_ERROR:{
+                    printf("  run ZipPatch ERROR!\n");
+                } break;
+                default: { //CHECK_OTHER_ERROR
+                    printf("  run check ZipPatch result ERROR!\n");
+                }
             }
+            printf("  patch time: %.3f s (thread==%d)\n",(clock_s()-time2),threadNum);
         }
-        printf("  patch time: %.3f s\n",(clock_s()-time2));
     }
     if (isPatchCheck && isDiff)
         printf("\nall     time: %.3f s\n",(clock_s()-time0));
