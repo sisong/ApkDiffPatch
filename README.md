@@ -35,7 +35,7 @@ release the diffData for update oldZip;
 * **ZipPatch**(oldZip,diffData,out newZip)   
 ok , got the newZip;   
 ZipPatch() requires 4*(decompress stream memory) + `ref old decompress` memory + O(1), also `ref old decompress` can use temp disk file without memory;    
-ZipPatch() support multi-thread parallel compress mode when writing zip file, which requires more and more memory!   
+ZipPatch() support multi-thread parallel compress mode when writing zip file, which requires more and more memory! (NOTE: patch by multi-thread need ApkNormalized zip files)   
 
 * NOTE:   
 if your need newZip(patch result) file byte by byte equal, `Released newZip` := **ApkNormalized**(newZip) before run ZipDiff, AND You should not modify the zlib version (unless it is certified compatible);   
