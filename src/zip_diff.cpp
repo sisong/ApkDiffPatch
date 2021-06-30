@@ -33,6 +33,11 @@
 #include "patch/patch_types.h"
 #include "../HDiffPatch/_clock_for_demo.h"
 #include "../HDiffPatch/_atosize.h"
+#include "../HDiffPatch/libHDiffPatch/HDiff/private_diff/mem_buf.h"
+
+#ifndef _IS_NEED_MAIN
+#   define  _IS_NEED_MAIN 1
+#endif
 
 #define _CompressPlugin_lzma //default use lzma
 
@@ -74,6 +79,25 @@ static void printUsage(){
 #define ZIPDIFF_OPTIONS_ERROR 1
 #define _options_check(value,errorInfo){ \
     if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return ZIPDIFF_OPTIONS_ERROR; } }
+
+int zipdiff_cmd_line(int argc, const char * argv[]);
+
+#if (_IS_NEED_MAIN)
+#   if (_IS_USED_WIN32_UTF8_WAPI)
+int wmain(int argc,wchar_t* argv_w[]){
+    hdiff_private::TAutoMem  _mem(hpatch_kPathMaxSize*4);
+    char** argv_utf8=(char**)_mem.data();
+    if (!_wFileNames_to_utf8((const wchar_t**)argv_w,argc,argv_utf8,_mem.size()))
+        return ZIPDIFF_OPTIONS_ERROR;
+    SetDefaultStringLocale();
+    return zipdiff_cmd_line(argc,(const char**)argv_utf8);
+}
+#   else
+int main(int argc,char* argv[]){
+    return  zipdiff_cmd_line(argc,(const char**)argv);
+}
+#   endif
+#endif
 
 static bool _tryGetCompressSet(const char** isMatchedType,const char* ptype,const char* ptypeEnd,
                                const char* cmpType,const char* cmpType2=0,
@@ -149,7 +173,7 @@ static int _checkSetCompress(hdiff_TCompress** out_compressPlugin,
 #define _kNULL_VALUE    (-1)
 #define _kNULL_SIZE     (~(size_t)0)
 
-int main(int argc, const char * argv[]) {
+int zipdiff_cmd_line(int argc, const char * argv[]) {
     const char* oldZipPath     =0;
     const char* newZipPath     =0;
     const char* outDiffFileName=0;
