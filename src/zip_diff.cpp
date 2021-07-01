@@ -58,11 +58,19 @@ static void printUsage(){
 #ifdef _CompressPlugin_lzma
            "        -c-lzma[-{0..9}[-dictSize]]     DEFAULT level 7\n"
            "            dictSize can like 4096 or 4k or 4m or 128m etc..., DEFAULT 4m\n"
+#   if (_IS_USED_MULTITHREAD)
+           "            support run by 2-thread parallel.\n"
+#   endif
 #endif
            "  -m-matchScore\n"
            "      matchScore>=0, DEFAULT -m-3.\n"
            "  -d  Diff only, do't run patch check, DEFAULT run patch check.\n"
            "  -t  Test only, run patch check, ZipPatch(oldZipFile,testDiffFile)==newZipFile ? \n"
+#if (_IS_USED_MULTITHREAD)
+           "  -p-parallelThreadNumber\n"
+           "      if parallelThreadNumber>1 then open multi-thread Parallel mode;\n"
+           "      DEFAULT -p-2; requires more memory!\n"
+#endif
            "  -v  output Version info. \n");
 }
 
@@ -173,6 +181,11 @@ static int _checkSetCompress(hdiff_TCompress** out_compressPlugin,
 #define _kNULL_VALUE    (-1)
 #define _kNULL_SIZE     (~(size_t)0)
 
+#define _THREAD_NUMBER_NULL     0
+#define _THREAD_NUMBER_MIN      1
+#define _THREAD_NUMBER_DEFUALT  2
+#define _THREAD_NUMBER_MAX      2
+
 int zipdiff_cmd_line(int argc, const char * argv[]) {
     const char* oldZipPath     =0;
     const char* newZipPath     =0;
@@ -181,6 +194,7 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
     hpatch_BOOL isPatchCheck   = _kNULL_VALUE;
     hpatch_BOOL isOutputVersion= _kNULL_VALUE;
     size_t      diffMatchScore = _kNULL_SIZE;
+    size_t      threadNum = _THREAD_NUMBER_NULL;
     hdiff_TCompress*        compressPlugin=0;
     hpatch_TDecompress*     decompressPlugin=0;
 #define kMax_arg_values_size 3
@@ -209,6 +223,14 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
                     _options_check(hpatch_FALSE,"-m?");
                 }
             } break;
+#if (_IS_USED_MULTITHREAD)
+            case 'p':{
+                _options_check((threadNum==_THREAD_NUMBER_NULL)&&(op[2]=='-'),"-p-?");
+                const char* pnum=op+3;
+                _options_check(a_to_size(pnum,strlen(pnum),&threadNum),"-p-?");
+                _options_check(threadNum>=_THREAD_NUMBER_MIN,"-p-?");
+            } break;
+#endif
             case 'c':{
                 _options_check((compressPlugin==0)&&(op[2]=='-'),"-c");
                 const char* ptype=op+3;
@@ -249,6 +271,14 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
         decompressPlugin=&zlibDecompressPlugin;
 #endif
     }
+    if (threadNum==_THREAD_NUMBER_NULL)
+        threadNum=_THREAD_NUMBER_DEFUALT;
+    else if (threadNum>_THREAD_NUMBER_MAX)
+        threadNum=_THREAD_NUMBER_MAX;
+    if (compressPlugin!=0){
+        compressPlugin->setParallelThreadNumber(compressPlugin,(int)threadNum);
+    }
+    
     if (diffMatchScore==_kNULL_SIZE)
         diffMatchScore=kDefaultDiffMatchScore;
     if (isOutputVersion==_kNULL_VALUE)
@@ -293,6 +323,10 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
     if (isPatchCheck){
         printf("\nrun ZipPatch:\n");
         for (int threadNum=1;threadNum<=4;threadNum*=4){
+#if (_IS_USED_MULTITHREAD)
+#else
+            if (threadNum>1) break;
+#endif
             double time2=clock_s();
             TCheckZipDiffResult rt=checkZipDiff(oldZipPath,newZipPath,outDiffFileName,threadNum);
             exitCode=((rt==CHECK_BYTE_BY_BYTE_EQUAL_TRUE)||(rt==CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE))?0:1;
