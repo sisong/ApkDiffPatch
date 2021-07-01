@@ -22,6 +22,7 @@ ZIPPATCH_OBJ := \
     HDiffPatch/libParallel/parallel_import.o \
     HDiffPatch/libParallel/parallel_channel.o \
     lzma/C/LzmaDec.o \
+    lzma/C/Lzma2Dec.o \
     $(ZLIB_OBJ)
 
 APKNORM_OBJ := \
@@ -44,10 +45,13 @@ ZIPDIFF_OBJ := \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/limit_mem_diff/adler_roll.o \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort64.o \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort.o \
+    lzma/C/Lzma2Enc.o \
     lzma/C/LzmaEnc.o \
     lzma/C/LzFind.o \
     lzma/C/LzFindMt.o \
-    lzma/C/ThreadsP.o \
+    lzma/C/MtCoder.o \
+    lzma/C/MtDec.o \
+    lzma/C/Threads.o \
     $(ZIPPATCH_OBJ)
 
 CFLAGS      += -O2 -DNDEBUG -D_IS_USED_PTHREAD=1

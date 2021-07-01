@@ -310,7 +310,6 @@ static bool getIsEqual(const hpatch_TStreamInput* x,const hpatch_TStreamInput* y
             TVectorStreamOutput* self=(TVectorStreamOutput*)stream->streamImport;
             std::vector<TByte>& dst=self->dst;
             size_t writeLen=(size_t)(data_end-data);
-            assert(writeToPos<=dst.size());
             if  (dst.size()==writeToPos){
                 dst.insert(dst.end(),data,data_end);
             }else{

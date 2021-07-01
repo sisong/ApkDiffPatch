@@ -33,8 +33,11 @@
 #include "NewStream.h"
 #include "patch_types.h"
 
-#define _CompressPlugin_lzma //default support lzma
+#define _CompressPlugin_lzma  //default support lzma
 #include "../../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
+#define _CompressPlugin_lzma2 //default support lzma2
+#include "../../lzma/C/Lzma2Dec.h"
+
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
 #define  check(value,error) { \
@@ -83,6 +86,12 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     assert(virtual_out==0);
 #endif
 
+#ifdef _CompressPlugin_lzma2
+    if (decompressPlugin==0){
+        if (ZipDiffData_isCanDecompress(zipDiffStream,&lzma2DecompressPlugin))
+            decompressPlugin=&lzma2DecompressPlugin;
+    }
+#endif
 #ifdef _CompressPlugin_lzma
     if (decompressPlugin==0){
         if (ZipDiffData_isCanDecompress(zipDiffStream,&lzmaDecompressPlugin))

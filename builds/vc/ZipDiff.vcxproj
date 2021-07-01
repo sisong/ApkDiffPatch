@@ -32,10 +32,15 @@
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_channel.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_import.cpp" />
+    <ClCompile Include="..\..\lzma\C\Alloc.c" />
     <ClCompile Include="..\..\lzma\C\LzFind.c" />
     <ClCompile Include="..\..\lzma\C\LzFindMt.c" />
+    <ClCompile Include="..\..\lzma\C\Lzma2Enc.c" />
     <ClCompile Include="..\..\lzma\C\LzmaDec.c" />
+    <ClCompile Include="..\..\lzma\C\Lzma2Dec.c" />
     <ClCompile Include="..\..\lzma\C\LzmaEnc.c" />
+    <ClCompile Include="..\..\lzma\C\MtCoder.c" />
+    <ClCompile Include="..\..\lzma\C\MtDec.c" />
     <ClCompile Include="..\..\lzma\C\Threads.c" />
     <ClCompile Include="..\..\src\diff\DiffData.cpp" />
     <ClCompile Include="..\..\src\diff\Differ.cpp" />

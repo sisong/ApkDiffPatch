@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_channel.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_import.cpp" />
+    <ClCompile Include="..\..\lzma\C\Lzma2Dec.c" />
     <ClCompile Include="..\..\lzma\C\LzmaDec.c" />
     <ClCompile Include="..\..\src\normalized\normalized.cpp" />
     <ClCompile Include="..\..\src\patch\NewStream.cpp" />

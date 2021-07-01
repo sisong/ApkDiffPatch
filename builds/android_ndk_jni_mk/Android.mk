@@ -3,7 +3,8 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := apkpatch
 
-Lzma_Files := $(LOCAL_PATH)/../../lzma/C/LzmaDec.c 
+Lzma_Files := $(LOCAL_PATH)/../../lzma/C/LzmaDec.c \
+              $(LOCAL_PATH)/../../lzma/C/Lzma2Dec.c 
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
   Lzma_Files += $(LOCAL_PATH)/../../../lzma/Asm/arm64/LzmaDecOpt.S
 endif
