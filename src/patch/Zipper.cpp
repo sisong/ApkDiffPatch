@@ -332,16 +332,19 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch,Z
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         if ((fileTag&(1<<3))!=0){//have descriptor?
             writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉data descriptor标识;
-            uint32_t crc=UnZipper_file_crc32(self,i);
-            uint32_t compressedSize=UnZipper_file_compressedSize(self,i);
+            const uint32_t crc=UnZipper_file_crc32(self,i);
+            const uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self,i);
             TByte buf[16];
             check(UnZipper_fileData_read(self,self->_fileDataOffsets[i]+self->_fileCompressedSizes[i],buf,buf+16));
-            if ((readUInt32(buf)==crc)&&(readUInt32(buf+4)==compressedSize))
+            if ((readUInt32(buf)==crc)&&(readUInt32(buf+8)==uncompressedSize))
                 self->_dataDescriptors[i]=kDataDescriptor_12;
-            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+8)==compressedSize))
+            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+12)==uncompressedSize))
                 self->_dataDescriptors[i]=kDataDescriptor_16;
-            else
-                check(false);
+            else {
+                //check(false);
+                printf("WARNING: zip format error, unknow data descriptor!\n");
+                self->_dataDescriptors[i]=kDataDescriptor_12;
+            }
             ++self->_dataDescriptorCount;
         }
         
@@ -571,7 +574,8 @@ bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInp
         check_clear(outStream->write(outStream,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
         curWritePos+=readLen;
     }
-    check_clear(_zlib_is_decompress_finish(decompressPlugin,decHandle));
+    if (!_zlib_is_decompress_finish(decompressPlugin,decHandle))
+        printf("WARNING: zip format error, decompress not finish!\n");
 clear:
     _zlib_decompress_close_by(decompressPlugin,decHandle);
     return result;
