@@ -35,7 +35,12 @@
 #include "normalized/normalized.h"
 #include "../HDiffPatch/_clock_for_demo.h"
 #include "../HDiffPatch/_atosize.h"
+#include "../HDiffPatch/libHDiffPatch/HDiff/private_diff/mem_buf.h"
 #include "diff/DiffData.h"
+
+#ifndef _IS_NEED_MAIN
+#   define  _IS_NEED_MAIN 1
+#endif
 
 static void printUsage(){
     printf("usage: ApkNormalized srcApk out_newApk [-nce-isNotCompressEmptyFile] [-cl-compressLevel] [-as-alignSize] [-v] \n"
@@ -64,13 +69,33 @@ static void printUsage(){
            );
 }
 
+#define _kOPTIONS_ERROR 1
+int normalized_cmd_line(int argc, const char * argv[]);
+
+#if (_IS_NEED_MAIN)
+#   if (_IS_USED_WIN32_UTF8_WAPI)
+int wmain(int argc,wchar_t* argv_w[]){
+    hdiff_private::TAutoMem  _mem(hpatch_kPathMaxSize*4);
+    char** argv_utf8=(char**)_mem.data();
+    if (!_wFileNames_to_utf8((const wchar_t**)argv_w,argc,argv_utf8,_mem.size()))
+        return _kOPTIONS_ERROR;
+    SetDefaultStringLocale();
+    return normalized_cmd_line(argc,(const char**)argv_utf8);
+}
+#   else
+int main(int argc,char* argv[]){
+    return  normalized_cmd_line(argc,(const char**)argv);
+}
+#   endif
+#endif
+
 #define _options_check(value,errorInfo){ \
-    if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return 1; } }
+    if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return _kOPTIONS_ERROR; } }
 
 #define _kNULL_VALUE    (-1)
 #define _kNULL_SIZE     (~(size_t)0)
 
-int main(int argc, const char * argv[]) {
+int normalized_cmd_line(int argc, const char * argv[]){
     hpatch_BOOL isNotCompressEmptyFile=_kNULL_VALUE;
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
     size_t      compressLevel = _kNULL_SIZE;

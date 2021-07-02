@@ -31,6 +31,11 @@
 #include "patch/patch_types.h"
 #include "patch/ZipDiffData.h"
 #include "diff/DiffData.h"
+#include "../HDiffPatch/libHDiffPatch/HDiff/private_diff/mem_buf.h"
+
+#ifndef _IS_NEED_MAIN
+#   define  _IS_NEED_MAIN 1
+#endif
 
 // ZiPatExtraDemo: insert your private data to ZiPatFile(ZipDiff result), support ApkV2Sign ;
 //   data will be write into NewZipFile(front of Central directory) when ZipPatch;
@@ -38,12 +43,32 @@
 static bool addToExtra(const char* srcZiPatPath,const char* outZiPatPath,
                        const TByte* appendData,size_t dataLen);
 
-int main(int argc, const char * argv[]) {
+#define _kRET_ERROR 1
+int extra_cmd_line(int argc, const char * argv[]);
+
+#if (_IS_NEED_MAIN)
+#   if (_IS_USED_WIN32_UTF8_WAPI)
+int wmain(int argc,wchar_t* argv_w[]){
+    hdiff_private::TAutoMem  _mem(hpatch_kPathMaxSize*4);
+    char** argv_utf8=(char**)_mem.data();
+    if (!_wFileNames_to_utf8((const wchar_t**)argv_w,argc,argv_utf8,_mem.size()))
+        return _kRET_ERROR;
+    SetDefaultStringLocale();
+    return extra_cmd_line(argc,(const char**)argv_utf8);
+}
+#   else
+int main(int argc,char* argv[]){
+    return  extra_cmd_line(argc,(const char**)argv);
+}
+#   endif
+#endif
+
+int extra_cmd_line(int argc, const char * argv[]) {
     const char* srcZiPatPath=0;
     const char* outZiPatPath=0;
     if (argc!=4){
         printf("parameter: ZipDiffResult_ZiPatFileName  outDemo_ZiPatFileName appendData\n");
-        return 1;
+        return _kRET_ERROR;
     }
     srcZiPatPath =argv[1];
     outZiPatPath =argv[2];
@@ -52,7 +77,7 @@ int main(int argc, const char * argv[]) {
     printf(" out ZiPat :\"%s\"\n",outZiPatPath);
     printf("test append:\"%s\"\n",appendData);
     if (!(addToExtra(srcZiPatPath,outZiPatPath,(const TByte*)appendData,strlen(appendData)))){
-        return 1;
+        return _kRET_ERROR;
     }
     return 0;
 }

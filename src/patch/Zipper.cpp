@@ -332,16 +332,19 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch,Z
         uint16_t fileTag=readUInt16(headBuf+8);//标志;
         if ((fileTag&(1<<3))!=0){//have descriptor?
             writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉data descriptor标识;
-            uint32_t crc=UnZipper_file_crc32(self,i);
-            uint32_t compressedSize=UnZipper_file_compressedSize(self,i);
+            const uint32_t crc=UnZipper_file_crc32(self,i);
+            const uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self,i);
             TByte buf[16];
             check(UnZipper_fileData_read(self,self->_fileDataOffsets[i]+self->_fileCompressedSizes[i],buf,buf+16));
-            if ((readUInt32(buf)==crc)&&(readUInt32(buf+4)==compressedSize))
+            if ((readUInt32(buf)==crc)&&(readUInt32(buf+8)==uncompressedSize))
                 self->_dataDescriptors[i]=kDataDescriptor_12;
-            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+8)==compressedSize))
+            else if ((readUInt32(buf+4)==crc)&&(readUInt32(buf+12)==uncompressedSize))
                 self->_dataDescriptors[i]=kDataDescriptor_16;
-            else
-                check(false);
+            else {
+                //check(false);
+                printf("WARNING: zip format error, unknow data descriptor!\n");
+                self->_dataDescriptors[i]=kDataDescriptor_12;
+            }
             ++self->_dataDescriptorCount;
         }
         
@@ -571,7 +574,8 @@ bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInp
         check_clear(outStream->write(outStream,writeToPos+curWritePos,dataBuf,dataBuf+readLen));
         curWritePos+=readLen;
     }
-    check_clear(_zlib_is_decompress_finish(decompressPlugin,decHandle));
+    if (!_zlib_is_decompress_finish(decompressPlugin,decHandle))
+        printf("WARNING: zip format error, decompress not finish!\n");
 clear:
     _zlib_decompress_close_by(decompressPlugin,decHandle);
     return result;
@@ -642,11 +646,93 @@ inline void freeThreadWork(TZipThreadWork* self){
     if (self) free(self);
 }
 
-struct TZipThreadWorks{
+
+namespace {
+
+struct TMt_base {
+    CChannel work_chan;
+    CChannel data_chan;
+    
+    void on_error(){
+        {
+            CAutoLocker _auto_locker(_locker.locker);
+            if (_is_on_error) return;
+            _is_on_error=true;
+        }
+        closeAndClear();
+    }
+    
+    bool start_threads(int threadCount,TThreadRunCallBackProc threadProc,void* workData,bool isUseThisThread){
+        for (int i=0;i<threadCount;++i){
+            if (isUseThisThread&&(i==threadCount-1)){
+                thread_on(1);
+                threadProc(i,workData);
+            }else{
+                thread_on(1);
+                try{
+                    thread_parallel(1,threadProc,workData,0,i);
+                }catch(...){
+                    thread_on(-1);
+                    on_error();
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    inline void thread_end(){
+        _end_chan.send((TChanData)1,true);
+    }
+    inline  explicit TMt_base(int workChanSize,int dataChanSize)
+        :work_chan(workChanSize),data_chan(dataChanSize),_is_on_error(false),_is_thread_on(0) {}
+    inline ~TMt_base() { closeAndClear(); wait_all_thread_end(); _end_chan.close(); while (_end_chan.accept(false)) {} }
+    inline bool is_on_error()const{ CAutoLocker _auto_locker(_locker.locker); return _is_on_error; }
+    
+    inline void finish(){ // wait all threads exit
+        close();
+        wait_all_thread_end();
+    }
+    inline void wait_all_thread_end(){
+        while(_is_thread_on){
+            --_is_thread_on;
+            _end_chan.accept(true);
+        }
+    }
+protected:
+    CHLocker  _locker;
+    volatile bool _is_on_error;
+    
+    inline void close() {
+        work_chan.close();
+        data_chan.close();
+    }
+    void closeAndClear(){
+        close();
+        while(work_chan.accept(false)) {}
+        while(data_chan.accept(false)) {}
+    }
+private:
+    inline void thread_on(int threadNum){
+        _is_thread_on+=threadNum;
+    }
+    volatile size_t _is_thread_on;
+    CChannel  _end_chan;
+};
+
+struct _auto_thread_end_t{
+    inline  explicit _auto_thread_end_t(TMt_base& mt) :_mt(mt) {  }
+    inline ~_auto_thread_end_t() { _mt.thread_end(); }
+    TMt_base&  _mt;
+};
+
+} //end namespace
+
+struct TZipThreadWorks:public TMt_base{
 //for thread
 public:
     static void run(int threadIndex,void* workData){
         TZipThreadWorks* self=(TZipThreadWorks*)workData;
+        _auto_thread_end_t _thread_end(*self);
         while (TZipThreadWork* work=self->getWork()){
             self->doWork(work);
             self->endWork(work);
@@ -654,7 +740,7 @@ public:
     }
 private:
     inline TZipThreadWork* getWork(){//wait,return 0 exit thread
-        return (TZipThreadWork*)_waitingList.accept(true);
+        return (TZipThreadWork*)work_chan.accept(true);
     }
     inline static void doWork(TZipThreadWork* work){
         size_t rsize=Zipper_compressData(work->inputData,work->inputDataSize,work->code,work->codeSize,
@@ -663,38 +749,30 @@ private:
             work->codeSize=0; //error or code size overflow
     }
     inline void endWork(TZipThreadWork* workResult){
-        _finishList.send(workResult,true);
+        data_chan.send(workResult,true);
     }
-    
 public:
     explicit TZipThreadWorks(Zipper* zip,int workThreadNum)
-        :_zip(zip),_curWorkCount(0),_waitingList(1),_finishList(workThreadNum){ }
-    ~TZipThreadWorks(){
-        finishDispatchWork();
-        _finishList.close();
-    }
-    
+        :TMt_base(1,workThreadNum),_zip(zip),_curWorkCount(0){ }
     inline void waitCanFastDispatchWork(){
-        _waitingList.is_can_fast_send(true);
+        work_chan.is_can_fast_send(true);
     }
     inline void dispatchWork(TZipThreadWork* newWork){
         ++_curWorkCount;
-        _waitingList.send(newWork,true);
+        work_chan.send(newWork,true);
     }
     inline void finishDispatchWork(){
-        _waitingList.close();
+        work_chan.close();
     }
     TZipThreadWork* haveFinishWork(bool isWait){
         if (_curWorkCount==0) return 0;
-        TZipThreadWork* result=(TZipThreadWork*)_finishList.accept(isWait);
+        TZipThreadWork* result=(TZipThreadWork*)data_chan.accept(isWait);
         if (result) --_curWorkCount;
         return result;
     }
 private:
     Zipper*             _zip;
     volatile int        _curWorkCount;
-    CChannel            _waitingList;
-    CChannel            _finishList;
 };
 #else
     struct TZipThreadWork{};
@@ -713,6 +791,7 @@ bool Zipper_close(Zipper* self){
         self->_append_stream.threadWork=0;
     }
     if (self->_threadWorks){
+        self->_threadNum=1;
         delete self->_threadWorks;
         self->_threadWorks=0;
     }
@@ -778,18 +857,13 @@ void Zipper_by_multi_thread(Zipper* self,int threadNum){
     if (isUsedMT(self)){
         try {
             self->_threadWorks=new TZipThreadWorks(self,self->_threadNum-1);
+            self->_threadWorks->start_threads(self->_threadNum-1,TZipThreadWorks::run,self->_threadWorks,false);
         } catch (...) {
             self->_threadNum=1; //close muti-thread
-            delete self->_threadWorks;
-            self->_threadWorks=0;
-        }
-    }
-    if (isUsedMT(self)){
-        try {
-            thread_parallel(self->_threadNum-1,TZipThreadWorks::run,self->_threadWorks,false,0);
-        } catch (...) {
-            self->_threadNum=1; //close muti-thread
-            self->_threadWorks->finishDispatchWork(); //for safe exit thread
+            if (self->_threadWorks){
+                delete self->_threadWorks;
+                self->_threadWorks=0;
+            } 
         }
     }
 #else

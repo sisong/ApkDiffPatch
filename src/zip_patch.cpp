@@ -32,6 +32,11 @@
 #include "patch/Patcher.h"
 #include "../HDiffPatch/libParallel/parallel_import.h"
 #include "patch/patch_types.h"
+#include "../HDiffPatch/libHDiffPatch/HDiff/private_diff/mem_buf.h"
+
+#ifndef _IS_NEED_MAIN
+#   define  _IS_NEED_MAIN 1
+#endif
 
 #ifndef PRSizeT
 #   ifdef _MSC_VER
@@ -64,13 +69,32 @@ static void printUsage(){
 #define _options_check(value,errorInfo){ \
     if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return PATCH_OPTIONS_ERROR; } }
 
+int zippatch_cmd_line(int argc, const char * argv[]);
+
+#if (_IS_NEED_MAIN)
+#   if (_IS_USED_WIN32_UTF8_WAPI)
+int wmain(int argc,wchar_t* argv_w[]){
+    hdiff_private::TAutoMem  _mem(hpatch_kPathMaxSize*4);
+    char** argv_utf8=(char**)_mem.data();
+    if (!_wFileNames_to_utf8((const wchar_t**)argv_w,argc,argv_utf8,_mem.size()))
+        return PATCH_OPTIONS_ERROR;
+    SetDefaultStringLocale();
+    return zippatch_cmd_line(argc,(const char**)argv_utf8);
+}
+#   else
+int main(int argc,char* argv[]){
+    return  zippatch_cmd_line(argc,(const char**)argv);
+}
+#   endif
+#endif
+
 #define _THREAD_NUMBER_NULL     0
 #define _THREAD_NUMBER_MIN      1
 #define _THREAD_NUMBER_MAX      (1<<8)
 
 #define _kNULL_VALUE (-1)
 
-int main(int argc, const char * argv[]) {
+int zippatch_cmd_line(int argc, const char * argv[]) {
     const char* oldZipPath=0;
     const char* zipDiffPath=0;
     const char* outNewZipPath=0;

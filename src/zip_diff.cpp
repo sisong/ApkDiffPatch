@@ -33,8 +33,14 @@
 #include "patch/patch_types.h"
 #include "../HDiffPatch/_clock_for_demo.h"
 #include "../HDiffPatch/_atosize.h"
+#include "../HDiffPatch/libHDiffPatch/HDiff/private_diff/mem_buf.h"
+
+#ifndef _IS_NEED_MAIN
+#   define  _IS_NEED_MAIN 1
+#endif
 
 #define _CompressPlugin_lzma //default use lzma
+#define _CompressPlugin_lzma2
 
 static void printUsage(){
     printf("diff usage: ZipDiff oldZipFile newZipFile outDiffFileName [-c-...] [-m-matchScore] [-v]\n"
@@ -53,17 +59,40 @@ static void printUsage(){
 #ifdef _CompressPlugin_lzma
            "        -c-lzma[-{0..9}[-dictSize]]     DEFAULT level 7\n"
            "            dictSize can like 4096 or 4k or 4m or 128m etc..., DEFAULT 4m\n"
+#   if (_IS_USED_MULTITHREAD)
+           "            support run by 2-thread parallel.\n"
+#   endif
+#endif
+#ifdef _CompressPlugin_lzma2
+           "        -c-lzma2[-{0..9}[-dictSize]]    DEFAULT level 7\n"
+           "            dictSize can like 4096 or 4k or 4m or 128m etc..., DEFAULT 4m\n"
+#   if (_IS_USED_MULTITHREAD)
+           "            support run by multi-thread parallel, fast!\n"
+#   endif
+           "            WARNING: code not compatible with it compressed by -c-lzma!\n"
 #endif
            "  -m-matchScore\n"
            "      matchScore>=0, DEFAULT -m-3.\n"
            "  -d  Diff only, do't run patch check, DEFAULT run patch check.\n"
            "  -t  Test only, run patch check, ZipPatch(oldZipFile,testDiffFile)==newZipFile ? \n"
+#if (_IS_USED_MULTITHREAD)
+           "  -p-parallelThreadNumber\n"
+           "      if parallelThreadNumber>1 then open multi-thread Parallel mode;\n"
+           "      DEFAULT -p-4; requires more memory!\n"
+#endif
            "  -v  output Version info. \n");
 }
 
 #ifdef _CompressPlugin_lzma
 #include "../lzma/C/LzmaDec.h" // http://www.7-zip.org/sdk.html
 #include "../lzma/C/LzmaEnc.h"
+#endif
+#ifdef _CompressPlugin_lzma2
+#include "../lzma/C/LzmaDec.h"
+#include "../lzma/C/LzmaEnc.h"
+#include "../lzma/C/Lzma2Dec.h"
+#include "../lzma/C/Lzma2Enc.h"
+#include "../lzma/C/MtCoder.h" //for MTCODER__THREADS_MAX
 #endif
 #include "patch/patch_types.h"
 #include "../HDiffPatch/compress_plugin_demo.h"
@@ -74,6 +103,25 @@ static void printUsage(){
 #define ZIPDIFF_OPTIONS_ERROR 1
 #define _options_check(value,errorInfo){ \
     if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return ZIPDIFF_OPTIONS_ERROR; } }
+
+int zipdiff_cmd_line(int argc, const char * argv[]);
+
+#if (_IS_NEED_MAIN)
+#   if (_IS_USED_WIN32_UTF8_WAPI)
+int wmain(int argc,wchar_t* argv_w[]){
+    hdiff_private::TAutoMem  _mem(hpatch_kPathMaxSize*4);
+    char** argv_utf8=(char**)_mem.data();
+    if (!_wFileNames_to_utf8((const wchar_t**)argv_w,argc,argv_utf8,_mem.size()))
+        return ZIPDIFF_OPTIONS_ERROR;
+    SetDefaultStringLocale();
+    return zipdiff_cmd_line(argc,(const char**)argv_utf8);
+}
+#   else
+int main(int argc,char* argv[]){
+    return  zipdiff_cmd_line(argc,(const char**)argv);
+}
+#   endif
+#endif
 
 static bool _tryGetCompressSet(const char** isMatchedType,const char* ptype,const char* ptypeEnd,
                                const char* cmpType,const char* cmpType2=0,
@@ -118,7 +166,8 @@ static int _checkSetCompress(hdiff_TCompress** out_compressPlugin,
     const char* isMatchedType=0;
     size_t      compressLevel=0;
 #if (defined _CompressPlugin_lzma)||(defined _CompressPlugin_lzma2)
-    size_t      dictSize=0;
+    size_t       dictSize=0;
+    const size_t defaultDictSize=kDefaultLzmaDictSize;
 #endif
 #ifdef _CompressPlugin_zlib
     _options_check(_tryGetCompressSet(&isMatchedType,
@@ -133,13 +182,24 @@ static int _checkSetCompress(hdiff_TCompress** out_compressPlugin,
 #ifdef _CompressPlugin_lzma
     _options_check(_tryGetCompressSet(&isMatchedType,
                                       ptype,ptypeEnd,"lzma",0,&compressLevel,0,9,7, &dictSize,1<<12,
-                                      (sizeof(size_t)<=4)?(1<<27):((size_t)3<<29),kDefaultLzmaDictSize),"-c-lzma-?");
+                                      (sizeof(size_t)<=4)?(1<<27):((size_t)3<<29),defaultDictSize),"-c-lzma-?");
      if ((isMatchedType)&&(0==strcmp(isMatchedType,"lzma"))){
          static TCompressPlugin_lzma _lzmaCompressPlugin=lzmaCompressPlugin;
          _lzmaCompressPlugin.compress_level=(int)compressLevel;
          _lzmaCompressPlugin.dict_size=(int)dictSize;
          *out_compressPlugin=&_lzmaCompressPlugin.base;
          *out_decompressPlugin=&lzmaDecompressPlugin;  }
+#endif
+#ifdef _CompressPlugin_lzma2
+    _options_check(_tryGetCompressSet(&isMatchedType,ptype,ptypeEnd,"lzma2",0,
+                                      &compressLevel,0,9,7, &dictSize,1<<12,
+                                      (sizeof(size_t)<=4)?(1<<27):((size_t)3<<29),defaultDictSize),"-c-lzma2-?");
+     if ((isMatchedType)&&(0==strcmp(isMatchedType,"lzma2"))){
+         static TCompressPlugin_lzma2 _lzma2CompressPlugin=lzma2CompressPlugin;
+         _lzma2CompressPlugin.compress_level=(int)compressLevel;
+         _lzma2CompressPlugin.dict_size=(int)dictSize;
+         *out_compressPlugin=&_lzma2CompressPlugin.base;
+         *out_decompressPlugin=&lzma2DecompressPlugin;  }
 #endif
     _options_check((*out_compressPlugin!=0)&&(*out_decompressPlugin!=0),"-c-?");
     return 0; //ok
@@ -149,7 +209,12 @@ static int _checkSetCompress(hdiff_TCompress** out_compressPlugin,
 #define _kNULL_VALUE    (-1)
 #define _kNULL_SIZE     (~(size_t)0)
 
-int main(int argc, const char * argv[]) {
+#define _THREAD_NUMBER_NULL     0
+#define _THREAD_NUMBER_MIN      1
+#define _THREAD_NUMBER_DEFUALT  kDefaultCompressThreadNumber
+#define _THREAD_NUMBER_MAX      (1<<8)
+
+int zipdiff_cmd_line(int argc, const char * argv[]) {
     const char* oldZipPath     =0;
     const char* newZipPath     =0;
     const char* outDiffFileName=0;
@@ -157,6 +222,7 @@ int main(int argc, const char * argv[]) {
     hpatch_BOOL isPatchCheck   = _kNULL_VALUE;
     hpatch_BOOL isOutputVersion= _kNULL_VALUE;
     size_t      diffMatchScore = _kNULL_SIZE;
+    size_t      threadNum = _THREAD_NUMBER_NULL;
     hdiff_TCompress*        compressPlugin=0;
     hpatch_TDecompress*     decompressPlugin=0;
 #define kMax_arg_values_size 3
@@ -185,6 +251,14 @@ int main(int argc, const char * argv[]) {
                     _options_check(hpatch_FALSE,"-m?");
                 }
             } break;
+#if (_IS_USED_MULTITHREAD)
+            case 'p':{
+                _options_check((threadNum==_THREAD_NUMBER_NULL)&&(op[2]=='-'),"-p-?");
+                const char* pnum=op+3;
+                _options_check(a_to_size(pnum,strlen(pnum),&threadNum),"-p-?");
+                _options_check(threadNum>=_THREAD_NUMBER_MIN,"-p-?");
+            } break;
+#endif
             case 'c':{
                 _options_check((compressPlugin==0)&&(op[2]=='-'),"-c");
                 const char* ptype=op+3;
@@ -225,6 +299,14 @@ int main(int argc, const char * argv[]) {
         decompressPlugin=&zlibDecompressPlugin;
 #endif
     }
+    if (threadNum==_THREAD_NUMBER_NULL)
+        threadNum=_THREAD_NUMBER_DEFUALT;
+    else if (threadNum>_THREAD_NUMBER_MAX)
+        threadNum=_THREAD_NUMBER_MAX;
+    if (compressPlugin!=0){
+        compressPlugin->setParallelThreadNumber(compressPlugin,(int)threadNum);
+    }
+    
     if (diffMatchScore==_kNULL_SIZE)
         diffMatchScore=kDefaultDiffMatchScore;
     if (isOutputVersion==_kNULL_VALUE)
@@ -269,6 +351,10 @@ int main(int argc, const char * argv[]) {
     if (isPatchCheck){
         printf("\nrun ZipPatch:\n");
         for (int threadNum=1;threadNum<=4;threadNum*=4){
+#if (_IS_USED_MULTITHREAD)
+#else
+            if (threadNum>1) break;
+#endif
             double time2=clock_s();
             TCheckZipDiffResult rt=checkZipDiff(oldZipPath,newZipPath,outDiffFileName,threadNum);
             exitCode=((rt==CHECK_BYTE_BY_BYTE_EQUAL_TRUE)||(rt==CHECK_SAME_LIKE_TRUE__BYTE_BY_BYTE_EQUAL_FALSE))?0:1;
