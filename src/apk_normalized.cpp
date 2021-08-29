@@ -64,7 +64,7 @@ static void printUsage(){
            "    if set 9, compress rate is high, but compress speed is very slow when patching.\n"
            "  -as-alignSize\n"
            "    set align size for uncompressed file in zip for optimize app run speed,\n"
-           "    alignSize>=1, recommended 4,8, DEFAULT -as-8.\n"
+           "    1 <= alignSize <= 4k, recommended 4,8, DEFAULT -as-8.\n"
            "  -v  output Version info. \n"
            );
 }
@@ -142,7 +142,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
                     _options_check(alignSize==_kNULL_SIZE,"-as-?")
                     const char* pnum=op+4;
                     _options_check(kmg_to_size(pnum,strlen(pnum),&alignSize),"-as-?");
-                    const size_t _kMaxAlignSize=(1<<20);
+                    const size_t _kMaxAlignSize=4*1024;
                     _options_check((1<=alignSize)&&(alignSize<=_kMaxAlignSize),"-as-?");
                 }else{
                     _options_check(hpatch_FALSE,"-as?");
