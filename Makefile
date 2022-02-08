@@ -49,6 +49,8 @@ ZIPDIFF_OBJ := \
     lzma/C/LzmaEnc.o \
     lzma/C/LzFind.o \
     lzma/C/LzFindMt.o \
+    lzma/C/LzFindOpt.o \
+    lzma/C/CpuArch.o \
     lzma/C/MtCoder.o \
     lzma/C/MtDec.o \
     lzma/C/Threads.o \

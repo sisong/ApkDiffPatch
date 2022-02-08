@@ -33,8 +33,10 @@
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_channel.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_import.cpp" />
     <ClCompile Include="..\..\lzma\C\Alloc.c" />
+    <ClCompile Include="..\..\lzma\C\CpuArch.c" />
     <ClCompile Include="..\..\lzma\C\LzFind.c" />
     <ClCompile Include="..\..\lzma\C\LzFindMt.c" />
+    <ClCompile Include="..\..\lzma\C\LzFindOpt.c" />
     <ClCompile Include="..\..\lzma\C\Lzma2Enc.c" />
     <ClCompile Include="..\..\lzma\C\LzmaDec.c" />
     <ClCompile Include="..\..\lzma\C\Lzma2Dec.c" />
