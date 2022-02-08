@@ -247,7 +247,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     bool isOk=true;
     if (oldZip->_isDataNormalized)
         printf("  NOTE: oldZip maybe normalized\n");
-    if (UnZipper_isHaveApkV1_or_jarSign(oldZip))
+    if (UnZipper_isHaveApkV1Sign(oldZip))
         printf("  NOTE: oldZip found JarSign(ApkV1Sign)\n");
     if (UnZipper_isHaveApkV2Sign(oldZip))
         printf("  NOTE: oldZip found ApkV2Sign\n");
@@ -255,7 +255,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
         printf("  NOTE: oldZip found ApkV3Sign\n");
     if (newZip->_isDataNormalized)
         printf("  NOTE: newZip maybe normalized\n");
-    if (UnZipper_isHaveApkV1_or_jarSign(newZip))
+    if (UnZipper_isHaveApkV1Sign(newZip))
         printf("  NOTE: newZip found JarSign(ApkV1Sign)\n");
     bool newIsV2Sign=UnZipper_isHaveApkV2Sign(newZip);
     if (newIsV2Sign)
@@ -341,7 +341,7 @@ TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStre
         return CHECK_BYTE_BY_BYTE_EQUAL_TRUE;
     
     bool isOldHaveApkV2Sign=false;
-    bool isSame=getZipIsSameWithStream(newZipStream,&temp_inNewZipStream,&isOldHaveApkV2Sign);
+    bool isSame=getZipIsSameWithStream(newZipStream,&temp_inNewZipStream,0,&isOldHaveApkV2Sign);
     if (!isSame)
         return CHECK_SAME_LIKE_ERROR;
     if (isOldHaveApkV2Sign)

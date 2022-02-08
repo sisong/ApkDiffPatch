@@ -172,14 +172,16 @@ int normalized_cmd_line(int argc, const char * argv[]){
     const char* dstApk=arg_values[1];
     printf("src: \"%s\"\nout: \"%s\"\n",srcApk,dstApk);
     double time0=clock_s();
-    if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,isNotCompressEmptyFile?true:false)){
+    int apkV1SignFilesRemoved=0;
+    if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,
+                       isNotCompressEmptyFile?true:false,&apkV1SignFilesRemoved)){
         printf("\nrun ApkNormalized ERROR!\n");
         return 1;
     }
     printf("run ApkNormalized ok!\n");
     
     //check
-    if (!getZipIsSame(srcApk,dstApk)){
+    if (!getZipIsSame(srcApk,dstApk,apkV1SignFilesRemoved)){
         printf("ApkNormalized result file check ERROR!\n");
         return 1;
     }

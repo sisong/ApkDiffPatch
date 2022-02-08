@@ -30,6 +30,7 @@
 
 //规范化zip包;
 bool ZipNormalized(const char* srcApk,const char* dstApk,
-                   int ZipAlignSize,int compressLevel,bool isNotCompressEmptyFile=true);
+                   int ZipAlignSize,int compressLevel,
+                   bool isNotCompressEmptyFile=true,int* out_apkV1SignFilesRemoved=0);
 
 #endif //ZipNormalized_normalized_h
