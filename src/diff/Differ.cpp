@@ -241,6 +241,7 @@ static bool HDiffZ(std::vector<TByte>& oldData,std::vector<TByte>& newData,std::
     double time1=clock_s();
     std::cout<<"  diffDataSize: "<<diffData.size()<<"\n";
     std::cout<<"  diff  time: "<<(time1-time0)<<" s\n";
+    return true;
 }
 
 static bool HPatchZ_check(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,

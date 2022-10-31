@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D5B125B28F1862700D12B51 /* Lzma2Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D5B125A28F1862700D12B51 /* Lzma2Dec.c */; };
+		0D5B125D28F1865800D12B51 /* Lzma2Enc.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D5B125C28F1865800D12B51 /* Lzma2Enc.c */; };
+		0D5B126328F189B300D12B51 /* CpuArch.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D5B126028F189B300D12B51 /* CpuArch.c */; };
+		0D5B126428F189B300D12B51 /* LzFindOpt.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D5B126128F189B300D12B51 /* LzFindOpt.c */; };
+		0D5B126528F189B300D12B51 /* MtCoder.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D5B126228F189B300D12B51 /* MtCoder.c */; };
 		D676B255220FB46900874D63 /* Threads.c in Sources */ = {isa = PBXBuildFile; fileRef = D676B253220FB46900874D63 /* Threads.c */; };
 		D676B256220FB46900874D63 /* LzFindMt.c in Sources */ = {isa = PBXBuildFile; fileRef = D676B254220FB46900874D63 /* LzFindMt.c */; };
 		D68B02D5205A452D001F3C40 /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = D68B02D4205A452D001F3C40 /* LzmaDec.c */; };
@@ -15,6 +20,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0D5B125A28F1862700D12B51 /* Lzma2Dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Lzma2Dec.c; path = ../../lzma/C/Lzma2Dec.c; sourceTree = "<group>"; };
+		0D5B125C28F1865800D12B51 /* Lzma2Enc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Lzma2Enc.c; path = ../../lzma/C/Lzma2Enc.c; sourceTree = "<group>"; };
+		0D5B126028F189B300D12B51 /* CpuArch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = CpuArch.c; path = ../../lzma/C/CpuArch.c; sourceTree = "<group>"; };
+		0D5B126128F189B300D12B51 /* LzFindOpt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzFindOpt.c; path = ../../lzma/C/LzFindOpt.c; sourceTree = "<group>"; };
+		0D5B126228F189B300D12B51 /* MtCoder.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MtCoder.c; path = ../../lzma/C/MtCoder.c; sourceTree = "<group>"; };
 		D676B253220FB46900874D63 /* Threads.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Threads.c; path = ../../lzma/C/Threads.c; sourceTree = "<group>"; };
 		D676B254220FB46900874D63 /* LzFindMt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = LzFindMt.c; path = ../../lzma/C/LzFindMt.c; sourceTree = "<group>"; };
 		D68B02C7205A4409001F3C40 /* liblzma.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblzma.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -37,6 +47,11 @@
 		D68B02BE205A4409001F3C40 = {
 			isa = PBXGroup;
 			children = (
+				0D5B126028F189B300D12B51 /* CpuArch.c */,
+				0D5B126128F189B300D12B51 /* LzFindOpt.c */,
+				0D5B126228F189B300D12B51 /* MtCoder.c */,
+				0D5B125C28F1865800D12B51 /* Lzma2Enc.c */,
+				0D5B125A28F1862700D12B51 /* Lzma2Dec.c */,
 				D676B254220FB46900874D63 /* LzFindMt.c */,
 				D676B253220FB46900874D63 /* Threads.c */,
 				D68B02D8205A4626001F3C40 /* LzFind.c */,
@@ -122,10 +137,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D5B126328F189B300D12B51 /* CpuArch.c in Sources */,
+				0D5B125D28F1865800D12B51 /* Lzma2Enc.c in Sources */,
 				D68B02D7205A4551001F3C40 /* LzmaEnc.c in Sources */,
+				0D5B125B28F1862700D12B51 /* Lzma2Dec.c in Sources */,
 				D68B02D9205A4626001F3C40 /* LzFind.c in Sources */,
 				D676B255220FB46900874D63 /* Threads.c in Sources */,
 				D676B256220FB46900874D63 /* LzFindMt.c in Sources */,
+				0D5B126428F189B300D12B51 /* LzFindOpt.c in Sources */,
+				0D5B126528F189B300D12B51 /* MtCoder.c in Sources */,
 				D68B02D5205A452D001F3C40 /* LzmaDec.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

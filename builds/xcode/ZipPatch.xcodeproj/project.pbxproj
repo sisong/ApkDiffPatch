@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D5B125F28F1869800D12B51 /* Lzma2Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = 0D5B125E28F1869800D12B51 /* Lzma2Dec.c */; };
 		D6126B8A20468CE400183A42 /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6126B8B20468CE400183A42 /* libzlib.a */; };
 		D6126B91204697FC00183A42 /* ZipDiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6126B90204697FC00183A42 /* ZipDiffData.cpp */; };
 		D6126BE62047B98500183A42 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = D6126BE42047B98500183A42 /* patch.c */; };
@@ -34,6 +35,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D5B125E28F1869800D12B51 /* Lzma2Dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Lzma2Dec.c; path = ../../lzma/C/Lzma2Dec.c; sourceTree = "<group>"; };
 		D6126B8B20468CE400183A42 /* libzlib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libzlib.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D6126B8F204697FC00183A42 /* ZipDiffData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ZipDiffData.h; sourceTree = "<group>"; };
 		D6126B90204697FC00183A42 /* ZipDiffData.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ZipDiffData.cpp; sourceTree = "<group>"; };
@@ -123,6 +125,7 @@
 		D66B49CF205A3534002BF30A /* lzma */ = {
 			isa = PBXGroup;
 			children = (
+				0D5B125E28F1869800D12B51 /* Lzma2Dec.c */,
 				D68B02D2205A44B0001F3C40 /* LzmaDec.c */,
 			);
 			name = lzma;
@@ -218,6 +221,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D65A440F22056EC6001638A6 /* file_for_patch.c in Sources */,
+				0D5B125F28F1869800D12B51 /* Lzma2Dec.c in Sources */,
 				D671B769204E82F4002D17A7 /* zip_patch.cpp in Sources */,
 				D6126BE62047B98500183A42 /* patch.c in Sources */,
 				D68B02D3205A44B0001F3C40 /* LzmaDec.c in Sources */,
