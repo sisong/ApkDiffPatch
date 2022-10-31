@@ -1,0 +1,60 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  make-build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: makeAll
+        run: |
+          make -j
+
+  clang-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: installClang
+        run: |
+          sudo apt-get install -y llvm clang
+      - name: makeByClang
+        run: |
+          make CL=1 -j
+
+  xcode-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: buildByXcode
+        run: |
+          xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ApkNormalized -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
+          xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipDiff -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
+          xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipPatch -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
+
+  ndk-build:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nttld/setup-ndk@v1.0.6
+        with:
+          ndk-version: r16b
+      - name: buildByAndroidNDK
+        run: |
+          cd ./builds/android_ndk_jni_mk
+          ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
+
+  vc-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: microsoft/setup-msbuild@v1.1
+        with:
+          msbuild-architecture: x64
+      - name: buildByVC
+        run: |
+          msbuild builds/vc/ApkDiffPatch.sln -t:rebuild -verbosity:diag -property:Configuration=Release

@@ -4,7 +4,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](https://github.com/sisong/ApkDiffPatch/pulls) 
 [![+issue Welcome](https://img.shields.io/github/issues-raw/sisong/ApkDiffPatch?color=green&label=%2Bissue%20welcome)](https://github.com/sisong/ApkDiffPatch/issues)   
 
-[![Build Status](https://travis-ci.org/sisong/ApkDiffPatch.svg?branch=master)](https://travis-ci.org/sisong/ApkDiffPatch) 
+[![Build Status](https://github.com/sisong/ApkDiffPatch/workflows/ci/badge.svg?branch=master)](https://github.com/sisong/ApkDiffPatch/actions?query=workflow%3Aci+branch%3Amaster)
 [![Build status](https://ci.appveyor.com/api/projects/status/u5tbrqwl72875r6h/branch/master?svg=true)](https://ci.appveyor.com/project/sisong/apkdiffpatch/branch/master)   
 
 a C++ library and command-line tools for Zip(Jar,Apk) file Diff & Patch; create minimal delta/differential; support [Jar sign](Apk v1 sign) & [Apk v2 sign] & [Apk v3 sign] .   
