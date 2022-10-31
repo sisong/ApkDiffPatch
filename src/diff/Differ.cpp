@@ -29,7 +29,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <algorithm> //sort
-#include "../../HDiffPatch/libHDiffPatch/HDiff/diff.h"  //https://github.com/sisong/HDiffPatch
+#include "../../HDiffPatch/libHDiffPatch/HDiff/match_block.h"  //https://github.com/sisong/HDiffPatch
 #include "../../HDiffPatch/libHDiffPatch/HPatch/patch.h"
 #include "../../HDiffPatch/file_for_patch.h"
 #include "../../HDiffPatch/_clock_for_demo.h"
@@ -41,8 +41,10 @@
 #include "../patch/patch_types.h"
 
 
-static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
-                   const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore);
+static bool HDiffZ(std::vector<TByte>& oldData,std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
+                   const hdiff_TCompress* compressPlugin,int myBestMatchScore,int threadNum);
+static bool HPatchZ_check(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
+                          const std::vector<TByte>& diffData,hpatch_TDecompress* decompressPlugin);
 static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 
 #define  check(value) { \
@@ -52,7 +54,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip);
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
              const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
-             int diffMatchScore,bool* out_isNewZipApkV2SignNoError){
+             int diffMatchScore,bool* out_isNewZipApkV2SignNoError,int threadNum){
     hpatch_TFileStreamInput    oldZipStream;
     hpatch_TFileStreamInput    newZipStream;
     hpatch_TFileStreamOutput   outDiffStream;
@@ -67,7 +69,8 @@ bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFi
     check(hpatch_TFileStreamOutput_open(&outDiffStream,outDiffFileName,(hpatch_StreamPos_t)(-1)));
     hpatch_TFileStreamOutput_setRandomOut(&outDiffStream,hpatch_TRUE);
     result=ZipDiffWithStream(&oldZipStream.base,&newZipStream.base,&outDiffStream.base,
-                             compressPlugin,decompressPlugin,diffMatchScore,out_isNewZipApkV2SignNoError);
+                             compressPlugin,decompressPlugin,diffMatchScore,
+                             out_isNewZipApkV2SignNoError,threadNum);
 clear:
     _isInClear=true;
     check(hpatch_TFileStreamOutput_close(&outDiffStream));
@@ -105,7 +108,7 @@ clear:
 bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
                        const hpatch_TStreamOutput* outDiffStream,
                        const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
-                       int diffMatchScore,bool* out_isNewZipApkV2SignNoError){
+                       int diffMatchScore,bool* out_isNewZipApkV2SignNoError,int threadNum){
     UnZipper            oldZip;
     UnZipper            newZip;
     std::vector<TByte>  newData;
@@ -190,13 +193,17 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     //for (int i=0; i<(int)newRefOtherCompressedList.size(); ++i) std::cout<<zipFile_name(&newZip,newRefOtherCompressedList[i])<<"\n";
     //for (int i=0; i<(int)oldRefList.size(); ++i) std::cout<<zipFile_name(&oldZip,oldRefList[i])<<"\n";
     
-    if ((newZip_otherCompressLevel|newZip_otherCompressMemLevel)!=0){
-        check(readZipStreamData(&newZip,newRefDecompressList,std::vector<uint32_t>(),newData));
-    }else{
-        check(readZipStreamData(&newZip,newRefList,newRefOtherCompressedList,newData));
-    }
-    check(readZipStreamData(&oldZip,oldRefList,std::vector<uint32_t>(),oldData));
-    check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,decompressPlugin,diffMatchScore));
+    #define _loadNewAndOldData() \
+        if ((newZip_otherCompressLevel|newZip_otherCompressMemLevel)!=0){ \
+            check(readZipStreamData(&newZip,newRefDecompressList,std::vector<uint32_t>(),newData)); \
+        }else{ \
+            check(readZipStreamData(&newZip,newRefList,newRefOtherCompressedList,newData)); \
+        } \
+        check(readZipStreamData(&oldZip,oldRefList,std::vector<uint32_t>(),oldData));
+    _loadNewAndOldData();
+    check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,diffMatchScore,threadNum));
+    _loadNewAndOldData();
+    check(HPatchZ_check(oldData,newData,hdiffzData,decompressPlugin));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }
     
@@ -215,8 +222,8 @@ clear:
     return result;
 }
 
-static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
-                   const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,int myBestMatchScore){
+static bool HDiffZ(std::vector<TByte>& oldData,std::vector<TByte>& newData,std::vector<TByte>& out_diffData,
+                   const hdiff_TCompress* compressPlugin,int myBestMatchScore,int threadNum){
     double time0=clock_s();
     const size_t oldDataSize=oldData.size();
     const size_t newDataSize=newData.size();
@@ -224,13 +231,26 @@ static bool HDiffZ(const std::vector<TByte>& oldData,const std::vector<TByte>& n
     std::cout<<"  oldDataSize : "<<oldDataSize<<"\n  newDataSize : "<<newDataSize<<"\n";
     
     std::vector<TByte>& diffData=out_diffData;
-    const TByte* newData0=newData.data();
-    const TByte* oldData0=oldData.data();
-    create_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
-                           diffData,compressPlugin,myBestMatchScore);
+    TByte* newData0=newData.data();
+    TByte* oldData0=oldData.data();
+    const bool isUseBigCacheMatch=true;
+    const size_t matchBlockSize=1024*4;
+    create_compressed_diff_block(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
+                                 diffData,compressPlugin,myBestMatchScore,
+                                 isUseBigCacheMatch,matchBlockSize,threadNum);
     double time1=clock_s();
     std::cout<<"  diffDataSize: "<<diffData.size()<<"\n";
     std::cout<<"  diff  time: "<<(time1-time0)<<" s\n";
+}
+
+static bool HPatchZ_check(const std::vector<TByte>& oldData,const std::vector<TByte>& newData,
+                          const std::vector<TByte>& diffData,hpatch_TDecompress* decompressPlugin){
+    const size_t oldDataSize=oldData.size();
+    const size_t newDataSize=newData.size();
+    
+    const TByte* newData0=newData.data();
+    const TByte* oldData0=oldData.data();
+    double time1=clock_s();
     if (!check_compressed_diff(newData0,newData0+newDataSize,oldData0,oldData0+oldDataSize,
                                diffData.data(),diffData.data()+diffData.size(),decompressPlugin)){
         std::cout<<"\n  hpatchz check hdiffz result error!!!\n";
