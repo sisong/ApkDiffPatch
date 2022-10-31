@@ -23,12 +23,13 @@
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\diff.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\bytes_rle.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\compress_detect.cpp" />
-    <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\libdivsufsort\divsufsort.c" />
-    <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\libdivsufsort\divsufsort64.c" />
+    <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\libdivsufsort\divsufsort.cpp" />
+    <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\libdivsufsort\divsufsort64.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\limit_mem_diff\adler_roll.c" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\limit_mem_diff\digest_matcher.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\limit_mem_diff\stream_serialize.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HDiff\private_diff\suffix_string.cpp" />
+    <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatchLite\hpatch_lite.c" />
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_channel.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_import.cpp" />
