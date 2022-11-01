@@ -210,6 +210,14 @@ bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self){
     }
     return false;
 }
+bool UnZipper_isHaveApkV1Sign(const UnZipper* self){
+    int fCount=UnZipper_fileCount(self);
+    for (int i=fCount-1; i>=0; --i) {
+        if (UnZipper_file_isApkV1Sign(self,i))
+            return true;
+    }
+    return false;
+}
 
 bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* fileName,int fileNameLen){
     return (UnZipper_file_nameLen(self,fileIndex)==fileNameLen)&&
@@ -241,16 +249,24 @@ int UnZipper_searchFileIndexByName(const UnZipper* self,const char* fileName,int
         return '2'==(*posBegin);
     }
 
+    static bool _fileName_isEndWith(const UnZipper* self,int fileIndex,const char* tag){
+        const size_t tagLen=strlen(tag);
+        int fnameLen=UnZipper_file_nameLen(self,fileIndex);
+        if (fnameLen<(int)tagLen) return false;
+        const char* fnameBegin=UnZipper_file_nameBegin(self,fileIndex);
+        return (0==memcmp(fnameBegin+fnameLen-tagLen,tag,tagLen));
+    }
+    static bool _fileName_is(const UnZipper* self,int fileIndex,const char* tag){
+        return (strlen(tag)==UnZipper_file_nameLen(self,fileIndex))
+                && _fileName_isEndWith(self,fileIndex,tag);
+    }
+
+    static const char* kJarSignSF=".SF";
     static bool _UnZipper_file_isHaveApkV2orV3SignTag_in_ApkV1SignFile(UnZipper* self,int fileIndex){
-        if (!UnZipper_file_isApkV1_or_jarSign(self,fileIndex)) return false;
+        if (!UnZipper_file_isApkV1Sign(self,fileIndex)) return false;
         
         //match fileType
-        const char* kJarSignSF=".SF";
-        const size_t kJarSignSFLen=strlen(kJarSignSF);
-        int fnameLen=UnZipper_file_nameLen(self,fileIndex);
-        if (fnameLen<(int)kJarSignSFLen) return false;
-        const char* fnameBegin=UnZipper_file_nameBegin(self,fileIndex);
-        if (0!=memcmp(fnameBegin+fnameLen-kJarSignSFLen,kJarSignSF,kJarSignSFLen)) return false;
+        if (!_fileName_isEndWith(self,fileIndex,kJarSignSF)) return false;
         //match V2 tag in txt file
         size_t fsize=UnZipper_file_uncompressedSize(self,fileIndex);
         TByte* data=(TByte*)malloc(fsize+1); //+1 for '\0'
@@ -275,16 +291,28 @@ bool UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(UnZipper* self){
 }
 
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
-    const char* kJarSignPath="META-INF/";
+    const char* kJarSignPath0="META-INF/";
+    const char* kJarSignPath1="META-INF/";
     const size_t kJarSignPathLen=8+1;
-    return (UnZipper_file_nameLen(self,fileIndex)>=(int)kJarSignPathLen)
-        && (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),kJarSignPath,kJarSignPathLen));
+    if (UnZipper_file_nameLen(self,fileIndex)<(int)kJarSignPathLen) return false;
+    const char* fn=UnZipper_file_nameBegin(self,fileIndex);
+    return (0==memcmp(fn,kJarSignPath0,kJarSignPathLen))
+         ||(0==memcmp(fn,kJarSignPath1,kJarSignPathLen));
+}
+
+bool UnZipper_file_isApkV1Sign(const UnZipper* self,int fileIndex){
+    if (!UnZipper_file_isApkV1_or_jarSign(self,fileIndex)) return false;
+    if (_fileName_isEndWith(self,fileIndex,kJarSignSF)) return true;
+    if (_fileName_isEndWith(self,fileIndex,".RSA")) return true;
+    if (_fileName_is(self,fileIndex,"META-INF/MANIFEST.MF")) return true;
+    if (_fileName_is(self,fileIndex,"META-INF\\MANIFEST.MF")) return true;
+    return false;
 }
 
 bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex){
     return UnZipper_isHaveApkV2Sign(self)
                 && UnZipper_file_isCompressed(self,fileIndex)
-                && UnZipper_file_isApkV1_or_jarSign(self,fileIndex);
+                && UnZipper_file_isApkV1Sign(self,fileIndex);
 }
 
 bool UnZipper_isHaveApkV3Sign(const UnZipper* self){

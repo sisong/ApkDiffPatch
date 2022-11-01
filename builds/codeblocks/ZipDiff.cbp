@@ -55,14 +55,11 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/diff.cpp" />
+		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/match_block.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/bytes_rle.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/compress_detect.cpp" />
-		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort64.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort.cpp" />
+		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort64.cpp" />
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HDiff/private_diff/limit_mem_diff/adler_roll.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -72,15 +69,24 @@
 		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatch/patch.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../../HDiffPatch/libHDiffPatch/HPatchLite/hpatch_lite.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../../HDiffPatch/libParallel/parallel_channel.cpp" />
 		<Unit filename="../../HDiffPatch/libParallel/parallel_import.cpp" />
 		<Unit filename="../../lzma/C/Alloc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/CpuArch.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../lzma/C/LzFind.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../lzma/C/LzFindMt.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../../lzma/C/LzFindOpt.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="../../lzma/C/Lzma2Dec.c">

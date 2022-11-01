@@ -70,8 +70,8 @@ bool ZipDiffData_openRead(ZipDiffData* self,const hpatch_TStreamInput* diffData,
                           hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 
-#define  kExtraEdit     "ZiPat1&Extra"
-#define  kExtraEditLen  12
+static const char* kExtraEdit = "ZiPat1&Extra";
+#define            kExtraEditLen  12  // ==strlen(kExtraEdit)
 //zip diff out:[head+hdiffzData+ ExtraData +SizeOf(ExtraData)4Byte+kExtraEdit]
 
 #ifdef __cplusplus

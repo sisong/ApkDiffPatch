@@ -340,7 +340,7 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
     bool   isNewZipApkV2SignNoError=true;
     if (isDiff){
         if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,compressPlugin,decompressPlugin,
-                     (int)diffMatchScore,&isNewZipApkV2SignNoError)){
+                     (int)diffMatchScore,&isNewZipApkV2SignNoError,(int)threadNum)){
             printf("ZipDiff error!\n");
             return 1;
         }//else

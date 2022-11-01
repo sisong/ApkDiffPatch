@@ -45,9 +45,11 @@
 #define  kDefaultDiffMatchScore         3 // for hdiff
 
 bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
-bool getZipIsSame(const char* oldZipPath,const char* newZipPath,bool* out_isOldHaveApkV2Sign=0);
+bool getZipIsSame(const char* oldZipPath,const char* newZipPath,
+                  int newApkV1SignFilesRemoved=0,bool* out_isOldHaveApkV2Sign=0);
 bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,
-                            const hpatch_TStreamInput* newZipStream,bool* out_isOldHaveApkV2Sign=0);
+                            const hpatch_TStreamInput* newZipStream,
+                            int newApkV1SignFilesRemoved=0,bool* out_isOldHaveApkV2Sign=0);
 bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
                                       int* out_zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
 bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,

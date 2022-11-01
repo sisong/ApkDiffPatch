@@ -107,9 +107,11 @@ static inline const unsigned char* UnZipper_CEData(const UnZipper* self) { retur
 bool UnZipper_searchApkV2Sign(const hpatch_TStreamInput* stream,hpatch_StreamPos_t centralDirectory_pos,
                               ZipFilePos_t* v2sign_topPos,ZipFilePos_t* out_blockSize=0,bool* out_isHaveV3Sign=0);
 bool UnZipper_isHaveApkV1_or_jarSign(const UnZipper* self);
+bool UnZipper_isHaveApkV1Sign(const UnZipper* self);
 bool UnZipper_isHaveApkV3Sign(const UnZipper* self);
 bool UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(UnZipper* self); //found true; not found or unknown or error false
-bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex);
+bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex); // file is in ApkV1Sign Dir
+bool UnZipper_file_isApkV1Sign(const UnZipper* self,int fileIndex); // file is ApkV1Sign File
 bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex);
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 int  UnZipper_searchFileIndexByName(const UnZipper* self,const char* fileName,int fileNameLen);

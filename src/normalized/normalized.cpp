@@ -47,13 +47,16 @@ struct TFileValue{
         static bool inline isEndWith(const std::string& s,const char* sub){
             return (s.find(sub)==s.size()-strlen(sub));
         }
+        static bool inline isSignMFFile(const std::string& s){
+            return (s=="META-INF/MANIFEST.MF")||(s=="META-INF\\MANIFEST.MF");
+        }
         size_t _v(const TFileValue& x)const{
             size_t xi=x.fileIndex;
             if (isInSignDir(x.fileName)){
                 xi+=_fileCount;
                      if (isEndWith(x.fileName,".SF"))  xi+=_fileCount;
                 else if (isEndWith(x.fileName,".RSA")) xi+=_fileCount*2;
-                else if (isEndWith(x.fileName,".MF"))  xi+=_fileCount*3;
+                else if (isSignMFFile(x.fileName))     xi+=_fileCount*3;
             }
             return  xi;
         }
@@ -80,13 +83,15 @@ inline static bool isCompressedEmptyFile(const UnZipper* unzipper,int fileIndex)
 }
 
 bool ZipNormalized(const char* srcApk,const char* dstApk,
-                   int ZipAlignSize,int compressLevel,bool isNotCompressEmptyFile){
+                   int ZipAlignSize,int compressLevel,bool isNotCompressEmptyFile,int* out_apkV1SignFilesRemoved){
     bool result=true;
     bool _isInClear=false;
     int  fileCount=0;
     bool isHaveApkV2Sign=false;
+    bool isHaveApkV3Sign=false;
     int  jarSignFileCount=0;
     std::vector<int>   fileIndexs;
+    std::vector<std::string>  removedFiles;
     UnZipper unzipper;
     Zipper   zipper;
     UnZipper_init(&unzipper);
@@ -95,21 +100,27 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
     check(UnZipper_openFile(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
     check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
-    
-    {//sort file
+    isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
+    isHaveApkV3Sign=UnZipper_isHaveApkV3Sign(&unzipper);
+    {
         std::vector<TFileValue> files;
         getFiles(&unzipper,files);
         std::sort(files.begin(),files.end(),TFileValue::TCmp(fileCount));
         for (int i=0; i<fileCount; ++i) {
-            fileIndexs.push_back(files[i].fileIndex);
+            int fileIndex=files[i].fileIndex;
+            if (UnZipper_file_isApkV1Sign(&unzipper,fileIndex)){
+                ++jarSignFileCount;
+                if (isHaveApkV2Sign){
+                    const char* fn=UnZipper_file_nameBegin(&unzipper,fileIndex);
+                    removedFiles.push_back(std::string(fn,fn+UnZipper_file_nameLen(&unzipper,fileIndex)));
+                    continue; //remove JarSign(ApkV1Sign) when found ApkV2Sign
+                }
+            }
+            fileIndexs.push_back(fileIndex);
         }
     }
-    for (int i=0; i<fileCount; ++i) {
-        if (UnZipper_file_isApkV1_or_jarSign(&unzipper,i))
-            ++jarSignFileCount;
-    }
-    isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
-    assert((size_t)fileCount==fileIndexs.size());
+    if (out_apkV1SignFilesRemoved) 
+        *out_apkV1SignFilesRemoved=(int)removedFiles.size();
     
     printf("\n");
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
@@ -138,10 +149,21 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
     }
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
     
-    if (jarSignFileCount>0)
-        printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",jarSignFileCount);
-    if (isHaveApkV2Sign)
-        printf("WARNING: src found ApkV2Sign and not save to dst(%d Byte, need re sign)\n",(int)UnZipper_ApkV2SignSize(&unzipper));
+    if (jarSignFileCount>0){
+        if (isHaveApkV2Sign){
+            printf("WARNING: src removed JarSign(ApkV1Sign) (%d file, need re sign)\n",jarSignFileCount);
+            for (size_t i=0;i<removedFiles.size();++i)
+                printf("    removed file: %s\n",removedFiles[i].c_str());
+        }else{
+            printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",jarSignFileCount);
+        }
+    }
+    if (isHaveApkV2Sign){
+        printf(isHaveApkV3Sign?
+                "WARNING: src removed ApkV2Sign & ApkV3Sign  data (%d Byte, need re sign)\n"
+               :"WARNING: src removed ApkV2Sign data (%d Byte, need re sign)\n",
+                (int)UnZipper_ApkV2SignSize(&unzipper));
+    }
     printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
 
 clear:

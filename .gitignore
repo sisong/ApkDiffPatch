@@ -14,3 +14,5 @@ xcshareddata
 *.sdf
 *.ipch
 xcuserdata/
+builds/vc2019/Release/
+builds/vc2019/x64/
