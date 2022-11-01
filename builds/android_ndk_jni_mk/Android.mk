@@ -39,7 +39,6 @@ LOCAL_SRC_FILES  := $(Src_Files) $(Lzma_Files) $(Zlib_Files) $(Hdp_Files) $(Adp_
 
 LOCAL_LDLIBS     := -llog
 LOCAL_CFLAGS     := -Os -DANDROID_NDK -DNDEBUG -D_IS_USED_MULTITHREAD=1 -D_IS_USED_PTHREAD=1 -D_IS_NEED_CACHE_OLD_BY_COVERS=0
-LOCAL_CFLAGS     += -D_IS_NEED_atomic_func=0
 ifneq ($(TARGET_ARCH_ABI),armeabi)
 LOCAL_CFLAGS     += -DUNALIGNED_OK 
 endif

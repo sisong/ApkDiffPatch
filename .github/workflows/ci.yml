@@ -10,6 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: makeAll
         run: |
+          git submodule update --init --recursive
           make -j
 
   clang-build:
@@ -21,6 +22,7 @@ jobs:
           sudo apt-get install -y llvm clang
       - name: makeByClang
         run: |
+          git submodule update --init --recursive
           make CL=1 -j
 
   xcode-build:
@@ -29,6 +31,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: buildByXcode
         run: |
+          git submodule update --init --recursive
           xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ApkNormalized -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
           xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipDiff -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
           xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipPatch -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
@@ -45,6 +48,7 @@ jobs:
           ndk-version: r16b
       - name: buildByAndroidNDK
         run: |
+          git submodule update --init --recursive
           cd ./builds/android_ndk_jni_mk
           ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
 
@@ -57,4 +61,5 @@ jobs:
           msbuild-architecture: x64
       - name: buildByVC
         run: |
+          git submodule update --init --recursive
           msbuild builds/vc/ApkDiffPatch.sln -t:rebuild -verbosity:diag -property:Configuration=Release
