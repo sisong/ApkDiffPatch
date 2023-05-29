@@ -904,8 +904,13 @@ bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
     assert(self->_fileStream.m_file==0);
     check(hpatch_TFileStreamOutput_open(&self->_fileStream,zipFileName,(hpatch_StreamPos_t)(-1)));
     hpatch_TFileStreamOutput_setRandomOut(&self->_fileStream,hpatch_TRUE);
-    return Zipper_openStream(self,&self->_fileStream.base,fileEntryMaxCount,
-                             ZipAlignSize,compressLevel,compressMemLevel);
+    bool result=Zipper_openStream(self,&self->_fileStream.base,fileEntryMaxCount,
+                                  ZipAlignSize,compressLevel,compressMemLevel);
+    if (!result){
+        hpatch_TFileStreamOutput_close(&self->_fileStream);
+        self->_fileStream.m_file=0;
+    }
+    return result;
 }
 
 static bool _writeFlush(Zipper* self){
