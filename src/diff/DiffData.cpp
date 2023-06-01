@@ -431,10 +431,11 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
                           const std::vector<uint32_t>& newRefCompressedSizeList,
                           const std::vector<uint32_t>& oldRefList,
                           const std::vector<TByte>&    hdiffzData,
-                          const hdiff_TCompress* compressPlugin){
+                          const hdiff_TCompress* compressPlugin,
+                          const size_t patchModel){
     ZipDiffData  data;
     memset(&data,0,sizeof(ZipDiffData));
-    data.PatchModel=0; //now must 0
+    data.PatchModel=patchModel; //now must 0 or 1
     data.newZipFileCount=UnZipper_fileCount(newZip);
     data.newZipIsDataNormalized=newZip->_isDataNormalized?1:0;
     data.newZipAlignSize=newZipAlignSize;

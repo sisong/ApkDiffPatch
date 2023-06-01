@@ -67,8 +67,11 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     bool            _isInClear=false;
     bool            isUsedTempFile=false;
     TByte*          temp_cache =0;
+    size_t          temp_cahe_size;
     ZipFilePos_t    decompressSumSize=0;
     hpatch_TDecompress* decompressPlugin=0;
+    bool isSD=false;
+    hpatch_singleCompressedDiffInfo sdiffInfo;
 
     UnZipper_init(&oldZip);
     Zipper_init(&out_newZip);
@@ -104,6 +107,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     }
     
     check(ZipDiffData_openRead(&zipDiffData,zipDiffStream,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
+    isSD=(zipDiffData.PatchModel==1);
     check(UnZipper_openStream(&oldZip,oldZipStream,zipDiffData.oldZipIsDataNormalized!=0,
                             zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
     check(zipDiffData.oldZipCESize==UnZipper_CESize(&oldZip),PATCH_OLDDATA_ERROR);
@@ -113,8 +117,16 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
 #endif
     check(zipDiffData.oldCrc==OldStream_getOldCrc(&oldZip,zipDiffData.oldRefList,zipDiffData.oldRefCount
                                                   _VIRTUAL_IN(virtual_in)), PATCH_OLDDATA_ERROR);
-    
-    check(getCompressedDiffInfo(&diffInfo,zipDiffData.hdiffzData),PATCH_HDIFFINFO_ERROR);
+    if (!isSD){
+        check(getCompressedDiffInfo(&diffInfo,zipDiffData.hdiffzData),PATCH_HDIFFINFO_ERROR);
+    }else{
+        check(getSingleCompressedDiffInfo(&sdiffInfo,zipDiffData.hdiffzData,0),PATCH_SD_HDIFFINFO_ERROR);
+        memset(&diffInfo,0,sizeof(diffInfo));
+        diffInfo.newDataSize=sdiffInfo.newDataSize;
+        diffInfo.oldDataSize=sdiffInfo.oldDataSize;
+        diffInfo.compressedCount=(sdiffInfo.compressedSize>0)?1:0;
+        memcpy(diffInfo.compressType,sdiffInfo.compressType,sizeof(diffInfo.compressType));
+    }
     if (strlen(diffInfo.compressType) > 0)
         check(decompressPlugin->is_can_open(diffInfo.compressType),PATCH_COMPRESSTYPE_ERROR);
     
@@ -153,10 +165,18 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
                          zipDiffData.newRefCompressedSizeList,zipDiffData.newRefCompressedSizeCount,
                          threadNum _VIRTUAL_IN(virtual_in) _VIRTUAL_OUT(virtual_out)),PATCH_NEWSTREAM_ERROR);
     
-    temp_cache =(TByte*)malloc(HPATCH_CACHE_SIZE);
+    temp_cahe_size=HPATCH_CACHE_SIZE+(isSD?sdiffInfo.stepMemSize:0);
+    temp_cache =(TByte*)malloc(temp_cahe_size);
     check(temp_cache!=0,PATCH_MEM_ERROR);
-    check(patch_decompress_with_cache(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
-                                      decompressPlugin,temp_cache,temp_cache+HPATCH_CACHE_SIZE),PATCH_HPATCH_ERROR);
+    if (!isSD){
+        check(patch_decompress_with_cache(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
+                                          decompressPlugin,temp_cache,temp_cache+temp_cahe_size),PATCH_HPATCH_ERROR);
+    }else{
+        check(patch_single_compressed_diff(newStream.stream,oldStream.stream,zipDiffData.hdiffzData,
+                                           sdiffInfo.diffDataPos,sdiffInfo.uncompressedSize,sdiffInfo.compressedSize,
+                                           decompressPlugin,sdiffInfo.coverCount,sdiffInfo.stepMemSize,
+                                           temp_cache,temp_cache+temp_cahe_size,0),PATCH_SD_HPATCH_ERROR);
+    }
     check(newStream.isFinish,PATCH_ZIPPATCH_ERROR);
     
 clear:
