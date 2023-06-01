@@ -109,7 +109,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,const hpatch_TStreamInput* diffData,
         //unpack head info
         const TByte* curBuf=buf;
         checkUnpackSize(&curBuf,buf+readLen,&self->PatchModel,size_t);
-        check(self->PatchModel==0);//now must 0
+        check(self->PatchModel<=1);//now must 0 or 1
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipFileCount,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipIsDataNormalized,size_t);
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipAlignSize,size_t);

@@ -42,11 +42,11 @@ typedef enum TCheckZipDiffResult {
 
 bool ZipDiff(const char* oldZipPath,const char* newZipPath,const char* outDiffFileName,
              const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
-             int diffMatchScore,bool* out_isNewZipApkV2SignNoError=0,int threadNum=1);
+             int diffMatchScore,size_t patchStepMemSize,bool* out_isNewZipApkV2SignNoError=0,int threadNum=1);
 bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStreamInput* newZipStream,
                        const hpatch_TStreamOutput* outDiffStream,
                        const hdiff_TCompress* compressPlugin,hpatch_TDecompress* decompressPlugin,
-                       int diffMatchScore,bool* out_isNewZipApkV2SignNoError=0,int threadNum=1);
+                       int diffMatchScore,size_t patchStepMemSize,bool* out_isNewZipApkV2SignNoError=0,int threadNum=1);
 
 TCheckZipDiffResult checkZipDiff(const char* oldZipPath,const char* newZipPath,const char* diffFileName,int threadNum);
 TCheckZipDiffResult checkZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,

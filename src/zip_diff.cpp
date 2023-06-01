@@ -73,6 +73,11 @@ static void printUsage(){
 #endif
            "  -m-matchScore\n"
            "      matchScore>=0, DEFAULT -m-3.\n"
+           "  -SD[-stepSize]\n"
+           "      create single compressed diffData(DEFAULT closed), only need one decompress buffer\n"
+           "      when patch, and support step by step patching when step by step downloading!\n"
+           "      stepSize>=" _HDIFFPATCH_EXPAND_AND_QUOTE(hpatch_kStreamCacheSize) ", DEFAULT -SD-2m, recommended 64k,512k,8m etc...\n"
+           "      WARNING: this is new diffFile format, must update patcher for support it.\n"
            "  -d  Diff only, do't run patch check, DEFAULT run patch check.\n"
            "  -t  Test only, run patch check, ZipPatch(oldZipFile,testDiffFile)==newZipFile ? \n"
 #if (_IS_USED_MULTITHREAD)
@@ -208,6 +213,7 @@ static int _checkSetCompress(hdiff_TCompress** out_compressPlugin,
 
 #define _kNULL_VALUE    (-1)
 #define _kNULL_SIZE     (~(size_t)0)
+#define kDefaultApkPatchStepMemSize (1024*1024*2)
 
 #define _THREAD_NUMBER_NULL     0
 #define _THREAD_NUMBER_MIN      1
@@ -219,6 +225,8 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
     const char* newZipPath     =0;
     const char* outDiffFileName=0;
     hpatch_BOOL isDiff=_kNULL_VALUE;
+    hpatch_BOOL isSingleCompressedDiff=_kNULL_VALUE;
+    size_t      patchStepMemSize=0;
     hpatch_BOOL isPatchCheck   = _kNULL_VALUE;
     hpatch_BOOL isOutputVersion= _kNULL_VALUE;
     size_t      diffMatchScore = _kNULL_SIZE;
@@ -267,6 +275,18 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
                 if (0!=result)
                     return result;
             } break;
+            case 'S':{
+                _options_check((isSingleCompressedDiff==_kNULL_VALUE)
+                               &&(op[2]=='D')&&((op[3]=='\0')||(op[3]=='-')),"-SD");
+                isSingleCompressedDiff=hpatch_TRUE;
+                if (op[3]=='-'){
+                    const char* pnum=op+4;
+                    _options_check(kmg_to_size(pnum,strlen(pnum),&patchStepMemSize),"-SD-?");
+                    _options_check((patchStepMemSize>=hpatch_kStreamCacheSize),"-SD-?");
+                }else{
+                    patchStepMemSize=kDefaultApkPatchStepMemSize;
+                }
+            } break;
             case 'v':{
                 _options_check((isOutputVersion==_kNULL_VALUE)&&(op[2]=='\0'),"-v");
                 isOutputVersion=hpatch_TRUE;
@@ -307,6 +327,8 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
         compressPlugin->setParallelThreadNumber(compressPlugin,(int)threadNum);
     }
     
+    if (isSingleCompressedDiff==_kNULL_VALUE)
+        isSingleCompressedDiff=hpatch_FALSE;
     if (diffMatchScore==_kNULL_SIZE)
         diffMatchScore=kDefaultDiffMatchScore;
     if (isOutputVersion==_kNULL_VALUE)
@@ -340,7 +362,8 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
     bool   isNewZipApkV2SignNoError=true;
     if (isDiff){
         if (!ZipDiff(oldZipPath,newZipPath,outDiffFileName,compressPlugin,decompressPlugin,
-                     (int)diffMatchScore,&isNewZipApkV2SignNoError,(int)threadNum)){
+                     (int)diffMatchScore,isSingleCompressedDiff?patchStepMemSize:0,
+                     &isNewZipApkV2SignNoError,(int)threadNum)){
             printf("ZipDiff error!\n");
             return 1;
         }//else
