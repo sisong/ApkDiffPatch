@@ -132,6 +132,7 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     int             newZip_otherCompressLevel=0;
     int             newZip_otherCompressMemLevel=0;
     bool            newCompressedDataIsNormalized=false;
+    const bool isSD=patchStepMemSize>0;
     
     check(compressPlugin!=0);
     check(decompressPlugin!=0);
@@ -204,7 +205,6 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     _loadNewAndOldData();
     check(HDiffZ(oldData,newData,hdiffzData,compressPlugin,diffMatchScore,patchStepMemSize,threadNum));
     _loadNewAndOldData();
-    const bool isSD=patchStepMemSize>0;
     check(HPatchZ_check(oldData,newData,hdiffzData,decompressPlugin,isSD));
     { std::vector<TByte> _empty; oldData.swap(_empty); }
     { std::vector<TByte> _empty; newData.swap(_empty); }

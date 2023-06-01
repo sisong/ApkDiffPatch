@@ -62,4 +62,4 @@ jobs:
       - name: buildByVC
         run: |
           git submodule update --init --recursive
-          msbuild builds/vc2019/ApkDiffPatch.sln -t:rebuild -verbosity:diag -property:Configuration=Release
+          msbuild builds/vc/ApkDiffPatch.sln -t:rebuild -verbosity:diag -property:Configuration=Release
