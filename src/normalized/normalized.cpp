@@ -127,7 +127,9 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
         printf("\"%s\"\n",fileName.c_str());
-        if (isCompressedEmptyFile(&unzipper,fileIndex)){
+        if (compressLevel==0){
+            check(Zipper_file_append_set_new_isCompress(&zipper,false));
+        } else if (isCompressedEmptyFile(&unzipper,fileIndex)){
             if (isNotCompressEmptyFile){
                 check(Zipper_file_append_set_new_isCompress(&zipper,false));
                 printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed!\n",fileName.c_str());
@@ -143,8 +145,11 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
     //no run: check(Zipper_copyExtra_before_fileHeader(&zipper,&unzipper));
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
-        if (isNotCompressEmptyFile&&isCompressedEmptyFile(&unzipper,fileIndex))
+        if (compressLevel==0){
+            check(Zipper_file_append_set_new_isCompress(&zipper,false));
+        } else if (isNotCompressEmptyFile&&isCompressedEmptyFile(&unzipper,fileIndex)){
             check(Zipper_fileHeader_append_set_new_isCompress(&zipper,false));
+        }
         check(Zipper_fileHeader_append(&zipper,&unzipper,fileIndex));
     }
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
