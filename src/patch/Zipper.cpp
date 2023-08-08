@@ -838,7 +838,7 @@ bool Zipper_close(Zipper* self){
 }
 
 #define checkCompressSet(compressLevel,compressMemLevel){   \
-    check((Z_BEST_SPEED<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));  \
+    check((Z_NO_COMPRESSION<=compressLevel)&&(compressLevel<=Z_BEST_COMPRESSION));  \
     check((1<=compressMemLevel)&&(compressMemLevel<=MAX_MEM_LEVEL)); }
 
 #define isUsedMT(self) (self->_threadNum>1)

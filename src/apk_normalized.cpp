@@ -60,7 +60,7 @@ static void printUsage(){
            "                      it can't patch by old ZipPatch(version<v1.3.5)!\n"
            "      -nce-1        DEFAULT, not compress all empty file.\n"
            "  -cl-compressLevel\n"
-           "    set zlib compress level, 1<=compressLevel<=9, DEFAULT -cl-6;\n"
+           "    set zlib compress level, 0<=compressLevel<=9, DEFAULT -cl-6;\n"
            "    if set 9, compress rate is high, but compress speed is very slow when patching.\n"
            "  -as-alignSize\n"
            "    set align size for uncompressed file in zip for optimize app run speed,\n"
@@ -132,7 +132,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
                     _options_check(compressLevel==_kNULL_SIZE,"-cl-?")
                     const char* pnum=op+4;
                     _options_check(kmg_to_size(pnum,strlen(pnum),&compressLevel),"-cl-?");
-                    _options_check((1<=compressLevel)&&(compressLevel<=9),"-cl-?");
+                    _options_check((0<=compressLevel)&&(compressLevel<=9),"-cl-?");
                 }else{
                     _options_check(hpatch_FALSE,"-cl?");
                 }
