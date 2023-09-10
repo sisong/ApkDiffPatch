@@ -38,9 +38,9 @@ Src_Files := $(LOCAL_PATH)/apk_patch_jni.cpp \
 
 LOCAL_SRC_FILES  := $(Src_Files) $(Lzma_Files) $(Zlib_Files) $(Hdp_Files) $(Adp_Files)
 
-DEF_FLAGS := -O1 -D_7ZIP_ST -D_IS_USED_MULTITHREAD=1 -D_IS_USED_PTHREAD=1
+DEF_FLAGS := -O1 -DZ7_ST -D_IS_USED_MULTITHREAD=1 -D_IS_USED_PTHREAD=1
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
-  DEF_FLAGS += -D_LZMA_DEC_OPT 
+  DEF_FLAGS += -DZ7_LZMA_DEC_OPT 
 endif
 
 LOCAL_LDLIBS     := -llog
@@ -49,7 +49,7 @@ ifneq ($(TARGET_ARCH_ABI),armeabi)
 LOCAL_CFLAGS     += -DUNALIGNED_OK 
 endif
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
-LOCAL_CFLAGS     += -D_LZMA_DEC_OPT 
+LOCAL_CFLAGS     += -DZ7_LZMA_DEC_OPT 
 endif
 
 LOCAL_SANITIZE   := address

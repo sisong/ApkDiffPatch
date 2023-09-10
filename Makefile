@@ -58,6 +58,7 @@ ZIPDIFF_OBJ := \
     HDiffPatch/libHDiffPatch/HDiff/private_diff/libdivsufsort/divsufsort.o \
     lzma/C/Lzma2Enc.o \
     lzma/C/LzmaEnc.o \
+    lzma/C/7zStream.o \
     lzma/C/LzFind.o \
     lzma/C/LzFindMt.o \
     lzma/C/LzFindOpt.o \

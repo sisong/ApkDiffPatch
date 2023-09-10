@@ -95,6 +95,9 @@
 		<Unit filename="../../lzma/C/Lzma2Enc.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="../../lzma/C/7zStream.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="../../lzma/C/LzmaDec.c">
 			<Option compilerVar="CC" />
 		</Unit>

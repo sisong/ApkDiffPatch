@@ -34,18 +34,6 @@
     <ClCompile Include="..\..\HDiffPatch\libHDiffPatch\HPatch\patch.c" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_channel.cpp" />
     <ClCompile Include="..\..\HDiffPatch\libParallel\parallel_import.cpp" />
-    <ClCompile Include="..\..\lzma\C\Alloc.c" />
-    <ClCompile Include="..\..\lzma\C\CpuArch.c" />
-    <ClCompile Include="..\..\lzma\C\LzFind.c" />
-    <ClCompile Include="..\..\lzma\C\LzFindMt.c" />
-    <ClCompile Include="..\..\lzma\C\LzFindOpt.c" />
-    <ClCompile Include="..\..\lzma\C\Lzma2Enc.c" />
-    <ClCompile Include="..\..\lzma\C\LzmaDec.c" />
-    <ClCompile Include="..\..\lzma\C\Lzma2Dec.c" />
-    <ClCompile Include="..\..\lzma\C\LzmaEnc.c" />
-    <ClCompile Include="..\..\lzma\C\MtCoder.c" />
-    <ClCompile Include="..\..\lzma\C\MtDec.c" />
-    <ClCompile Include="..\..\lzma\C\Threads.c" />
     <ClCompile Include="..\..\src\diff\DiffData.cpp" />
     <ClCompile Include="..\..\src\diff\Differ.cpp" />
     <ClCompile Include="..\..\src\diff\OldRef.cpp" />
@@ -66,6 +54,11 @@
     <ClCompile Include="..\..\zlib1.2.11\trees.c" />
     <ClCompile Include="..\..\zlib1.2.11\uncompr.c" />
     <ClCompile Include="..\..\zlib1.2.11\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HDiffPatch\builds\vc\lzma.vcxproj">
+      <Project>{0849cd0e-1b9b-44eb-8937-a278b6a7e2cf}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{96E107FE-4A2E-4008-9FDE-8CEAA695BFCA}</ProjectGuid>

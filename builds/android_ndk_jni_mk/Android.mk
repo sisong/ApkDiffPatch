@@ -43,7 +43,7 @@ ifneq ($(TARGET_ARCH_ABI),armeabi)
 LOCAL_CFLAGS     += -DUNALIGNED_OK 
 endif
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
-LOCAL_CFLAGS     += -D_LZMA_DEC_OPT 
+LOCAL_CFLAGS     += -DZ7_LZMA_DEC_OPT 
 endif
 
 include $(BUILD_SHARED_LIBRARY)

@@ -39,17 +39,17 @@
 struct TFileValue{
     std::string fileName;
     int         fileIndex;
+    static bool inline isInSignDir(const std::string& s){
+        return (s.find("META-INF/")==0)||(s.find("META-INF\\")==0);
+    }
+    static bool inline isEndWith(const std::string& s,const char* sub){
+        return (s.find(sub)==s.size()-strlen(sub));
+    }
+    static bool inline isSignMFFile(const std::string& s){
+        return (s=="META-INF/MANIFEST.MF")||(s=="META-INF\\MANIFEST.MF");
+    }
     struct TCmp{
         inline TCmp(int fileCount):_fileCount(fileCount){}
-        static bool inline isInSignDir(const std::string& s){
-            return (s.find("META-INF/")==0)||(s.find("META-INF\\")==0);
-        }
-        static bool inline isEndWith(const std::string& s,const char* sub){
-            return (s.find(sub)==s.size()-strlen(sub));
-        }
-        static bool inline isSignMFFile(const std::string& s){
-            return (s=="META-INF/MANIFEST.MF")||(s=="META-INF\\MANIFEST.MF");
-        }
         size_t _v(const TFileValue& x)const{
             size_t xi=x.fileIndex;
             if (isInSignDir(x.fileName)){
@@ -111,8 +111,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
             if (UnZipper_file_isApkV1Sign(&unzipper,fileIndex)){
                 ++jarSignFileCount;
                 if (isHaveApkV2Sign){
-                    const char* fn=UnZipper_file_nameBegin(&unzipper,fileIndex);
-                    removedFiles.push_back(std::string(fn,fn+UnZipper_file_nameLen(&unzipper,fileIndex)));
+                    removedFiles.push_back(files[i].fileName);
                     continue; //remove JarSign(ApkV1Sign) when found ApkV2Sign
                 }
             }
