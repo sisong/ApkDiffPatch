@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D225C0E2AAD453600DBD5B1 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D68B02D1205A4462001F3C40 /* liblzma.a */; };
 		D6126B8D20468CF000183A42 /* libzlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6126B8E20468CF000183A42 /* libzlib.a */; };
 		D62AA00F2054035600A61D43 /* libHDiffPatch.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D62AA0102054035600A61D43 /* libHDiffPatch.a */; };
 		D62AA0152056649900A61D43 /* Patcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D62AA0142056649900A61D43 /* Patcher.cpp */; };
@@ -19,7 +20,6 @@
 		D671B72D204E7649002D17A7 /* Zipper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B723204E7649002D17A7 /* Zipper.cpp */; };
 		D671B76B204E8346002D17A7 /* zip_diff.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B76A204E8346002D17A7 /* zip_diff.cpp */; };
 		D671B76E204EA161002D17A7 /* DiffData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D671B76D204EA161002D17A7 /* DiffData.cpp */; };
-		D68B02D0205A4462001F3C40 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D68B02D1205A4462001F3C40 /* liblzma.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -65,9 +65,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D68B02D0205A4462001F3C40 /* liblzma.a in Frameworks */,
 				D62AA00F2054035600A61D43 /* libHDiffPatch.a in Frameworks */,
 				D6126B8D20468CF000183A42 /* libzlib.a in Frameworks */,
+				0D225C0E2AAD453600DBD5B1 /* liblzma.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
