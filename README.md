@@ -17,7 +17,6 @@ You can use this library (and Android NDK) to delta update your Apk.
 [zlib]: https://github.com/madler/zlib
 [lzma]: https://www.7-zip.org/sdk.html
 [Apk v2 sign]: https://source.android.com/security/apksigning/v2
-[Apk v3 sign]: https://source.android.com/security/apksigning/v3
 [Jar sign]: https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
 [BsDiff]: http://www.daemonology.net/bsdiff/
 [archive-patcher]: https://github.com/google/archive-patcher
@@ -40,11 +39,11 @@ ZipPatch() support multi-thread parallel compress mode when writing zip file, wh
 * NOTE:   
 if your need newZip(patch result) file byte by byte equal, `Released newZip` := **ApkNormalized**(newZip) before run ZipDiff, AND You should not modify the zlib version (unless it is certified compatible);   
 if your apk(or jar) file used [Jar sign](Apk v1 sign), is same as zip file;   
-if your apk used [Apk v2 sign](or [Apk v3 sign]), `Released newZip` := AndroidSDK#apksigner(**ApkNormalized**(AndroidSDK#apksigner(newZip)))  before ZipDiff;   
+if your apk used [Apk v2 sign](or [later](https://source.android.com/security/apksigning/v3)), `Released newApk` := AndroidSDK#apksigner(**ApkNormalized**(newApk))  before ZipDiff;   
    
 * NOTE:   
-ApkDiffPath can't be used in the Android app store, because it requires re-signing apk;      
-[sfpatcher] like [archive-patcher], is designed for Android app store, but patch is much faster than archive-patcher.
+ApkDiffPath can't be used by Android app store, because it requires re-signing apks before diff.   
+[sfpatcher] not require re-signing apks (like [archive-patcher]), is designed for Android app store, patch speed up by a factor of xx than archive-patcher & run with O(1) memory.   
 
 ---
 ## Why [ApkDiffPatch]
