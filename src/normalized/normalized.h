@@ -29,8 +29,7 @@
 #define ZipNormalized_normalized_h
 
 //规范化zip包;
-bool ZipNormalized(const char* srcApk,const char* dstApk,
-                   int ZipAlignSize,int compressLevel,
-                   bool isNotCompressEmptyFile=true,int* out_apkFilesRemoved=0);
+bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel,
+                   bool isNotCompressEmptyFile=true,bool isPageAlignSoFile=true,int* out_apkFilesRemoved=0);
 
 #endif //ZipNormalized_normalized_h

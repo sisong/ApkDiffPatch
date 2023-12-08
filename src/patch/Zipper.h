@@ -113,9 +113,11 @@ bool UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(UnZipper* self); //found t
 bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex); // file is in ApkV1Sign Dir
 bool UnZipper_file_isApkV1Sign(const UnZipper* self,int fileIndex); // file is ApkV1Sign File
 bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex);
+
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 int  UnZipper_searchFileIndexByName(const UnZipper* self,const char* fileName,int fileNameLen);
 bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* fileName,int fileNameLen);
+bool UnZipper_file_is_nameEndWith(const UnZipper* self,int fileIndex,const char* nameSuffix);//file name is end with nameSuffix
 
     
     struct TZipThreadWorks;
@@ -147,6 +149,7 @@ typedef struct Zipper{
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
+    size_t          _SoPageAlignSize;
     int             _compressLevel;
     int             _compressMemLevel;
     int             _fileHeaderCount;
@@ -172,9 +175,9 @@ typedef struct Zipper{
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                    int ZipAlignSize,int compressLevel,int compressMemLevel);
+                    int ZipAlignSize,int SoPageAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                    int ZipAlignSize,int compressLevel,int compressMemLevel);
+                    int ZipAlignSize,int SoPageAlignSize,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);

@@ -36,6 +36,8 @@
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; if (!_isInClear){ goto clear; } } }
 
+#define kSoPageAlignSize (1024*4)
+
 struct TFileValue{
     std::string fileName;
     int         fileIndex;
@@ -131,8 +133,8 @@ inline static bool isCompressedEmptyFile(const UnZipper* unzipper,int fileIndex)
             &&UnZipper_file_isCompressed(unzipper,fileIndex);
 }
 
-bool ZipNormalized(const char* srcApk,const char* dstApk,
-                   int ZipAlignSize,int compressLevel,bool isNotCompressEmptyFile,int* out_apkFilesRemoved){
+bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel,
+                   bool isNotCompressEmptyFile,bool isPageAlignSoFile,int* out_apkFilesRemoved){
     bool result=true;
     bool _isInClear=false;
     int  fileCount=0;
@@ -148,7 +150,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
     
     check(UnZipper_openFile(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel));
+    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,isPageAlignSoFile?kSoPageAlignSize:ZipAlignSize,
+                          compressLevel,kDefaultZlibCompressMemLevel));
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
     isHaveApkV3Sign=UnZipper_isHaveApkV3Sign(&unzipper);
     {
@@ -187,7 +190,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,
                 check(Zipper_file_append_set_new_isCompress(&zipper,false));
                 printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed!\n",fileName.c_str());
             }else{
-                printf("WARNING: \"%s\" is a compressed empty file, can't patch by old ZipPatch(version<v1.3.5)!)\n",fileName.c_str());
+                printf("WARNING: \"%s\" is a compressed empty file, can't patch by old(version<v1.3.5) ZipPatch!)\n",fileName.c_str());
             }
         }
         bool isAlwaysReCompress=true;
