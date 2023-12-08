@@ -75,6 +75,9 @@ typedef enum TDataDescriptor{
 #define kMinFileHeaderSize          (46)  //struct size
 
 
+static bool inline _isDirTag(char c){
+    return (c=='\\')|(c=='/');
+}
 
 //反向找到第一个kENDHEADERMAGIC的位置;
 static bool _UnZipper_searchEndCentralDirectory(UnZipper* self,ZipFilePos_t* out_endCentralDirectory_pos){
@@ -219,9 +222,18 @@ bool UnZipper_isHaveApkV1Sign(const UnZipper* self){
     return false;
 }
 
-bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* fileName,int fileNameLen){
-    return (UnZipper_file_nameLen(self,fileIndex)==fileNameLen)&&
-           (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),fileName,fileNameLen));
+bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* pathName,int pathNameLen){
+    return (UnZipper_file_nameLen(self,fileIndex)==pathNameLen)&&
+           (0==memcmp(UnZipper_file_nameBegin(self,fileIndex),pathName,pathNameLen));
+}
+
+bool UnZipper_file_is_lastNameWith(const UnZipper* self,int fileIndex,const char* lastName,int lastNameLen){
+         if (!UnZipper_file_is_nameEndWith(self,fileIndex,lastName,lastNameLen)) return false;
+        size_t nameL=UnZipper_file_nameLen(self,fileIndex);
+        if (lastNameLen==nameL) return true;
+        size_t s1=lastNameLen-nameL-1;
+        const char* fn=UnZipper_file_nameBegin(self,fileIndex);
+        return _isDirTag(fn[s1]);
 }
 
 int UnZipper_searchFileIndexByName(const UnZipper* self,const char* fileName,int fileNameLen){
@@ -300,12 +312,11 @@ bool UnZipper_file_isApkV1_or_jarSign(const UnZipper* self,int fileIndex){
          ||(0==memcmp(fn,kJarSignPath1,kJarSignPathLen));
 }
 
-bool UnZipper_file_is_nameEndWith(const UnZipper* self,int fileIndex,const char* nameSuffix){
-    const int nsLen=(int)strlen(nameSuffix);
+bool UnZipper_file_is_nameEndWith(const UnZipper* self,int fileIndex,const char* nameSuffix,int nameSuffixLen){
     int fnLen=UnZipper_file_nameLen(self,fileIndex);
-    if (fnLen<nsLen) return false;
+    if (fnLen<nameSuffixLen) return false;
     const char* fn=UnZipper_file_nameBegin(self,fileIndex);
-    return (0==memcmp(fn+fnLen-nsLen,nameSuffix,nsLen));
+    return (0==memcmp(fn+fnLen-nameSuffixLen,nameSuffix,nameSuffixLen));
 }
 
 bool UnZipper_file_isApkV1Sign(const UnZipper* self,int fileIndex){
@@ -1009,7 +1020,7 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     if (isNeedAlign){
         size_t headInfoLen=30+fileNameLen+extraFieldLen;
         size_t skipLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,self->_ZipAlignSize);
-        if (UnZipper_file_is_nameEndWith(srcZip,srcFileIndex,".so")){
+        if (UnZipper_file_is_nameEndWith(srcZip,srcFileIndex,".so",3)){
             size_t skipSoLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,self->_SoPageAlignSize);
             if (skipSoLen!=skipLen){
                 skipLen=skipSoLen;

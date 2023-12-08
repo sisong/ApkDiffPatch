@@ -116,8 +116,9 @@ bool UnZipper_file_isReCompressedByApkV2Sign(const UnZipper* self,int fileIndex)
 
 ZipFilePos_t UnZipper_fileEntry_offset_unsafe(const UnZipper* self,int fileIndex);
 int  UnZipper_searchFileIndexByName(const UnZipper* self,const char* fileName,int fileNameLen);
-bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* fileName,int fileNameLen);
-bool UnZipper_file_is_nameEndWith(const UnZipper* self,int fileIndex,const char* nameSuffix);//file name is end with nameSuffix
+bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* pathName,int pathNameLen);
+bool UnZipper_file_is_lastNameWith(const UnZipper* self,int fileIndex,const char* lastName,int lastNameLen);
+bool UnZipper_file_is_nameEndWith(const UnZipper* self,int fileIndex,const char* nameSuffix,int nameSuffixLen);//file name is end with nameSuffix
 
     
     struct TZipThreadWorks;

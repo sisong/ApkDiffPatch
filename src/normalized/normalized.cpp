@@ -50,18 +50,9 @@ struct TFileValue{
     static bool inline isEndWith(const std::string& s,const char* sub){
         return (s.find(sub)==s.size()-strlen(sub));
     }
-    static bool inline isNameWith(const std::string& s,const char* name){
-        if (!isEndWith(s,name)) return false;
-        size_t nameL=s.size()-strlen(name)-1;
-        if (s.size()==nameL) return true;
-        size_t s1=s.size()-nameL-1;
-        return isDirTag(s[s1]);
-    }
+
     static bool inline isSignMFFile(const std::string& s){
         return (s=="META-INF/MANIFEST.MF")||(s=="META-INF\\MANIFEST.MF");
-    }
-    static bool inline isCertFile(const std::string& s){
-        return isNameWith(s,"stamp-cert-sha256");
     }
     struct TCmp{
         inline explicit TCmp(int fileCount):_fileCount(fileCount){}
@@ -86,14 +77,14 @@ struct TFileValue{
         }
     };
 };
+
 static void getAllFiles(const UnZipper* zip,std::vector<TFileValue>& out_files){
     int fileCount=UnZipper_fileCount(zip);
     out_files.resize(fileCount);
     for (int i=0; i<fileCount; ++i) {
-        const char* fn=UnZipper_file_nameBegin(zip,i);
         TFileValue& fi=out_files[i];
         fi.fileIndex=i;
-        fi.fileName.assign(std::string(fn,fn+UnZipper_file_nameLen(zip,i)));
+        fi.fileName.assign(zipFile_name(zip,i));
     }
 }
 
@@ -112,7 +103,7 @@ static int removeNonEmptyDirs(const UnZipper* zip,std::vector<TFileValue>& files
             if (nL>ny.size()) continue;
             if (0!=memcmp(nx.c_str(),ny.c_str(),nL)) continue;
             if (((nL>0)&&TFileValue::isDirTag(nx[nL-1]))||
-            ((nL<ny.size())&&TFileValue::isDirTag(ny[nL])))
+              ((nL<ny.size())&&TFileValue::isDirTag(ny[nL])))
                 rfiles[i]->fileIndex=-1; //need remove
         }
     }
@@ -170,6 +161,11 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
                     removedFiles.push_back(files[i].fileName);
                     continue; //remove JarSign(ApkV1Sign) when found ApkV2Sign
                 }
+            }
+            if (getIsStampCertFile(&unzipper,fileIndex)){
+                ++apkFilesRemoved;
+                removedFiles.push_back(files[i].fileName);
+                continue; //remove stamp cert file
             }
 
             fileIndexs.push_back(fileIndex);

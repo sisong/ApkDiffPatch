@@ -56,11 +56,12 @@ bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,
                                       int zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
 size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示未对齐;
 
-static inline std::string zipFile_name(UnZipper* self,int fileIndex){
+static inline std::string zipFile_name(const UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);
     const char* nameBegin=UnZipper_file_nameBegin(self,fileIndex);
     return std::string(nameBegin,nameBegin+nameLen);
 }
+bool getIsStampCertFile(const UnZipper* self,int fileIndex);
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      bool newCompressedDataIsNormalized,
