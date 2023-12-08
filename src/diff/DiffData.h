@@ -61,7 +61,6 @@ static inline std::string zipFile_name(const UnZipper* self,int fileIndex){
     const char* nameBegin=UnZipper_file_nameBegin(self,fileIndex);
     return std::string(nameBegin,nameBegin+nameLen);
 }
-bool getIsStampCertFile(const UnZipper* self,int fileIndex);
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
                      bool newCompressedDataIsNormalized,

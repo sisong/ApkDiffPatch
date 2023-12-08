@@ -1020,7 +1020,8 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     if (isNeedAlign){
         size_t headInfoLen=30+fileNameLen+extraFieldLen;
         size_t skipLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,self->_ZipAlignSize);
-        if (UnZipper_file_is_nameEndWith(srcZip,srcFileIndex,".so",3)){
+        if ((self->_SoPageAlignSize!=self->_ZipAlignSize)&&UnZipper_file_is_nameEndWith(srcZip,srcFileIndex,".so",3)){
+            check(0==(self->_SoPageAlignSize%self->_ZipAlignSize));
             size_t skipSoLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,self->_SoPageAlignSize);
             if (skipSoLen!=skipLen){
                 skipLen=skipSoLen;

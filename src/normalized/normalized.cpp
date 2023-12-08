@@ -162,7 +162,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
                     continue; //remove JarSign(ApkV1Sign) when found ApkV2Sign
                 }
             }
-            if (getIsStampCertFile(&unzipper,fileIndex)){
+            if (UnZipper_file_isStampCertFile(&unzipper,fileIndex)){
                 ++apkFilesRemoved;
                 removedFiles.push_back(files[i].fileName);
                 continue; //remove stamp cert file

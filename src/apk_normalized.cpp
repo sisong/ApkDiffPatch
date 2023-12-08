@@ -60,6 +60,7 @@ static void printUsage(){
            "  -as-alignSize\n"
            "    set align size for uncompressed file in zip for optimize app run speed,\n"
            "    1 <= alignSize <= 4k, recommended 4,8, DEFAULT -as-8.\n"
+           "    NOTE: if -ap-1, must 4096%%alignSize==0;\n"
            "  -ap-isPageAlignSoFile\n"
            "    if found uncompressed .so file in the zip, need align it to 4k page?\n"
            "      -ap-0         not page-align uncompressed .so files;\n"

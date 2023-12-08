@@ -60,11 +60,6 @@ bool zipFileData_isSame(UnZipper* selfZip,int selfIndex,UnZipper* srcZip,int src
     return 0==memcmp(buf.data(),buf.data()+selfFileSize,selfFileSize);
 }
 
-
-bool getIsStampCertFile(const UnZipper* self,int fileIndex){
-    return UnZipper_file_is_lastNameWith(self,fileIndex,"stamp-cert-sha256",17);
-}
-
 bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,
                             const hpatch_TStreamInput* newZipStream,
                             int newApkFilesRemoved,bool* out_isOldHaveApkV2Sign){
@@ -103,7 +98,7 @@ bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,
         for (std::map<std::string,int>::iterator it=oldMap.begin();it!=oldMap.end();++it){
             int old_i=it->second;
             check_clear(UnZipper_file_isApkV1Sign(&oldZip,old_i)
-                        ||getIsStampCertFile(&oldZip,old_i)
+                        ||UnZipper_file_isStampCertFile(&oldZip,old_i)
                         ||(UnZipper_file_uncompressedSize(&oldZip,old_i)==0));
         }
     }

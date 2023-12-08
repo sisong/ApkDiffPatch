@@ -120,6 +120,9 @@ bool UnZipper_file_is_sameName(const UnZipper* self,int fileIndex,const char* pa
 bool UnZipper_file_is_lastNameWith(const UnZipper* self,int fileIndex,const char* lastName,int lastNameLen);
 bool UnZipper_file_is_nameEndWith(const UnZipper* self,int fileIndex,const char* nameSuffix,int nameSuffixLen);//file name is end with nameSuffix
 
+static inline bool UnZipper_file_isStampCertFile(const UnZipper* self,int fileIndex){
+    return UnZipper_file_is_lastNameWith(self,fileIndex,"stamp-cert-sha256",17);
+}
     
     struct TZipThreadWorks;
     struct TZipThreadWork;
