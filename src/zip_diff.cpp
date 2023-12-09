@@ -69,7 +69,9 @@ static void printUsage(){
 #   if (_IS_USED_MULTITHREAD)
            "            support run by multi-thread parallel, fast!\n"
 #   endif
-           "            WARNING: code not compatible with it compressed by -c-lzma!\n"
+           "            NOTE: code not compatible with it compressed by -c-lzma!\n"
+           "            WARNING: this is new diffFile format, it can't patch by old(version<v1.4.0) ZipPatch!\n"
+
 #endif
            "  -m-matchScore\n"
            "      matchScore>=0, DEFAULT -m-3.\n"
@@ -77,7 +79,7 @@ static void printUsage(){
            "      create single compressed diffData(DEFAULT closed), only need one decompress buffer\n"
            "      when patch, and support step by step patching when step by step downloading!\n"
            "      stepSize>=" _HDIFFPATCH_EXPAND_AND_QUOTE(hpatch_kStreamCacheSize) ", DEFAULT -SD-2m, recommended 64k,512k,8m etc...\n"
-           "      WARNING: this is new diffFile format, must update patcher for support it.\n"
+           "      WARNING: this is new diffFile format, it can't patch by old(version<v1.6.0) ZipPatch!\n"
            "  -d  Diff only, do't run patch check, DEFAULT run patch check.\n"
            "  -t  Test only, run patch check, ZipPatch(oldZipFile,testDiffFile)==newZipFile ? \n"
 #if (_IS_USED_MULTITHREAD)

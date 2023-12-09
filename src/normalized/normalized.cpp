@@ -36,8 +36,6 @@
     if (!(value)){ printf(#value" ERROR!\n");  \
         result=false; if (!_isInClear){ goto clear; } } }
 
-#define kSoPageAlignSize (1024*4)
-
 struct TFileValue{
     std::string fileName;
     int         fileIndex;
@@ -134,6 +132,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     int  jarSignFileCount=0;
     std::vector<int>   fileIndexs;
     std::vector<std::string>  removedFiles;
+    std::vector<std::string> _compressedEmptyFiles; //only for WARNING
     UnZipper unzipper;
     Zipper   zipper;
     UnZipper_init(&unzipper);
@@ -141,7 +140,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     
     check(UnZipper_openFile(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,isPageAlignSoFile?kSoPageAlignSize:ZipAlignSize,
+    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,isPageAlignSoFile,
                           compressLevel,kDefaultZlibCompressMemLevel));
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
     isHaveApkV3Sign=UnZipper_isHaveApkV3Sign(&unzipper);
@@ -186,8 +185,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
                 check(Zipper_file_append_set_new_isCompress(&zipper,false));
                 printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed!\n",fileName.c_str());
             }else{
-                printf("WARNING: \"%s\" is a compressed empty file, can't patch by old(version<v1.3.5) ZipPatch!)\n",fileName.c_str());
-            }
+                _compressedEmptyFiles.push_back(fileName);
+             }
         }
         bool isAlwaysReCompress=true;
         check(Zipper_file_append_copy(&zipper,&unzipper,fileIndex,isAlwaysReCompress));
@@ -206,6 +205,9 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     }
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
     
+    for (int i=0;i<(int)_compressedEmptyFiles.size();++i){
+        printf("WARNING: \"%s\" is a compressed empty file, can't patch by old(version<v1.3.5) ZipPatch!)\n",_compressedEmptyFiles[i].c_str());
+    }
     if (jarSignFileCount>0){
         if (isHaveApkV2Sign){
             printf("WARNING: src removed JarSign(ApkV1Sign) (%d file, need re sign)\n",jarSignFileCount);
@@ -221,6 +223,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
                :"WARNING: src removed ApkV2Sign data (%d Byte, need re sign)\n",
                 (int)UnZipper_ApkV2SignSize(&unzipper));
     }
+    if (zipper._normalizeSoPageAlignCount>0)
+        printf("WARNING: this is new diffFile format, it can't patch by old(version<v1.7.0) ZipPatch!\n");
     printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
 
 clear:

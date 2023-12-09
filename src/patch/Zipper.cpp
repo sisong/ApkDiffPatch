@@ -35,6 +35,8 @@
 #include "../../HDiffPatch/compress_plugin_demo.h"
 #include "../../HDiffPatch/decompress_plugin_demo.h"
 
+#define kSoPageAlignSize (1024*4)
+
 static const TCompressPlugin_zlib zipCompatibleCompressPlugin={
     {_zlib_compressType,_default_maxCompressedSize,_default_setParallelThreadNumber,_zlib_compress},
             9,MAX_MEM_LEVEL,-MAX_WBITS,hpatch_FALSE};
@@ -191,7 +193,7 @@ inline static int32_t _centralDirectory_size(const UnZipper* self){
     return readUInt32(self->_endCentralDirectory+12);
 }
 
-inline static const TByte* fileHeaderBuf(const UnZipper* self,int fileIndex){
+inline static TByte* fileHeaderBuf(const UnZipper* self,int fileIndex){
     return self->_centralDirectory+self->_fileHeaderOffsets[fileIndex];
 }
 
@@ -522,6 +524,18 @@ bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCE
     bool isFileDataOffsetMatch=true;
     check(_UnZipper_vce_normalized(self,isFileDataOffsetMatch,&fileDataEndPos));
     return true;
+}
+
+
+inline static unsigned char* _at_file_generalPurposeBitFlag(const UnZipper* self,int fileIndex){
+    return fileHeaderBuf(self,fileIndex)+8;
+}
+//NOTE: used bit pos 7 in generalPurposeBitFlag for saving isPageAlignSoFile tag
+inline static bool _file_getIsPageAlignSoFile(const UnZipper* self,int fileIndex){
+    return 0!=((*_at_file_generalPurposeBitFlag(self,fileIndex))&(1<<7));
+}
+inline static void _file_setIsPageAlignSoFile(const UnZipper* self,int fileIndex){
+    (*_at_file_generalPurposeBitFlag(self,fileIndex))|=(1<<7);
 }
 
 inline static const unsigned char* _at_file_compressType(const UnZipper* self,int fileIndex){
@@ -863,17 +877,15 @@ bool Zipper_close(Zipper* self){
 #define isUsedMT(self) (self->_threadNum>1)
 
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                       int ZipAlignSize,int SoPageAlignSize,int compressLevel,int compressMemLevel){
+                       int ZipAlignSize,bool isNormalizeSoPageAlign,int compressLevel,int compressMemLevel){
 #if (_IS_NEED_FIXED_ZLIB_VERSION)
     check(0==strcmp(kNormalizedZlibVersion,zlibVersion()));//fixed zlib version
 #endif
     assert(ZipAlignSize>0);
-    assert(SoPageAlignSize>0);
     if (ZipAlignSize<=0) ZipAlignSize=1;
-    if (SoPageAlignSize<=0) SoPageAlignSize=1;
     checkCompressSet(compressLevel,compressMemLevel);
     self->_ZipAlignSize=ZipAlignSize;
-    self->_SoPageAlignSize=SoPageAlignSize;
+    self->_isNormalizeSoPageAlign=isNormalizeSoPageAlign;
     self->_compressLevel=compressLevel;
     self->_compressMemLevel=compressMemLevel;
     
@@ -922,12 +934,12 @@ void Zipper_by_multi_thread(Zipper* self,int threadNum){
 }
 
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                      int ZipAlignSize,int SoPageAlignSize,int compressLevel,int compressMemLevel){
+                      int ZipAlignSize,bool isNormalizeSoPageAlign,int compressLevel,int compressMemLevel){
     assert(self->_fileStream.m_file==0);
     check(hpatch_TFileStreamOutput_open(&self->_fileStream,zipFileName,(hpatch_StreamPos_t)(-1)));
     hpatch_TFileStreamOutput_setRandomOut(&self->_fileStream,hpatch_TRUE);
     bool result=Zipper_openStream(self,&self->_fileStream.base,fileEntryMaxCount,
-                                  ZipAlignSize,SoPageAlignSize,compressLevel,compressMemLevel);
+                                  ZipAlignSize,isNormalizeSoPageAlign,compressLevel,compressMemLevel);
     if (!result){
         hpatch_TFileStreamOutput_close(&self->_fileStream);
         self->_fileStream.m_file=0;
@@ -1016,21 +1028,41 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     uint16_t extraFieldLen=readUInt16(headBuf+30);
     uint16_t extraFieldLen_for_align=extraFieldLen;
     bool isNeedAlign=(!isFullInfo)&&(!isCompressed); //dir or 0 size file need align too, same AndroidSDK#zipalign
-    bool isNeedSoAlign=false;
+    size_t curAlignSize=self->_ZipAlignSize;
     if (isNeedAlign){
         size_t headInfoLen=30+fileNameLen+extraFieldLen;
-        size_t skipLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,self->_ZipAlignSize);
-        if ((self->_SoPageAlignSize!=self->_ZipAlignSize)&&UnZipper_file_is_nameEndWith(srcZip,srcFileIndex,".so",3)){
-            check(0==(self->_SoPageAlignSize%self->_ZipAlignSize));
-            size_t skipSoLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,self->_SoPageAlignSize);
-            if (skipSoLen!=skipLen){
-                skipLen=skipSoLen;
+        size_t skipLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,curAlignSize);
+        if ((kSoPageAlignSize!=curAlignSize)&&UnZipper_file_is_nameEndWith(srcZip,srcFileIndex,".so",3)){
+            bool tag_sPageAlignSoFile=_file_getIsPageAlignSoFile(srcZip,srcFileIndex);
+            bool isNeedSoAlign=false;
+            if (self->_isNormalizeSoPageAlign){ //in Normalize
+                if (tag_sPageAlignSoFile){//error
+                    LOG_ERR("ERROR: Normalize unsupport this zip file, required bit pos in general purpose bit flag is already in use.\n");
+                    return false;
+                }
+                if (0!=(kSoPageAlignSize%curAlignSize)){//error
+                    LOG_ERR("ERROR: Normalize unsupport this AlignSize %d\n",(int)curAlignSize);
+                    return false;
+                }
+                isNeedSoAlign=true;
+            }else if (tag_sPageAlignSoFile){ //in patch
                 isNeedSoAlign=true;
             }
+            if (isNeedSoAlign){
+                curAlignSize=kSoPageAlignSize;
+                size_t skipSoLen=_getAlignSkipLen(self->_curFilePos+headInfoLen,curAlignSize);
+                if (skipSoLen!=skipLen){
+                    skipLen=skipSoLen;
+                    if (self->_isNormalizeSoPageAlign){
+                        _file_setIsPageAlignSoFile(srcZip,srcFileIndex);
+                        ++self->_normalizeSoPageAlignCount;
+                    }
+                }
+            }
         }
+        
         if (skipLen>0){
-            if ((isNeedSoAlign)   //为了保持兼容旧的patch,用extraField来对齐;
-                ||(fileIndex==0)){//只能扩展第一个entry的extraField来对齐;
+            if (fileIndex==0){//只能扩展第一个entry的extraField来对齐;
                 extraFieldLen_for_align+=(uint16_t)skipLen;
                 {// print WARNING 
                     char fileName[hpatch_kPathMaxSize];
@@ -1077,7 +1109,7 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
     if (fileCommentLen>0)
         check(_write(self,headBuf+46+fileNameLen+extraFieldLen,fileCommentLen));//[+文件注释];
     if (isNeedAlign)
-        assert_align(self->_curFilePos,isNeedSoAlign?self->_SoPageAlignSize:self->_ZipAlignSize);//对齐检查;
+        assert_align(self->_curFilePos,curAlignSize);//对齐检查;
     return  true;
 }
 

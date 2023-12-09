@@ -153,7 +153,8 @@ typedef struct Zipper{
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
-    size_t          _SoPageAlignSize;
+    bool            _isNormalizeSoPageAlign;
+    int             _normalizeSoPageAlignCount;
     int             _compressLevel;
     int             _compressMemLevel;
     int             _fileHeaderCount;
@@ -179,9 +180,9 @@ typedef struct Zipper{
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                    int ZipAlignSize,int SoPageAlignSize,int compressLevel,int compressMemLevel);
+                    int ZipAlignSize,bool isNormalizeSoPageAlign,int compressLevel,int compressMemLevel);
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                    int ZipAlignSize,int SoPageAlignSize,int compressLevel,int compressMemLevel);
+                    int ZipAlignSize,bool isNormalizeSoPageAlign,int compressLevel,int compressMemLevel);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);

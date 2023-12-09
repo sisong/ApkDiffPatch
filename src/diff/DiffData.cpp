@@ -203,7 +203,7 @@ static bool _isAligned(const std::vector<ZipFilePos_t>& offsetList,ZipFilePos_t 
 size_t getZipAlignSize_unsafe(UnZipper* zip){
     //note: 该函数对没有Normalized的zip允许获取AlignSize失败;
     int fileCount=UnZipper_fileCount(zip);
-    ZipFilePos_t maxSkipLen=0;
+    //ZipFilePos_t maxSkipLen=0;
     ZipFilePos_t minOffset=1024*4; //set search max AlignSize
     std::vector<ZipFilePos_t> offsetList;
     for (int i=0; i<fileCount; ++i){
@@ -214,18 +214,18 @@ size_t getZipAlignSize_unsafe(UnZipper* zip){
         ZipFilePos_t lastEndPos=(i<=0)?0:UnZipper_fileEntry_endOffset(zip,i-1); //unsafe last可能并没有按顺序放置?
         if (entryOffset<lastEndPos) return 0; //顺序有误;
         ZipFilePos_t skipLen=entryOffset-lastEndPos;
-        if (skipLen>maxSkipLen) maxSkipLen=skipLen;
+        //if (skipLen>maxSkipLen) maxSkipLen=skipLen;
         ZipFilePos_t offset=UnZipper_fileData_offset(zip,i);
         if (offset<minOffset) minOffset=offset;
         offsetList.push_back(offset);
     }
     if (offsetList.empty())
         return 1;
-    for (ZipFilePos_t align=minOffset; align>=maxSkipLen+1; --align) {
+    for (ZipFilePos_t align=minOffset; align>1; --align) {
         if (_isAligned(offsetList,align))
             return align;
     }
-    return 0;
+    return 1;
 }
 
 bool getSamePairList(UnZipper* newZip,UnZipper* oldZip,
