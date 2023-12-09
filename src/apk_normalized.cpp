@@ -43,7 +43,7 @@
 #endif
 
 static void printUsage(){
-    printf("usage: ApkNormalized srcApk out_newApk [-nce-isNotCompressEmptyFile] [-cl-compressLevel] [-as-alignSize] [-v] \n"
+    printf("usage: ApkNormalized srcApk normalizedApk [-cl-compressLevel]\n"
            "options:\n"
            "  input srcApk file can *.zip *.jar *.apk file type;\n"
            "    ApkNormalized normalized zip file:\n"
@@ -52,19 +52,25 @@ static void printUsage(){
            "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
            "      compatible with jar sign(apk v1 sign), etc...\n"
            "    if apk file used apk v2 sign, must re sign apk file after ApkNormalized;\n"
-           "      release newApk:=AndroidSDK#apksigner(out_newApk)\n"
-           "  -nce-isNotCompressEmptyFile\n"
-           "    if found compressed empty file in the zip, need change it to not compressed?\n"
-           "      -nce-0        keep the original compress setting for empty file;\n"
-           "                      WARNING: if have compressed empty file,\n"
-           "                      it can't patch by old ZipPatch(version<v1.3.5)!\n"
-           "      -nce-1        DEFAULT, not compress all empty file.\n"
+           "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
            "  -cl-compressLevel\n"
-           "    set zlib compress level, 0<=compressLevel<=9, DEFAULT -cl-6;\n"
-           "    if set 9, compress rate is high, but compress speed is very slow when patching.\n"
+           "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"
+           "    WARNING: -cl not recommended 7,8,9, compress rate is high, but\n"
+           "            compress speed is very slow when patching.\n"
            "  -as-alignSize\n"
            "    set align size for uncompressed file in zip for optimize app run speed,\n"
            "    1 <= alignSize <= 4k, recommended 4,8, DEFAULT -as-8.\n"
+           "    NOTE: if -ap-1, must 4096%%alignSize==0;\n"
+           "  -ap-isPageAlignSoFile\n"
+           "    if found uncompressed .so file in the zip, need align it to 4k page?\n"
+           "      -ap-0         not page-align uncompressed .so files;\n"
+           "      -ap-1         DEFAULT, page-align uncompressed .so files.\n"
+           "  -nce-isNotCompressEmptyFile\n"
+           "    if found compressed empty file in the zip, need change it to not compressed?\n"
+           "      -nce-0        keep the original compress setting for empty file;\n"
+           "                    WARNING: if have compressed empty file,\n"
+           "                            it can't patch by old(version<v1.3.5) ZipPatch!\n"
+           "      -nce-1        DEFAULT, not compress all empty file.\n"
            "  -v  output Version info. \n"
            );
 }
@@ -97,6 +103,7 @@ int main(int argc,char* argv[]){
 
 int normalized_cmd_line(int argc, const char * argv[]){
     hpatch_BOOL isNotCompressEmptyFile=_kNULL_VALUE;
+    hpatch_BOOL isPageAlignSoFile=_kNULL_VALUE;
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
     size_t      compressLevel = _kNULL_SIZE;
     size_t      alignSize     = _kNULL_SIZE;
@@ -144,8 +151,11 @@ int normalized_cmd_line(int argc, const char * argv[]){
                     _options_check(kmg_to_size(pnum,strlen(pnum),&alignSize),"-as-?");
                     const size_t _kMaxAlignSize=4*1024;
                     _options_check((1<=alignSize)&&(alignSize<=_kMaxAlignSize),"-as-?");
+                }else if ((op[2]=='p')&&(op[3]=='-')&&((op[4]=='0')||(op[4]=='1'))){
+                    _options_check(isPageAlignSoFile==_kNULL_VALUE,"-ap-?");
+                    isPageAlignSoFile=(hpatch_BOOL)(op[4]=='1');
                 }else{
-                    _options_check(hpatch_FALSE,"-as?");
+                    _options_check(hpatch_FALSE,"-a?");
                 }
             } break;
             default: {
@@ -155,6 +165,8 @@ int normalized_cmd_line(int argc, const char * argv[]){
     }
     if (isNotCompressEmptyFile==_kNULL_VALUE)
         isNotCompressEmptyFile=hpatch_TRUE;
+    if (isPageAlignSoFile==_kNULL_VALUE)
+        isPageAlignSoFile=hpatch_TRUE;
     if (compressLevel==_kNULL_SIZE)
         compressLevel=kDefaultZlibCompressLevel;
     if (alignSize==_kNULL_SIZE)
@@ -166,22 +178,25 @@ int normalized_cmd_line(int argc, const char * argv[]){
         if (arg_values_size==0)
             return 0; //ok
     }
-    
+
+    if (compressLevel>6)
+        printf("WARNING: not recommended 7,8,9, compress rate is high, but compress speed is very slow when patching.\n");
+        
     _options_check(arg_values_size==2,"count");
     const char* srcApk=arg_values[0];
     const char* dstApk=arg_values[1];
     printf("src: \"%s\"\nout: \"%s\"\n",srcApk,dstApk);
     double time0=clock_s();
-    int apkV1SignFilesRemoved=0;
+    int apkFilesRemoved=0;
     if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,
-                       isNotCompressEmptyFile?true:false,&apkV1SignFilesRemoved)){
+                       (bool)isNotCompressEmptyFile,(bool)isPageAlignSoFile,&apkFilesRemoved)){
         printf("\nrun ApkNormalized ERROR!\n");
         return 1;
     }
     printf("run ApkNormalized ok!\n");
     
     //check
-    if (!getZipIsSame(srcApk,dstApk,apkV1SignFilesRemoved)){
+    if (!getZipIsSame(srcApk,dstApk,apkFilesRemoved)){
         printf("ApkNormalized result file check ERROR!\n");
         return 1;
     }

@@ -144,11 +144,10 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     
     newZipAlignSize=getZipAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip)){//precondition (+checkZipIsSame() to complete)
-        newZip._isDataNormalized=(newZipAlignSize>0)&(newZip._dataDescriptorCount==0);
+        newZip._isDataNormalized=(newZipAlignSize>0)&&(newZip._dataDescriptorCount==0);
     }else{
         newZip._isDataNormalized=true;
     }
-    newZipAlignSize=(newZipAlignSize>0)?newZipAlignSize:kDefaultZipAlignSize;
     if (newZip._isDataNormalized && UnZipper_isHaveApkV2Sign(&newZip)){
         newCompressedDataIsNormalized=getCompressedIsNormalized(&newZip,&newZipNormalized_compressLevel,
                                                                 &newZipNormalized_compressMemLevel);
@@ -304,7 +303,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     if (newIsV2Sign&(!newZip->_isDataNormalized)){
         //maybe bring apk can't install ERROR!
         printf("  ERROR: newZip not Normalized, need do "
-               "newZip=AndroidSDK#apksigner(ApkNormalized(AndroidSDK#apksigner(newZip))) before running ZipDiff!\n");
+               "newZip=AndroidSDK#apksigner(ApkNormalized(newZip)) before running ZipDiff!\n");
         isOk=false;
     }
     if ((!newIsV2Sign)&&UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(newZip)){

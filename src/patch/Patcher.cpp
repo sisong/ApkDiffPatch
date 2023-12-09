@@ -154,7 +154,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
     
     check(Zipper_openStream(&out_newZip,outNewZipStream,(int)zipDiffData.newZipFileCount,
-                          (int)zipDiffData.newZipAlignSize,(int)zipDiffData.newCompressLevel,
+                          (int)zipDiffData.newZipAlignSize,false,(int)zipDiffData.newCompressLevel,
                           (int)zipDiffData.newCompressMemLevel),PATCH_OPENWRITE_ERROR);
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsDataNormalized!=0,
