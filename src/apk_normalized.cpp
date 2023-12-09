@@ -65,6 +65,8 @@ static void printUsage(){
            "    if found uncompressed .so file in the zip, need align it to 4k page?\n"
            "      -ap-0         not page-align uncompressed .so files;\n"
            "      -ap-1         DEFAULT, page-align uncompressed .so files.\n"
+           "                        WARNING: if have uncompressed .so file & do page-align,\n"
+           "                                it can't patch by old(version<v1.7.0) ZipPatch!\n"
            "  -nce-isNotCompressEmptyFile\n"
            "    if found compressed empty file in the zip, need change it to not compressed?\n"
            "      -nce-0        keep the original compress setting for empty file;\n"

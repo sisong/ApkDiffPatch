@@ -224,7 +224,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
                 (int)UnZipper_ApkV2SignSize(&unzipper));
     }
     if (zipper._normalizeSoPageAlignCount>0)
-        printf("WARNING: this is new diffFile format, it can't patch by old(version<v1.7.0) ZipPatch!\n");
+        printf("WARNING: found uncompressed .so file & do page-align, it can't patch by old(version<v1.7.0) ZipPatch!\n");
     printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
 
 clear:
