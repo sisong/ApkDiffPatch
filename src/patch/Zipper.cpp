@@ -860,13 +860,13 @@ bool Zipper_close(Zipper* self){
     
     self->_stream=0;
     self->_fileEntryCount=0;
-    if (self->_buf) { free(self->_buf); self->_buf=0; }
     if (self->_fileStream.m_file) { check(hpatch_TFileStreamOutput_close(&self->_fileStream)); }
     if (self->_append_stream.compressHandle!=0){
         struct _zlib_TCompress* compressHandle=self->_append_stream.compressHandle;
         self->_append_stream.compressHandle=0;
         check(_zlib_compress_close_by(compressPlugin,compressHandle));
     }
+    if (self->_buf) { free(self->_buf); self->_buf=0; }
     return true;
 }
 
@@ -1289,12 +1289,15 @@ bool Zipper_file_append_end(Zipper* self){
     if (append_state->self==0) { assert(false); return false; }
     
     bool result=true;
-    if (append_state->compressHandle!=0){
+    const bool isCompressedFile=(append_state->compressHandle!=0);
+    if (isCompressedFile){
         if ((append_state->inputPos==0)&&(append_state->outputPos==0)){
             Byte emptyBuf=0; //compress empty file
             check(append_state->write(append_state,0,&emptyBuf,&emptyBuf));
         }
-        check_clear(_zlib_compress_close_by(compressPlugin,append_state->compressHandle));
+        struct _zlib_TCompress* compressHandle=append_state->compressHandle;
+        append_state->compressHandle=0;
+        check_clear(_zlib_compress_close_by(compressPlugin,compressHandle));
     }
     
     check_clear(append_state->inputPos==append_state->streamSize);
@@ -1307,7 +1310,7 @@ bool Zipper_file_append_end(Zipper* self){
         check_clear(_dispose_filishedThreadWork(self,false));
     }
 #endif
-    if (append_state->compressHandle!=0){
+    if (isCompressedFile){
         assert(append_state->outputPos==(uint32_t)append_state->outputPos);
         uint32_t compressedSize=(uint32_t)append_state->outputPos;
         check_clear(_zipper_file_update_compressedSize(self,append_state->curFileIndex,compressedSize));

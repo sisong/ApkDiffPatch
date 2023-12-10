@@ -150,7 +150,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
         getAllFiles(&unzipper,files);
         apkFilesRemoved=removeNonEmptyDirs(&unzipper,files);
         fileCount=(int)files.size();
-        std::sort(files.begin(),files.end(),TFileValue::TCmp(fileCount));
+        std::sort(files.begin(),files.end(),TFileValue::TCmp(UnZipper_fileCount(&unzipper)));
         for (int i=0; i<fileCount; ++i) {
             int fileIndex=files[i].fileIndex;
             if (UnZipper_file_isApkV1Sign(&unzipper,fileIndex)){
