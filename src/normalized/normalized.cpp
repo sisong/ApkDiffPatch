@@ -210,17 +210,17 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     }
     if (jarSignFileCount>0){
         if (isHaveApkV2Sign){
-            printf("WARNING: src removed JarSign(ApkV1Sign) (%d file, need re sign)\n",jarSignFileCount);
+            printf("WARNING: src removed JarSign(ApkV1Sign) (%d file, need re-sign)\n",jarSignFileCount);
         }else{
-            printf("NOTE: src found JarSign(ApkV1Sign) (%d file)\n",jarSignFileCount);
+            printf("WARNING: src JarSign(ApkV1Sign) (%d file) has been Normalized, Don't re-sign!\n",jarSignFileCount);
         }
     }
     for (size_t i=0;i<removedFiles.size();++i)
         printf("WARNING:   removed file: %s\n",removedFiles[i].c_str());
     if (isHaveApkV2Sign){
         printf(isHaveApkV3Sign?
-                "WARNING: src removed ApkV2Sign & ApkV3Sign  data (%d Byte, need re sign)\n"
-               :"WARNING: src removed ApkV2Sign data (%d Byte, need re sign)\n",
+                "WARNING: src removed ApkV2Sign & ApkV3Sign  data (%d Byte, need re-sign)\n"
+               :"WARNING: src removed ApkV2Sign data (%d Byte, need re-sign)\n",
                 (int)UnZipper_ApkV2SignSize(&unzipper));
     }
     if (zipper._normalizeSoPageAlignCount>0)

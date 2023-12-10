@@ -51,7 +51,7 @@ static void printUsage(){
            "      align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
            "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
            "      compatible with jar sign(apk v1 sign), etc...\n"
-           "    if apk file used apk v2 sign, must re sign apk file after ApkNormalized;\n"
+           "    if apk file used apk v2 sign, must re-sign apk file after ApkNormalized;\n"
            "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
            "  -cl-compressLevel\n"
            "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"
