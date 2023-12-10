@@ -31,6 +31,13 @@
 #include <algorithm> //sort
 #include "../patch/Zipper.h"
 #include "../diff/DiffData.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+bool g_isPrintApkNormalizedFileName=true;
+#ifdef __cplusplus
+}
+#endif
 
 #define  check(value) { \
     if (!(value)){ printf(#value" ERROR!\n");  \
@@ -177,7 +184,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
-        printf("\"%s\"\n",fileName.c_str());
+        if (g_isPrintApkNormalizedFileName)
+            printf("\"%s\"\n",fileName.c_str());
         if (compressLevel==0){
             check(Zipper_file_append_set_new_isCompress(&zipper,false));
         } else if (isCompressedEmptyFile(&unzipper,fileIndex)){

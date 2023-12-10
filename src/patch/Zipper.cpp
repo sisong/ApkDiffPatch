@@ -526,16 +526,19 @@ bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCE
     return true;
 }
 
+//NOTE: used bit pos in generalPurposeBitFlag for saving isPageAlignSoFile tag
+#define kPurposeBitFlag_so_pos 7 //now 7,8?,10 unused by zip 
+#define _kPurposeBitFlag_so_BytePos (kPurposeBitFlag_so_pos/8)
+#define _kPurposeBitFlag_so_bitPos (kPurposeBitFlag_so_pos-(kPurposeBitFlag_so_pos/8)*8)
 
 inline static unsigned char* _at_file_generalPurposeBitFlag(const UnZipper* self,int fileIndex){
-    return fileHeaderBuf(self,fileIndex)+8;
+    return fileHeaderBuf(self,fileIndex)+8+_kPurposeBitFlag_so_BytePos;
 }
-//NOTE: used bit pos 7 in generalPurposeBitFlag for saving isPageAlignSoFile tag
 inline static bool _file_getIsPageAlignSoFile(const UnZipper* self,int fileIndex){
-    return 0!=((*_at_file_generalPurposeBitFlag(self,fileIndex))&(1<<7));
+    return 0!=((*_at_file_generalPurposeBitFlag(self,fileIndex))&(1<<_kPurposeBitFlag_so_bitPos));
 }
 inline static void _file_setIsPageAlignSoFile(const UnZipper* self,int fileIndex){
-    (*_at_file_generalPurposeBitFlag(self,fileIndex))|=(1<<7);
+    (*_at_file_generalPurposeBitFlag(self,fileIndex))|=(1<<_kPurposeBitFlag_so_bitPos);
 }
 
 inline static const unsigned char* _at_file_compressType(const UnZipper* self,int fileIndex){
@@ -998,7 +1001,6 @@ inline static size_t _getAlignSkipLen(size_t curPos,size_t align){
     return align-1-(curPos+align-1)%align;
 }
 inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
-    assert(alignSkipLen<self->_ZipAlignSize);
     const size_t bufSize =16;
     const TByte _alignSkipBuf[bufSize]={0};
     while (alignSkipLen>0) {

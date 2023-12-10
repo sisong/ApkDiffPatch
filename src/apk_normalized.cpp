@@ -73,6 +73,7 @@ static void printUsage(){
            "                    WARNING: if have compressed empty file,\n"
            "                            it can't patch by old(version<v1.3.5) ZipPatch!\n"
            "      -nce-1        DEFAULT, not compress all empty file.\n"
+           "  -q  quiet mode, don't print fileName\n"
            "  -v  output Version info. \n"
            );
 }
@@ -127,6 +128,10 @@ int normalized_cmd_line(int argc, const char * argv[]){
             case 'v':{
                 _options_check((isOutputVersion==_kNULL_VALUE)&&(op[2]=='\0'),"-v");
                 isOutputVersion=hpatch_TRUE;
+            } break;
+            case 'q':{
+                _options_check((op[2]=='\0'),"-q");
+                g_isPrintApkNormalizedFileName=false;
             } break;
             case 'n':{
                 if ((op[2]=='c')&&(op[3]=='e')&&(op[4]=='-')&&((op[5]=='0')||(op[5]=='1'))){
