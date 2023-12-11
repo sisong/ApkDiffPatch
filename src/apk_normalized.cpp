@@ -192,7 +192,8 @@ int normalized_cmd_line(int argc, const char * argv[]){
     _options_check(arg_values_size==2,"count");
     const char* srcApk=arg_values[0];
     const char* dstApk=arg_values[1];
-    printf("src: \"%s\"\nout: \"%s\"\n",srcApk,dstApk);
+    hpatch_printPath_utf8((std::string("src: \"")+srcApk+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string("out: \"")+dstApk+"\"\n").c_str());
     double time0=clock_s();
     int apkFilesRemoved=0;
     if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,

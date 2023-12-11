@@ -162,10 +162,13 @@ int zippatch_cmd_line(int argc, const char * argv[]) {
     }else{
         _options_check(false,"count");
     }
-    printf("oldZip   :\"%s\"\nzipDiff  :\"%s\"\noutNewZip:\"%s\"\n",oldZipPath,zipDiffPath,outNewZipPath);
-    if (tempUncompressFileName!=0)
-        printf("maxUncompressMemory:%" PRSizeT "\ntempUncompressFileName:\"%s\"\n",
-               maxUncompressMemory,tempUncompressFileName);
+    hpatch_printPath_utf8((std::string("oldZip   : \"")+oldZipPath+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string("zipDiff  : \"")+zipDiffPath+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string("outNewZip: \"")+outNewZipPath+"\"\n").c_str());
+    if (tempUncompressFileName!=0){
+        printf("maxUncompressMemory:%" PRSizeT "\n",maxUncompressMemory);
+        hpatch_printPath_utf8((std::string("tempUncompressFileName:\"")+tempUncompressFileName+"\"\n").c_str());
+    }
     
     double time0=clock_s();
     int exitCode=ZipPatch(oldZipPath,zipDiffPath,outNewZipPath,

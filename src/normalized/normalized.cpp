@@ -185,13 +185,14 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
         if (g_isPrintApkNormalizedFileName)
-            printf("\"%s\"\n",fileName.c_str());
+            hpatch_printPath_utf8(("\""+fileName+"\"\n").c_str());
         if (compressLevel==0){
             check(Zipper_file_append_set_new_isCompress(&zipper,false));
         } else if (isCompressedEmptyFile(&unzipper,fileIndex)){
             if (isNotCompressEmptyFile){
                 check(Zipper_file_append_set_new_isCompress(&zipper,false));
-                printf("NOTE: \"%s\" is a compressed empty file, change to uncompressed!\n",fileName.c_str());
+                hpatch_printPath_utf8(("NOTE: \""+fileName+"\"").c_str());
+                printf(" is a compressed empty file, change to uncompressed!\n");
             }else{
                 _compressedEmptyFiles.push_back(fileName);
              }
@@ -214,7 +215,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     check(Zipper_endCentralDirectory_append(&zipper,&unzipper));
     
     for (int i=0;i<(int)_compressedEmptyFiles.size();++i){
-        printf("WARNING: \"%s\" is a compressed empty file, can't patch by old(version<v1.3.5) ZipPatch!)\n",_compressedEmptyFiles[i].c_str());
+        hpatch_printPath_utf8(("WARNING: \""+_compressedEmptyFiles[i]).c_str());
+        printf(" is a compressed empty file, can't patch by old(version<v1.3.5) ZipPatch!)\n");
     }
     if (jarSignFileCount>0){
         if (isHaveApkV2Sign){
@@ -224,7 +226,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
         }
     }
     for (size_t i=0;i<removedFiles.size();++i)
-        printf("WARNING:   removed file: %s\n",removedFiles[i].c_str());
+        hpatch_printPath_utf8((std::string("WARNING:   removed file: \"")+removedFiles[i]+"\"\n").c_str());
     if (isHaveApkV2Sign){
         printf(isHaveApkV3Sign?
                 "WARNING: src removed ApkV2Sign & ApkV3Sign  data (%d Byte, need re-sign)\n"

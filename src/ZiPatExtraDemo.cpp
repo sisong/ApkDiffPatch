@@ -73,9 +73,9 @@ int extra_cmd_line(int argc, const char * argv[]) {
     srcZiPatPath =argv[1];
     outZiPatPath =argv[2];
     const char* appendData=argv[3];//NOTE: modify this for your require
-    printf(" src ZiPat :\"%s\"\n",srcZiPatPath);
-    printf(" out ZiPat :\"%s\"\n",outZiPatPath);
-    printf("test append:\"%s\"\n",appendData);
+    hpatch_printPath_utf8((std::string("src ZiPat  : \"")+srcZiPatPath+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string("out ZiPat  : \"")+outZiPatPath+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string("test append: \"")+appendData+"\"\n").c_str());
     if (!(addToExtra(srcZiPatPath,outZiPatPath,(const TByte*)appendData,strlen(appendData)))){
         return _kRET_ERROR;
     }

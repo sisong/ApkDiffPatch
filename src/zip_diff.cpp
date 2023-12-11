@@ -356,10 +356,11 @@ int zipdiff_cmd_line(int argc, const char * argv[]) {
     oldZipPath      =arg_values[0];
     newZipPath      =arg_values[1];
     outDiffFileName =arg_values[2];
-    printf((isDiff?"oldZip  :\"%s\"\nnewZip  :\"%s\"\noutDiff :\"%s\"\n":
-                   "oldZip  :\"%s\"\nnewZip  :\"%s\"\ntestDiff:\"%s\"\n"),
-                    oldZipPath,newZipPath,outDiffFileName);
-
+    hpatch_printPath_utf8((std::string("oldZip  : \"")+oldZipPath+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string("newZip  : \"")+newZipPath+"\"\n").c_str());
+    hpatch_printPath_utf8((std::string(isDiff?
+                                       "outDiff : \"":
+                                       "testDiff: \"")+outDiffFileName+"\"\n").c_str());
     double time0=clock_s();
     bool   isNewZipApkV2SignNoError=true;
     if (isDiff){
