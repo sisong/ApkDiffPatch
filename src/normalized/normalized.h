@@ -31,5 +31,11 @@
 //规范化zip包;
 bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel,
                    bool isNotCompressEmptyFile=true,bool isPageAlignSoFile=true,int* out_apkFilesRemoved=0);
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern bool g_isPrintApkNormalizedFileName; //default true
+#ifdef __cplusplus
+}
+#endif
 #endif //ZipNormalized_normalized_h

@@ -308,7 +308,7 @@ static bool checkZipInfo(UnZipper* oldZip,UnZipper* newZip){
     }
     if ((!newIsV2Sign)&&UnZipper_isHaveApkV2orV3SignTag_in_ApkV1SignFile(newZip)){
         //maybe bring apk can't install ERROR!
-        printf("  ERROR: newZip fond \"X-Android-APK-Signed: 2(or 3...)\" in ApkV1Sign file, need re sign "
+        printf("  ERROR: newZip fond \"X-Android-APK-Signed: 2(or 3...)\" in ApkV1Sign file, need re-sign "
                "newZip:=AndroidSDK#apksigner(newZip) before running ZipDiff!\n");
         isOk=false;
     }
