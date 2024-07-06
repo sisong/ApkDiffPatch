@@ -58,34 +58,34 @@
 		<Unit filename="../../src/normalized/normalized.cpp" />
 		<Unit filename="../../src/patch/OldStream.cpp" />
 		<Unit filename="../../src/patch/Zipper.cpp" />
-		<Unit filename="../../zlib1.2.11/adler32.c">
+		<Unit filename="../../zlib1.3.1/adler32.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/compress.c">
+		<Unit filename="../../zlib1.3.1/compress.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/crc32.c">
+		<Unit filename="../../zlib1.3.1/crc32.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/deflate.c">
+		<Unit filename="../../zlib1.3.1/deflate.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/inffast.c">
+		<Unit filename="../../zlib1.3.1/inffast.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/inflate.c">
+		<Unit filename="../../zlib1.3.1/inflate.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/inftrees.c">
+		<Unit filename="../../zlib1.3.1/inftrees.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/trees.c">
+		<Unit filename="../../zlib1.3.1/trees.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/uncompr.c">
+		<Unit filename="../../zlib1.3.1/uncompr.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="../../zlib1.2.11/zutil.c">
+		<Unit filename="../../zlib1.3.1/zutil.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>

@@ -10,7 +10,7 @@ ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
   Lzma_Files += $(LOCAL_PATH)/../../lzma/Asm/arm64/LzmaDecOpt.S
 endif
 
-ZLIB_PATH  := $(LOCAL_PATH)/../../zlib1.2.11
+ZLIB_PATH  := $(LOCAL_PATH)/../../zlib1.3.1
 Zlib_Files := $(ZLIB_PATH)/crc32.c    \
               $(ZLIB_PATH)/deflate.c  \
               $(ZLIB_PATH)/inflate.c  \

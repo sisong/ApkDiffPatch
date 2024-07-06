@@ -1,5 +1,5 @@
-[submodule "zlib1.2.11"]
-	path = zlib1.2.11
+[submodule "zlib1.3.1"]
+	path = zlib1.3.1
 	url = https://github.com/sisong/zlib.git
 [submodule "HDiffPatch"]
 	path = HDiffPatch

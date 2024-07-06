@@ -52,7 +52,7 @@
 
 #if (!_IsNeedIncludeDefaultCompressHead)
 #   if (_IS_NEED_FIXED_ZLIB_VERSION)
-#       include "../../zlib1.2.11/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
+#       include "../../zlib1.3.1/zlib.h" // http://zlib.net/  https://github.com/madler/zlib
 #   else
 #       include "zlib.h" //default by compiler environment
 #   endif

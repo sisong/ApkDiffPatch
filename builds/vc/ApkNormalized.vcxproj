@@ -27,16 +27,16 @@
     <ClCompile Include="..\..\src\patch\OldStream.cpp" />
     <ClCompile Include="..\..\src\patch\ZipDiffData.cpp" />
     <ClCompile Include="..\..\src\patch\Zipper.cpp" />
-    <ClCompile Include="..\..\zlib1.2.11\adler32.c" />
-    <ClCompile Include="..\..\zlib1.2.11\compress.c" />
-    <ClCompile Include="..\..\zlib1.2.11\crc32.c" />
-    <ClCompile Include="..\..\zlib1.2.11\deflate.c" />
-    <ClCompile Include="..\..\zlib1.2.11\inffast.c" />
-    <ClCompile Include="..\..\zlib1.2.11\inflate.c" />
-    <ClCompile Include="..\..\zlib1.2.11\inftrees.c" />
-    <ClCompile Include="..\..\zlib1.2.11\trees.c" />
-    <ClCompile Include="..\..\zlib1.2.11\uncompr.c" />
-    <ClCompile Include="..\..\zlib1.2.11\zutil.c" />
+    <ClCompile Include="..\..\zlib1.3.1\adler32.c" />
+    <ClCompile Include="..\..\zlib1.3.1\compress.c" />
+    <ClCompile Include="..\..\zlib1.3.1\crc32.c" />
+    <ClCompile Include="..\..\zlib1.3.1\deflate.c" />
+    <ClCompile Include="..\..\zlib1.3.1\inffast.c" />
+    <ClCompile Include="..\..\zlib1.3.1\inflate.c" />
+    <ClCompile Include="..\..\zlib1.3.1\inftrees.c" />
+    <ClCompile Include="..\..\zlib1.3.1\trees.c" />
+    <ClCompile Include="..\..\zlib1.3.1\uncompr.c" />
+    <ClCompile Include="..\..\zlib1.3.1\zutil.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B7BA5C32-5DC9-431D-BFD7-35ED679CD797}</ProjectGuid>

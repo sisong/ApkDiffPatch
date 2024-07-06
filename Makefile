@@ -8,17 +8,17 @@ M32      := 0
 MINS     := 0
 
 ZLIB_OBJ := \
-    zlib1.2.11/adler32.o \
-    zlib1.2.11/compress.o \
-    zlib1.2.11/crc32.o \
-    zlib1.2.11/deflate.o \
-    zlib1.2.11/infback.o \
-    zlib1.2.11/inffast.o \
-    zlib1.2.11/inflate.o \
-    zlib1.2.11/inftrees.o \
-    zlib1.2.11/trees.o \
-    zlib1.2.11/uncompr.o \
-    zlib1.2.11/zutil.o
+    zlib1.3.1/adler32.o \
+    zlib1.3.1/compress.o \
+    zlib1.3.1/crc32.o \
+    zlib1.3.1/deflate.o \
+    zlib1.3.1/infback.o \
+    zlib1.3.1/inffast.o \
+    zlib1.3.1/inflate.o \
+    zlib1.3.1/inftrees.o \
+    zlib1.3.1/trees.o \
+    zlib1.3.1/uncompr.o \
+    zlib1.3.1/zutil.o
 
 ZIPPATCH_OBJ := \
     src/patch/NewStream.o \

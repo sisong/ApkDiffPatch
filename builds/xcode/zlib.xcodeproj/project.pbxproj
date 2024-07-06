@@ -45,7 +45,7 @@
 		D688888E204688D30042E2B3 = {
 			isa = PBXGroup;
 			children = (
-				D6DA363820468A05009AEF45 /* zlib1.2.11 */,
+				D6DA363820468A05009AEF45 /* zlib1.3.1 */,
 				D6888898204688D30042E2B3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -58,7 +58,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		D6DA363820468A05009AEF45 /* zlib1.2.11 */ = {
+		D6DA363820468A05009AEF45 /* zlib1.3.1 */ = {
 			isa = PBXGroup;
 			children = (
 				D6DA363B20468A05009AEF45 /* inflate.c */,
@@ -71,8 +71,8 @@
 				D6DA375820468A05009AEF45 /* inffast.c */,
 				D6DA375920468A05009AEF45 /* adler32.c */,
 			);
-			name = zlib1.2.11;
-			path = ../../zlib1.2.11;
+			name = zlib1.3.1;
+			path = ../../zlib1.3.1;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

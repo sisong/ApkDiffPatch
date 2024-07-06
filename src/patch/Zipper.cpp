@@ -44,7 +44,7 @@ static const hdiff_TCompress*   compressPlugin  =&zipCompatibleCompressPlugin.ba
 static hpatch_TDecompress*      decompressPlugin=&zlibDecompressPlugin;
 
 #if (_IS_NEED_FIXED_ZLIB_VERSION)
-#   define  kNormalizedZlibVersion         "1.2.11" //fixed zlib version
+#   define  kNormalizedZlibVersion         "1.3.1" //fixed zlib version
 #endif
 
 #define check(v) { if (!(v)) { assert(false); return false; } }
