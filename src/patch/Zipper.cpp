@@ -924,7 +924,7 @@ void Zipper_by_multi_thread(Zipper* self,int threadNum){
             self->_threadWorks=new TZipThreadWorks(self,self->_threadNum-1);
             self->_threadWorks->start_threads(self->_threadNum-1,TZipThreadWorks::run,self->_threadWorks,false);
         } catch (...) {
-            self->_threadNum=1; //close muti-thread
+            self->_threadNum=1; //close multi-thread
             if (self->_threadWorks){
                 delete self->_threadWorks;
                 self->_threadWorks=0;

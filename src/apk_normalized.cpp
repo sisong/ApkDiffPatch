@@ -43,7 +43,7 @@
 #endif
 
 static void printUsage(){
-    printf("usage: ApkNormalized srcApk normalizedApk [-cl-compressLevel]\n"
+    printf("usage: ApkNormalized srcApk normalizedApk [-cl-compressLevel] [options]\n"
            "options:\n"
            "  input srcApk file can *.zip *.jar *.apk file type;\n"
            "    ApkNormalized normalized zip file:\n"
@@ -51,7 +51,8 @@ static void printUsage(){
            "      align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
            "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
            "      compatible with jar sign(apk v1 sign), etc...\n"
-           "    if apk file used apk v2 sign, must re-sign apk file after ApkNormalized;\n"
+           "    if apk file only used apk v1 sign, don't re-sign normalizedApk file!\n"
+           "    if apk file used apk v2 sign, must re-sign normalizedApk file after ApkNormalized;\n"
            "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
            "  -cl-compressLevel\n"
            "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"
@@ -65,8 +66,8 @@ static void printUsage(){
            "    if found uncompressed .so file in the zip, need align it to 4k page?\n"
            "      -ap-0         not page-align uncompressed .so files;\n"
            "      -ap-1         DEFAULT, page-align uncompressed .so files.\n"
-           "                        WARNING: if have uncompressed .so file & do page-align,\n"
-           "                                it can't patch by old(version<v1.7.0) ZipPatch!\n"
+           "                    WARNING: if have uncompressed .so file & do page-align,\n"
+           "                             it can't patch by old(version<v1.7.0) ZipPatch!\n"
            "  -nce-isNotCompressEmptyFile\n"
            "    if found compressed empty file in the zip, need change it to not compressed?\n"
            "      -nce-0        keep the original compress setting for empty file;\n"
@@ -78,7 +79,12 @@ static void printUsage(){
            );
 }
 
-#define _kOPTIONS_ERROR 1
+#define _kResult_OK                             0
+#define _kResult_OPTIONS_ERROR                  1
+#define _kResult_NORMALIZED_ERROR               2
+#define _kResult_OPEN_NORMALIZED_ERROR          3
+#define _kResult_CHECK_NORMALIZED_DATA_ERROR    4
+
 int normalized_cmd_line(int argc, const char * argv[]);
 
 #if (_IS_NEED_MAIN)
@@ -87,7 +93,7 @@ int wmain(int argc,wchar_t* argv_w[]){
     hdiff_private::TAutoMem  _mem(hpatch_kPathMaxSize*4);
     char** argv_utf8=(char**)_mem.data();
     if (!_wFileNames_to_utf8((const wchar_t**)argv_w,argc,argv_utf8,_mem.size()))
-        return _kOPTIONS_ERROR;
+        return _kResult_OPTIONS_ERROR;
     SetDefaultStringLocale();
     return normalized_cmd_line(argc,(const char**)argv_utf8);
 }
@@ -99,7 +105,7 @@ int main(int argc,char* argv[]){
 #endif
 
 #define _options_check(value,errorInfo){ \
-    if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return _kOPTIONS_ERROR; } }
+    if (!(value)) { printf("options " errorInfo " ERROR!\n"); printUsage(); return _kResult_OPTIONS_ERROR; } }
 
 #define _kNULL_VALUE    (-1)
 #define _kNULL_SIZE     (~(size_t)0)
@@ -110,7 +116,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
     size_t      compressLevel = _kNULL_SIZE;
     size_t      alignSize     = _kNULL_SIZE;
-#define kMax_arg_values_size 2
+    #define kMax_arg_values_size 2
     const char * arg_values[kMax_arg_values_size]={0};
     int          arg_values_size=0;
     int         i;
@@ -183,7 +189,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
     if (isOutputVersion){
         printf("ApkDiffPatch::ApkNormalized v" APKDIFFPATCH_VERSION_STRING "\n\n");
         if (arg_values_size==0)
-            return 0; //ok
+            return _kResult_OK;
     }
 
     if (compressLevel>6)
@@ -199,19 +205,27 @@ int normalized_cmd_line(int argc, const char * argv[]){
     if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,
                        (bool)isNotCompressEmptyFile,(bool)isPageAlignSoFile,&apkFilesRemoved)){
         printf("\nrun ApkNormalized ERROR!\n");
-        return 1;
+        return _kResult_NORMALIZED_ERROR;
     }
     printf("run ApkNormalized ok!\n");
     
+    TCompressedFilesInfos cInfos;
+    if (!getCompressedFilesInfos(dstApk,&cInfos)){
+        printf("\nApkNormalized result file open ERROR!\n");
+        return _kResult_OPEN_NORMALIZED_ERROR;
+    }
+    printf("  NOTE: recompressed files count %d, data size %" PRIu64 " compress to %" PRIu64 "\n",
+            cInfos.compressedCount,cInfos.sumCompressedUncompressedSize,cInfos.sumCompressedSize);
+    
     //check
     if (!getZipIsSame(srcApk,dstApk,apkFilesRemoved)){
-        printf("ApkNormalized result file check ERROR!\n");
-        return 1;
+        printf("\nApkNormalized result file check ERROR!\n");
+        return _kResult_CHECK_NORMALIZED_DATA_ERROR;
     }
     printf("  check ApkNormalized result ok!\n");
-    
+
     double time1=clock_s();
     printf("\nApkNormalized time: %.3f s\n",(time1-time0));
-    return 0;
+    return _kResult_OK;
 }
 

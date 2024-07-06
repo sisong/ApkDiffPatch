@@ -50,11 +50,23 @@ bool getZipIsSame(const char* oldZipPath,const char* newZipPath,
 bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,
                             const hpatch_TStreamInput* newZipStream,
                             int newApkFilesRemoved=0,bool* out_isOldHaveApkV2Sign=0);
+
+typedef struct TCompressedFilesInfos{
+    int             uncompressedCount;
+    int             compressedCount;
+    hpatch_uint64_t sumUncompressedSize;
+    hpatch_uint64_t sumCompressedSize;
+    hpatch_uint64_t sumCompressedUncompressedSize;
+} TCompressedFilesInfos;
+bool getCompressedFilesInfos(const char* zipPath,TCompressedFilesInfos* out_infos);
+bool getCompressedFilesInfosWithStream(const hpatch_TStreamInput* zipStream,TCompressedFilesInfos* out_infos);
+bool getCompressedFilesInfosWithZip(const UnZipper* zip,TCompressedFilesInfos* out_infos);
+
 bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
                                       int* out_zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
 bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,
                                       int zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
-size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示未对齐;
+size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示错误，否则至少对齐到1;
 
 static inline std::string zipFile_name(const UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);

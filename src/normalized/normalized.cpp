@@ -235,7 +235,10 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     }
     if (zipper._normalizeSoPageAlignCount>0)
         printf("WARNING: found uncompressed .so file & do page-align, it can't patch by old(version<v1.7.0) ZipPatch!\n");
-    printf("src fileCount:%d\nout fileCount:%d\n\n",fileCount,(int)fileIndexs.size());
+    printf("src fileCount: %d  (filseSize: %" PRIu64 ")\n"
+            "out fileCount: %d  (filseSize: %" PRIu64 ")\n\n",
+            fileCount,unzipper._fileStream.base.streamSize,
+            (int)fileIndexs.size(),zipper._fileStream.out_length);
 
 clear:
     _isInClear=true;

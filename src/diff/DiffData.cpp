@@ -107,7 +107,8 @@ clear:
     _isInClear=true;
     check_clear(UnZipper_close(&newZip));
     check_clear(UnZipper_close(&oldZip));
-    return result;}
+    return result;
+}
 
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath,
                   int newApkFilesRemoved,bool* out_isOldHaveApkV2Sign){
@@ -126,6 +127,52 @@ clear:
     _isInClear=true;
     check_clear(hpatch_TFileStreamInput_close(&newZipStream));
     check_clear(hpatch_TFileStreamInput_close(&oldZipStream));
+    return result;
+}
+
+
+bool getCompressedFilesInfosWithZip(const UnZipper* zip,TCompressedFilesInfos* out_infos){
+    TCompressedFilesInfos infos={0};
+    int fcount=UnZipper_fileCount(zip);
+    for (int i=0;i<fcount;++i){
+            if (UnZipper_file_isCompressed(zip,i)){
+            infos.compressedCount++;
+            infos.sumCompressedSize+=UnZipper_file_compressedSize(zip,i);
+            infos.sumCompressedUncompressedSize+=UnZipper_file_uncompressedSize(zip,i);
+        }else{
+            infos.uncompressedCount++;
+            infos.sumUncompressedSize+=UnZipper_file_uncompressedSize(zip,i);
+        }
+    }
+    *out_infos=infos;
+    return true;
+}
+
+
+bool getCompressedFilesInfosWithStream(const hpatch_TStreamInput* zipStream,TCompressedFilesInfos* out_infos){
+    UnZipper            zip;
+    bool            result=true;
+    bool            _isInClear=false;
+    UnZipper_init(&zip);
+    check_clear(UnZipper_openStream(&zip,zipStream));
+    result=getCompressedFilesInfosWithZip(&zip,out_infos);
+clear:
+    _isInClear=true;
+    check_clear(UnZipper_close(&zip));
+    return result;
+}
+
+bool getCompressedFilesInfos(const char* zipPath,TCompressedFilesInfos* out_infos){
+    hpatch_TFileStreamInput    zipStream;
+    bool            result=true;
+    bool            _isInClear=false;
+    
+    hpatch_TFileStreamInput_init(&zipStream);
+    check_clear(hpatch_TFileStreamInput_open(&zipStream,zipPath));
+    result=getCompressedFilesInfosWithStream(&zipStream.base,out_infos);
+clear:
+    _isInClear=true;
+    check_clear(hpatch_TFileStreamInput_close(&zipStream));
     return result;
 }
 
