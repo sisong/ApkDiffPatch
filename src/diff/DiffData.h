@@ -44,7 +44,7 @@
 #define  kDefaultZlibCompressMemLevel   DEF_MEM_LEVEL
 #define  kDefaultDiffMatchScore         3 // for hdiff
 
-bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte test
+bool zipFileData_isSame(UnZipper* self,int selfIndex,UnZipper* srcZip,int srcIndex);//byte by byte compare uncompressed data
 bool getZipIsSame(const char* oldZipPath,const char* newZipPath,
                   int newApkFilesRemoved=0,bool* out_isOldHaveApkV2Sign=0);
 bool getZipIsSameWithStream(const hpatch_TStreamInput* oldZipStream,

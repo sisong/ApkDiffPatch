@@ -56,7 +56,7 @@ static void printUsage(){
            "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
            "  -cl-compressLevel\n"
            "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"
-           "    WARNING: -cl not recommended 7,8,9, compress rate is high, but\n"
+           "    NOTE: zlib not recommended 7,8,9, compress ratio is slightly higher, but\n"
            "            compress speed is very slow when patching.\n"
            "  -as-alignSize\n"
            "    set align size for uncompressed file in zip for optimize app run speed,\n"
@@ -72,7 +72,7 @@ static void printUsage(){
            "    if found compressed empty file in the zip, need change it to not compressed?\n"
            "      -nce-0        keep the original compress setting for empty file;\n"
            "                    WARNING: if have compressed empty file,\n"
-           "                            it can't patch by old(version<v1.3.5) ZipPatch!\n"
+           "                             it can't patch by old(version<v1.3.5) ZipPatch!\n"
            "      -nce-1        DEFAULT, not compress all empty file.\n"
            "  -q  quiet mode, don't print fileName\n"
            "  -v  output Version info. \n"
@@ -193,7 +193,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
     }
 
     if (compressLevel>6)
-        printf("WARNING: not recommended 7,8,9, compress rate is high, but compress speed is very slow when patching.\n");
+        printf("WARNING: not recommended 7,8,9, compress ratio is slightly higher, but compress speed is very slow when patching.\n");
         
     _options_check(arg_values_size==2,"count");
     const char* srcApk=arg_values[0];
