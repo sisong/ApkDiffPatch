@@ -16,3 +16,4 @@ xcshareddata
 xcuserdata/
 builds/vc/Release/
 builds/vc/x64/
+builds/vc/ZipDiff/

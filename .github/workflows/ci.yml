@@ -36,27 +36,38 @@ jobs:
           xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipDiff -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
           xcodebuild -workspace builds/xcode/ApkDiffPatch.xcworkspace -scheme ZipPatch -configuration Release OBJROOT=$PWD/bin SYMROOT=$PWD/bin
 
-  ndk-build:
-    strategy:
-      matrix:
-        platform: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
+
+  macos-ndk-build:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: nttld/setup-ndk@v1.0.6
+      - uses: nttld/setup-ndk@v1.5.0
+        with:
+          ndk-version: r23c
+      - name: buildByAndroidNDK
+        run: |
+          git submodule update --init --recursive
+          cd ./builds/android_ndk_jni_mk
+          ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=./Application.mk APP_PLATFORM=android-16 APP_STL=c++_static
+
+  windows-ndk-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: nttld/setup-ndk@v1.5.0
         with:
           ndk-version: r16b
       - name: buildByAndroidNDK
         run: |
           git submodule update --init --recursive
           cd ./builds/android_ndk_jni_mk
-          ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
+          ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=./Application.mk
 
   ubuntu-ndk-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: nttld/setup-ndk@v1.0.6
+      - uses: nttld/setup-ndk@v1.5.0
         with:
           ndk-version: r16b
       - name: buildByAndroidNDK
@@ -64,7 +75,7 @@ jobs:
           sudo apt install libncurses5
           git submodule update --init --recursive
           cd ./builds/android_ndk_jni_mk
-          ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
+          ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=./Application.mk
 
 
   vc-build:
