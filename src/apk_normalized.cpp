@@ -52,7 +52,7 @@ static void printUsage(){
            "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
            "      compatible with jar sign(apk v1 sign), etc...\n"
            "    if apk file only used apk v1 sign, don't re-sign normalizedApk file!\n"
-           "    if apk file used apk v2 sign, must re-sign normalizedApk file after ApkNormalized;\n"
+           "    if apk file used apk v2 sign or later, must re-sign normalizedApk file after ApkNormalized;\n"
            "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
            "  -cl-compressLevel\n"
            "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"

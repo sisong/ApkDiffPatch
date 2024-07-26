@@ -1,8 +1,9 @@
 APP_PLATFORM := android-27
-APP_STL := c++_shared
 APP_CFLAGS := -fsanitize=address -fno-omit-frame-pointer
-APP_LDFLAGS := -fsanitize=address
 APP_CPPFLAGS := -fexceptions
+APP_LDFLAGS := -fsanitize=address
+APP_LDFLAGS += -Wl,-z,max-page-size=16384
+APP_STL := c++_shared
 APP_BUILD_SCRIPT := Android_DEBUG.mk
 APP_OPTIM        := debug
 NDK_DEBUG := 1
