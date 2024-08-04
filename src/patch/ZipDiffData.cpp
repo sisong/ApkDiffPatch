@@ -108,6 +108,15 @@ bool ZipDiffData_openRead(ZipDiffData* self,const hpatch_TStreamInput* diffData,
         check(diffData->read(diffData,headInoPos,buf,buf+readLen));
         //unpack head info
         const TByte* curBuf=buf;
+        #define kSoSmallPageAlignSize (1024*4)
+        self->normalizeSoPageAlign=kSoSmallPageAlignSize/4;
+        while ((curBuf<buf+readLen)&&(kPackedEmptyPrefix==(*curBuf))){//test have normalizeSoPageAlign tag? starting with v1.8.0
+            self->normalizeSoPageAlign*=4;
+            ++curBuf;
+        }// else old version diffData, not saved normalizeSoPageAlign tag
+        if (self->normalizeSoPageAlign==kSoSmallPageAlignSize) self->normalizeSoPageAlign=0;
+        self->pageAlignCompatible=(self->normalizeSoPageAlign==(kSoSmallPageAlignSize/4));
+        if (self->pageAlignCompatible) self->normalizeSoPageAlign=kSoSmallPageAlignSize;
         checkUnpackSize(&curBuf,buf+readLen,&self->PatchModel,size_t);
         check(self->PatchModel<=1);//now must 0 or 1
         checkUnpackSize(&curBuf,buf+readLen,&self->newZipFileCount,size_t);

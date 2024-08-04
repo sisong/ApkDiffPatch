@@ -27,14 +27,15 @@
  */
 #ifndef ZipNormalized_normalized_h
 #define ZipNormalized_normalized_h
+#include <string.h> //size_t
 
 //规范化zip包;
 bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel,
-                   bool isNotCompressEmptyFile=true,bool isPageAlignSoFile=true,int* out_apkFilesRemoved=0);
+                   bool isNotCompressEmptyFile,size_t pageAlignSoFile,bool pageAlignCompatible,int* out_apkFilesRemoved=0);
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern bool g_isPrintApkNormalizedFileName; //default true
+extern bool g_isPrintNormalizingFileName; //default true
 #ifdef __cplusplus
 }
 #endif

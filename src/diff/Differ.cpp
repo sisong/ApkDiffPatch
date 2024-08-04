@@ -140,21 +140,21 @@ bool ZipDiffWithStream(const hpatch_TStreamInput* oldZipStream,const hpatch_TStr
     UnZipper_init(&oldZip);
     UnZipper_init(&newZip);
     check(UnZipper_openStream(&oldZip,oldZipStream));
-    check(UnZipper_openStream(&newZip,newZipStream));
+    check(UnZipper_openStream(&newZip,newZipStream,false,false,true));
     
-    newZipAlignSize=getZipAlignSize_unsafe(&newZip);
+    newZipAlignSize=getBaseAlignSize_unsafe(&newZip);
     if (UnZipper_isHaveApkV2Sign(&newZip)){//precondition (+checkZipIsSame() to complete)
         newZip._isDataNormalized=(newZipAlignSize>0)&&(newZip._dataDescriptorCount==0);
     }else{
         newZip._isDataNormalized=true;
     }
-    if (newZip._isDataNormalized && UnZipper_isHaveApkV2Sign(&newZip)){
+    //if (newZip._isDataNormalized && UnZipper_isHaveApkV2Sign(&newZip)){
         newCompressedDataIsNormalized=getCompressedIsNormalized(&newZip,&newZipNormalized_compressLevel,
                                                                 &newZipNormalized_compressMemLevel);
-    }else{
-        newCompressedDataIsNormalized=getCompressedIsNormalizedBy(&newZip,newZipNormalized_compressLevel,
-                                                                  newZipNormalized_compressMemLevel);
-    }
+    //}else{
+    //    newCompressedDataIsNormalized=getCompressedIsNormalizedBy(&newZip,newZipNormalized_compressLevel,
+    //                                                              newZipNormalized_compressMemLevel);
+    //}
     newZip._isDataNormalized&=newCompressedDataIsNormalized;
     if (UnZipper_isHaveApkV2Sign(&newZip)){
         if (!getCompressedIsNormalized(&newZip,&newZip_otherCompressLevel,&newZip_otherCompressMemLevel,true)){

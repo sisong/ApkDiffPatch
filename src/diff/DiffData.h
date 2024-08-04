@@ -66,7 +66,7 @@ bool getCompressedIsNormalized(UnZipper* zip,int* out_zlibCompressLevel,
                                       int* out_zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
 bool getCompressedIsNormalizedBy(UnZipper* zip,int zlibCompressLevel,
                                       int zlibCompressMemLevel,bool testReCompressedByApkV2Sign=false); //只检查压缩数据是否标准化;
-size_t getZipAlignSize_unsafe(UnZipper* zip); //只检查未压缩数据的起始位置对齐值,返回对齐值,0表示错误，否则至少对齐到1;
+size_t getBaseAlignSize_unsafe(UnZipper* self);//只检查未压缩数据的起始位置对齐值,返回对齐值,0表示错误，否则至少对齐到1;
 
 static inline std::string zipFile_name(const UnZipper* self,int fileIndex){
     int nameLen=UnZipper_file_nameLen(self,fileIndex);

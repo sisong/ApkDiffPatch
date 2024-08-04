@@ -39,7 +39,7 @@ typedef uint32_t ZipFilePos_t;
 // https://en.wikipedia.org/wiki/Zip_(file_format)
 // https://source.android.com/security/apksigning/v2
 // https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Signed_JAR_File
-    
+
 typedef struct UnZipper{
     const hpatch_TStreamInput* stream;
 //private:
@@ -52,6 +52,8 @@ typedef struct UnZipper{
     unsigned char*  _dataDescriptors;
     int             _dataDescriptorCount;
     ZipFilePos_t*   _fileDataOffsets;
+    ZipFilePos_t*   _fileEntryOffsets;
+    bool            _isSaved_fileEntryOffsets;
     bool            _isDataNormalized;
     bool            _isFileDataOffsetMatch;
     bool            _isHaveV3Sign;
@@ -63,9 +65,9 @@ typedef struct UnZipper{
 } UnZipper;
 void UnZipper_init(UnZipper* self);
 bool UnZipper_openFile(UnZipper* self,const char* zipFileName,
-                       bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
+                       bool isDataNormalized=false,bool isFileDataOffsetMatch=false,bool isSaved_fileEntryOffsets=false);
 bool UnZipper_openStream(UnZipper* self,const hpatch_TStreamInput* zipStream,
-                         bool isDataNormalized=false,bool isFileDataOffsetMatch=false);
+                         bool isDataNormalized=false,bool isFileDataOffsetMatch=false,bool isSaved_fileEntryOffsets=false);
 bool UnZipper_close(UnZipper* self);
 int                 UnZipper_fileCount(const UnZipper* self);
 int                 UnZipper_file_nameLen(const UnZipper* self,int fileIndex);
@@ -92,7 +94,8 @@ bool UnZipper_compressedData_decompressTo(UnZipper* self,const hpatch_TStreamInp
                                           hpatch_StreamPos_t code_begin,hpatch_StreamPos_t code_end,
                                           hpatch_StreamPos_t uncompressedSize,
                                           const hpatch_TStreamOutput* outStream,hpatch_StreamPos_t writeToPos);
-    
+size_t UnZipper_getHugePageAlign(const UnZipper* self,size_t baseZipAlignSize); //old4k or 16k or 64k, fail return 0 
+
 bool UnZipper_openVirtualVCE(UnZipper* self,ZipFilePos_t fvce_size,int fileCount);
 bool UnZipper_updateVirtualVCE(UnZipper* self,bool isDataNormalized,size_t zipCESize);
 #if (_IS_NEED_VIRTUAL_ZIP)
@@ -124,10 +127,18 @@ static inline bool UnZipper_file_isStampCertFile(const UnZipper* self,int fileIn
     return UnZipper_file_is_lastNameWith(self,fileIndex,"stamp-cert-sha256",17);
 }
     
+    struct TZipCompressor{
+        const void* import;
+        void* (*openCompressHandle)(TZipCompressor* zipCompressor,size_t dataUncompressedSize,int compressLevel,int compressMemLevel,
+                                    const hpatch_TStreamOutput* out_code,unsigned char* _mem_buf,size_t _mem_buf_size);
+        bool  (*compressPart)(void* compressHandle,const unsigned char* part_data,const unsigned char* part_data_end,
+                              int is_data_end,hpatch_StreamPos_t* curWritedPos);
+        bool  (*closeCompressHandle)(TZipCompressor* zipCompressor,void* compressHandle);
+    };
+    
     struct TZipThreadWorks;
     struct TZipThreadWork;
     struct Zipper;
-    struct _zlib_TCompress;
     struct Zipper_file_append_stream:public hpatch_TStreamOutput{
     //private:
         hpatch_StreamPos_t    inputPos;
@@ -135,7 +146,8 @@ static inline bool UnZipper_file_isStampCertFile(const UnZipper* self,int fileIn
         struct Zipper*        self;
         TZipThreadWork*       threadWork;
 
-        struct _zlib_TCompress* compressHandle;
+        TZipCompressor*       compressor;
+        void*                   compressHandle;
         hpatch_TStreamOutput    compressOutStream;
         ZipFilePos_t            curFileIndex;
         static hpatch_BOOL _append_part_input(const hpatch_TStreamOutput* stream,hpatch_StreamPos_t pos,
@@ -144,7 +156,11 @@ static inline bool UnZipper_file_isStampCertFile(const UnZipper* self,int fileIn
                                                const unsigned char* part_data,const unsigned char* part_data_end);
     };
 
-    
+enum TPageAlignState{
+    kPageAlign_inPatch=0,
+    kPageAlign_inNormalize
+};
+
 typedef struct Zipper{
 //private:
     const hpatch_TStreamOutput* _stream;
@@ -153,8 +169,11 @@ typedef struct Zipper{
     int             _fileEntryMaxCount;
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
-    bool            _isNormalizeSoPageAlign;
+    size_t          _normalizeSoPageAlign;
+    ZipFilePos_t*   _normalizeExtraFieldLens; //only for normalize
+    bool            _pageAlignCompatible;
     int             _normalizeSoPageAlignCount;
+    TPageAlignState _pageAlignState;
     int             _compressLevel;
     int             _compressMemLevel;
     int             _fileHeaderCount;
@@ -180,9 +199,11 @@ typedef struct Zipper{
 } Zipper;
 void Zipper_init(Zipper* self);
 bool Zipper_openFile(Zipper* self,const char* zipFileName,int fileEntryMaxCount,
-                    int ZipAlignSize,bool isNormalizeSoPageAlign,int compressLevel,int compressMemLevel);
+                     int ZipAlignSize,int compressLevel,int compressMemLevel,
+                     size_t normalizeSoPageAlign,bool pageAlignCompatible,TPageAlignState pageAlignState);
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
-                    int ZipAlignSize,bool isNormalizeSoPageAlign,int compressLevel,int compressMemLevel);
+                       int ZipAlignSize,int compressLevel,int compressMemLevel,
+                       size_t normalizeSoPageAlign,bool pageAlignCompatible,TPageAlignState pageAlignState);
 bool Zipper_close(Zipper* self);
 bool Zipper_file_append_copy(Zipper* self,UnZipper* srcZip,int srcFileIndex,
                              bool isAlwaysReCompress=false);
