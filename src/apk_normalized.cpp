@@ -54,6 +54,7 @@ static void printUsage(){
            "    if apk file only used apk v1 sign, don't re-sign normalizedApk file!\n"
            "    if apk file used apk v2 sign or later, must re-sign normalizedApk file after ApkNormalized;\n"
            "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
+           "      WARNING: now, not supported Android sdk apksigner v35.\n"
            "  -cl-compressLevel\n"
            "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"
            "    NOTE: zlib not recommended 7,8,9, compress ratio is slightly higher, but\n"
