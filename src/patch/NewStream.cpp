@@ -38,7 +38,7 @@ void NewStream_close(NewStream* self){
 static bool _copy_same_file(NewStream* self,uint32_t newFileIndex,uint32_t oldFileIndex);
 static bool _file_entry_end(NewStream* self);
 
-inline static void _update_compressedSize(NewStream* self,int newFileIndex,uint32_t compressedSize){
+inline static void _update_compressedSize(NewStream* self,int newFileIndex,ZipFilePos_t compressedSize){
     self->_newZipVCE._fileCompressedSizes[newFileIndex]=compressedSize;
 }
 #if (_IS_NEED_VIRTUAL_ZIP)

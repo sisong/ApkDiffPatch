@@ -1,5 +1,6 @@
 # args
 STATIC_CPP := 0
+STATIC_C := 0
 # used clang?
 CL  	 := 0
 # build with -m32?
@@ -21,17 +22,13 @@ ZLIB_OBJ := \
     zlib1.3.1/zutil.o
 
 ZIPPATCH_OBJ := \
-    src/patch/NewStream.o \
     src/patch/OldStream.o \
-    src/patch/Patcher.o \
     src/patch/ZipDiffData.o \
     src/patch/Zipper.o \
     HDiffPatch/libHDiffPatch/HPatch/patch.o \
     HDiffPatch/file_for_patch.o \
     HDiffPatch/libParallel/parallel_import.o \
     HDiffPatch/libParallel/parallel_channel.o \
-    lzma/C/LzmaDec.o \
-    lzma/C/Lzma2Dec.o \
     $(ZLIB_OBJ)
 
 APKNORM_OBJ := \
@@ -40,6 +37,12 @@ APKNORM_OBJ := \
     src/diff/DiffData.o \
     $(ZIPPATCH_OBJ)
     
+ZIPPATCH_OBJ += \
+    src/patch/NewStream.o \
+    src/patch/Patcher.o \
+    lzma/C/LzmaDec.o \
+    lzma/C/Lzma2Dec.o
+
 ZIPDIFF_OBJ := \
     src/zip_diff.o \
     src/diff/DiffData.o \
@@ -68,27 +71,43 @@ ZIPDIFF_OBJ := \
     lzma/C/Threads.o \
     $(ZIPPATCH_OBJ)
 
+ZIPPATCH_OBJ += src/zip_patch.o
+
 DEF_FLAGS := -O3 -DNDEBUG -D_IS_USED_MULTITHREAD=1 -D_IS_USED_CPP11THREAD=1
+ifeq ($(MINS),0)
+else
+  DEF_FLAGS += \
+    -s \
+    -Wno-error=format-security \
+    -fvisibility=hidden  \
+    -ffunction-sections -fdata-sections \
+    -ffat-lto-objects -flto
+  CXXFLAGS += -fvisibility-inlines-hidden
+endif
 CFLAGS   += $(DEF_FLAGS)
 CXXFLAGS += $(DEF_FLAGS) -std=c++11
 
-LINK_LIB := -lpthread	# link pthread
+DEF_LINK := -lpthread	# link pthread
 ifeq ($(M32),0)
 else
-  LINK_LIB += -m32
+  DEF_LINK += -m32
 endif
 ifeq ($(MINS),0)
 else
-  LINK_LIB += -Wl,--gc-sections,--as-needed
+  DEF_LINK += -s -Wl,--gc-sections,--as-needed
+endif
+ifeq ($(STATIC_CPP),0)
+  DEF_LINK += -lstdc++
+else
+  DEF_LINK += -static-libstdc++
+endif
+ifeq ($(STATIC_C),0)
+else
+  DEF_LINK += -static
 endif
 ifeq ($(CL),1)
   CXX := clang++
   CC  := clang
-endif
-ifeq ($(STATIC_CPP),0)
-  LINK_LIB += -lstdc++
-else
-  LINK_LIB += -static-libstdc++
 endif
 
 .PHONY: all clean
@@ -96,11 +115,11 @@ endif
 all: ApkNormalized ZipDiff ZipPatch
 
 ApkNormalized: $(APKNORM_OBJ)
-	$(CXX) $(APKNORM_OBJ) $(LINK_LIB) -o ApkNormalized
+	$(CXX) $(APKNORM_OBJ) $(DEF_LINK) -o ApkNormalized
 ZipDiff: $(ZIPDIFF_OBJ)
-	$(CXX) $(ZIPDIFF_OBJ) $(LINK_LIB) -o ZipDiff
-ZipPatch: src/zip_patch.o $(ZIPPATCH_OBJ)
-	$(CXX) src/zip_patch.o $(ZIPPATCH_OBJ) $(LINK_LIB) -o ZipPatch
+	$(CXX) $(ZIPDIFF_OBJ) $(DEF_LINK) -o ZipDiff
+ZipPatch: $(ZIPPATCH_OBJ)
+	$(CXX) $(ZIPPATCH_OBJ) $(DEF_LINK) -o ZipPatch
 
 clean:
-	-rm -f ApkNormalized ZipDiff ZipPatch src/zip_patch.o $(ZIPDIFF_OBJ) $(APKNORM_OBJ)
+	-rm -f ApkNormalized ZipDiff ZipPatch  $(ZIPDIFF_OBJ)  $(ZIPPATCH_OBJ) $(APKNORM_OBJ)

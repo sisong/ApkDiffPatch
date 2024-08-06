@@ -28,7 +28,7 @@
 
 //apk_normalized是为了diff/patch过程兼容apk的v2版签名而提供;
 //该过程对zip\jar\apk包进行规范化处理:
-//   输入包文件,重新按固定压缩算法生成对齐的新包文件(扩展字段、注释、jar的签名和apk文件的v1签名会被保留,apk的v2签名数据会被删除)
+//   输入包文件,重新按固定压缩算法生成对齐的新包文件(注释、jar的签名和apk文件的v1签名会被保留,扩展字段在未压缩.so文件页面对齐时可能会被修改，apk的v2签名数据会被删除)
 //   规范化后可以用Android签名工具对输出的apk文件执行v2签名,比如:
 //  $apksigner sign --v1-signing-enabled true --v2-signing-enabled true --ks *.keystore --ks-pass pass:* --in normalized.apk --out release.apk
 
@@ -49,25 +49,39 @@ static void printUsage(){
            "    ApkNormalized normalized zip file:\n"
            "      recompress all compressed files's data by zlib,\n"
            "      align file data offset in zip file (compatible with AndroidSDK#zipalign),\n"
-           "      remove all data descriptor, reserve & normalized Extra field and Comment,\n"
+           "      remove all data descriptor, normalized Extra field & reserve Comment,\n"
            "      compatible with jar sign(apk v1 sign), etc...\n"
            "    if apk file only used apk v1 sign, don't re-sign normalizedApk file!\n"
-           "    if apk file used apk v2 sign, must re-sign normalizedApk file after ApkNormalized;\n"
+           "    if apk file used apk v2 sign or later, must re-sign normalizedApk file after ApkNormalized;\n"
            "      release signedApk:=AndroidSDK#apksigner(normalizedApk)\n"
+           "      WARNING: now, not supported Android sdk apksigner v35.\n"
            "  -cl-compressLevel\n"
            "    set zlib compress level [0..9], recommended 4,5,6, DEFAULT -cl-6;\n"
            "    NOTE: zlib not recommended 7,8,9, compress ratio is slightly higher, but\n"
            "            compress speed is very slow when patching.\n"
            "  -as-alignSize\n"
            "    set align size for uncompressed file in zip for optimize app run speed,\n"
-           "    1 <= alignSize <= 4k, recommended 4,8, DEFAULT -as-8.\n"
-           "    NOTE: if -ap-1, must 4096%%alignSize==0;\n"
-           "  -ap-isPageAlignSoFile\n"
-           "    if found uncompressed .so file in the zip, need align it to 4k page?\n"
-           "      -ap-0         not page-align uncompressed .so files;\n"
-           "      -ap-1         DEFAULT, page-align uncompressed .so files.\n"
-           "                    WARNING: if have uncompressed .so file & do page-align,\n"
-           "                             it can't patch by old(version<v1.7.0) ZipPatch!\n"
+           "    1 <= alignSize <= PageSize, recommended 4,8, DEFAULT -as-8.\n"
+           "    NOTE: if not -ap-0, must PageSize%%alignSize==0;\n"
+           "  -ap-pageAlignSoFile\n"
+           "    if found uncompressed .so file in the zip, need align it to page size?\n"
+           "      -ap-0      not page-align uncompressed .so files;\n"
+           "      -ap-4k     (or -ap-1) DEFAULT, page-align uncompressed .so files to 4KB;\n"
+           "                 compatible with all version of ZipPatch;\n"
+           "                 WARNING: if have uncompressed .so file,\n"
+           "                          it not compatible with Android 15 with 16KB page size;\n"
+           "      -ap-16k    page-align uncompressed .so files to 16KB;\n"
+           "                 compatible with Android 15 with 16KB page size;\n"
+           "                 WARNING: if have uncompressed .so file,\n"
+           "                          it can't patch by old(version<v1.8.0) ZipPatch!\n"
+           "      -ap-c16k   page-align uncompressed .so files to 16KB;\n"
+           "                 compatible with all version of ZipPatch,\n"
+           "                 & compatible with Android 15 with 16KB page size;\n"
+           "                 Note: normalized apk file size maybe larger than -ap-16k;\n"
+           "      -ap-64k    page-align uncompressed .so files to 64KB;\n"
+           "                 compatible with Android 15 with 16KB(or 64KB) page size;\n"
+           "                 WARNING: if have uncompressed .so file,\n"
+           "                          it can't patch by old(version<v1.8.0) ZipPatch!\n"
            "  -nce-isNotCompressEmptyFile\n"
            "    if found compressed empty file in the zip, need change it to not compressed?\n"
            "      -nce-0        keep the original compress setting for empty file;\n"
@@ -112,7 +126,8 @@ int main(int argc,char* argv[]){
 
 int normalized_cmd_line(int argc, const char * argv[]){
     hpatch_BOOL isNotCompressEmptyFile=_kNULL_VALUE;
-    hpatch_BOOL isPageAlignSoFile=_kNULL_VALUE;
+    size_t      pageAlignSoFile=_kNULL_SIZE;
+    hpatch_BOOL pageAlignSoFileCompatible=_kNULL_VALUE;
     hpatch_BOOL isOutputVersion=_kNULL_VALUE;
     size_t      compressLevel = _kNULL_SIZE;
     size_t      alignSize     = _kNULL_SIZE;
@@ -137,7 +152,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
             } break;
             case 'q':{
                 _options_check((op[2]=='\0'),"-q");
-                g_isPrintApkNormalizedFileName=false;
+                g_isPrintNormalizingFileName=false;
             } break;
             case 'n':{
                 if ((op[2]=='c')&&(op[3]=='e')&&(op[4]=='-')&&((op[5]=='0')||(op[5]=='1'))){
@@ -158,15 +173,22 @@ int normalized_cmd_line(int argc, const char * argv[]){
                 }
             } break;
             case 'a':{
-                if ((op[2]=='s')&&(op[3]=='-')){
+                if ((op[2]=='p')&&(op[3]=='-')){
+                    _options_check(pageAlignSoFile==_kNULL_SIZE,"-ap-?");
+                    const char* pnum=op+4;
+                    pageAlignSoFileCompatible=(pnum[0]=='c')||(pnum[0]=='C');
+                    if (pageAlignSoFileCompatible) ++pnum;
+                    _options_check(kmg_to_size(pnum,strlen(pnum),&pageAlignSoFile),"-ap-?");
+                    #define _kMaxPageAlignSize      (64*1024)
+                    #define _kDefaultPageAlignSize  (4*1024)
+                    if (pageAlignSoFile==1) pageAlignSoFile=_kDefaultPageAlignSize;
+                    _options_check((pageAlignSoFile==0)||(pageAlignSoFile==16*1024)
+                                 ||(pageAlignSoFile==_kDefaultPageAlignSize)||(pageAlignSoFile==_kMaxPageAlignSize),"-ap-?");
+                }else if ((op[2]=='s')&&(op[3]=='-')){
                     _options_check(alignSize==_kNULL_SIZE,"-as-?")
                     const char* pnum=op+4;
                     _options_check(kmg_to_size(pnum,strlen(pnum),&alignSize),"-as-?");
-                    const size_t _kMaxAlignSize=4*1024;
-                    _options_check((1<=alignSize)&&(alignSize<=_kMaxAlignSize),"-as-?");
-                }else if ((op[2]=='p')&&(op[3]=='-')&&((op[4]=='0')||(op[4]=='1'))){
-                    _options_check(isPageAlignSoFile==_kNULL_VALUE,"-ap-?");
-                    isPageAlignSoFile=(hpatch_BOOL)(op[4]=='1');
+                    _options_check((1<=alignSize)&&(alignSize<=_kMaxPageAlignSize),"-as-?");
                 }else{
                     _options_check(hpatch_FALSE,"-a?");
                 }
@@ -178,8 +200,10 @@ int normalized_cmd_line(int argc, const char * argv[]){
     }
     if (isNotCompressEmptyFile==_kNULL_VALUE)
         isNotCompressEmptyFile=hpatch_TRUE;
-    if (isPageAlignSoFile==_kNULL_VALUE)
-        isPageAlignSoFile=hpatch_TRUE;
+    if (pageAlignSoFile==_kNULL_SIZE)
+        pageAlignSoFile=_kDefaultPageAlignSize;
+    if (pageAlignSoFile==_kDefaultPageAlignSize)
+        pageAlignSoFileCompatible=hpatch_TRUE;
     if (compressLevel==_kNULL_SIZE)
         compressLevel=kDefaultZlibCompressLevel;
     if (alignSize==_kNULL_SIZE)
@@ -203,7 +227,7 @@ int normalized_cmd_line(int argc, const char * argv[]){
     double time0=clock_s();
     int apkFilesRemoved=0;
     if (!ZipNormalized(srcApk,dstApk,(int)alignSize,(int)compressLevel,
-                       (bool)isNotCompressEmptyFile,(bool)isPageAlignSoFile,&apkFilesRemoved)){
+                       (bool)isNotCompressEmptyFile,pageAlignSoFile,pageAlignSoFileCompatible,&apkFilesRemoved)){
         printf("\nrun ApkNormalized ERROR!\n");
         return _kResult_NORMALIZED_ERROR;
     }

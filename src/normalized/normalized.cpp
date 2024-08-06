@@ -34,7 +34,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-bool g_isPrintApkNormalizedFileName=true;
+bool g_isPrintNormalizingFileName=true;
 #ifdef __cplusplus
 }
 #endif
@@ -130,7 +130,7 @@ inline static bool isCompressedEmptyFile(const UnZipper* unzipper,int fileIndex)
 }
 
 bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int compressLevel,
-                   bool isNotCompressEmptyFile,bool isPageAlignSoFile,int* out_apkFilesRemoved){
+                   bool isNotCompressEmptyFile,size_t pageAlignSoFile,bool pageAlignCompatible,int* out_apkFilesRemoved){
     bool result=true;
     bool _isInClear=false;
     int  fileCount=0;
@@ -147,8 +147,8 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     
     check(UnZipper_openFile(&unzipper,srcApk));
     fileCount=UnZipper_fileCount(&unzipper);
-    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,isPageAlignSoFile,
-                          compressLevel,kDefaultZlibCompressMemLevel));
+    check(Zipper_openFile(&zipper,dstApk,fileCount,ZipAlignSize,compressLevel,kDefaultZlibCompressMemLevel,
+                          pageAlignSoFile,pageAlignCompatible,kPageAlign_inNormalize));
     isHaveApkV2Sign=UnZipper_isHaveApkV2Sign(&unzipper);
     isHaveApkV3Sign=UnZipper_isHaveApkV3Sign(&unzipper);
     {
@@ -184,7 +184,7 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
     for (int i=0; i<(int)fileIndexs.size(); ++i) {
         int fileIndex=fileIndexs[i];
         std::string fileName=zipFile_name(&unzipper,fileIndex);
-        if (g_isPrintApkNormalizedFileName)
+        if (g_isPrintNormalizingFileName)
             hpatch_printPath_utf8(("\""+fileName+"\"\n").c_str());
         if (compressLevel==0){
             check(Zipper_file_append_set_new_isCompress(&zipper,false));
@@ -233,8 +233,6 @@ bool ZipNormalized(const char* srcApk,const char* dstApk,int ZipAlignSize,int co
                :"WARNING: src removed ApkV2Sign data (%d Byte, need re-sign)\n",
                 (int)UnZipper_ApkV2SignSize(&unzipper));
     }
-    if (zipper._normalizeSoPageAlignCount>0)
-        printf("WARNING: found uncompressed .so file & do page-align, it can't patch by old(version<v1.7.0) ZipPatch!\n");
     printf("src fileCount: %d  (filseSize: %" PRIu64 ")\n"
             "out fileCount: %d  (filseSize: %" PRIu64 ")\n\n",
             fileCount,unzipper._fileStream.base.streamSize,

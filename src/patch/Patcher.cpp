@@ -109,7 +109,7 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
     check(ZipDiffData_openRead(&zipDiffData,zipDiffStream,decompressPlugin),PATCH_ZIPDIFFINFO_ERROR);
     isSD=(zipDiffData.PatchModel==1);
     check(UnZipper_openStream(&oldZip,oldZipStream,zipDiffData.oldZipIsDataNormalized!=0,
-                            zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
+                              zipDiffData.oldIsFileDataOffsetMatch!=0),PATCH_OPENREAD_ERROR);
     check(zipDiffData.oldZipCESize==UnZipper_CESize(&oldZip),PATCH_OLDDATA_ERROR);
 #if (_IS_NEED_VIRTUAL_ZIP)
     if (virtual_in)
@@ -153,9 +153,9 @@ TPatchResult VirtualZipPatchWithStream(const hpatch_TStreamInput* oldZipStream,c
                          0,0,input_ref _VIRTUAL_IN(virtual_in)), PATCH_OLDSTREAM_ERROR);
     check(oldStream.stream->streamSize==diffInfo.oldDataSize,PATCH_OLDDATA_ERROR);
     
-    check(Zipper_openStream(&out_newZip,outNewZipStream,(int)zipDiffData.newZipFileCount,
-                          (int)zipDiffData.newZipAlignSize,false,(int)zipDiffData.newCompressLevel,
-                          (int)zipDiffData.newCompressMemLevel),PATCH_OPENWRITE_ERROR);
+    check(Zipper_openStream(&out_newZip,outNewZipStream,(int)zipDiffData.newZipFileCount,(int)zipDiffData.newZipAlignSize,
+                            (int)zipDiffData.newCompressLevel,(int)zipDiffData.newCompressMemLevel,
+                            zipDiffData.normalizeSoPageAlign,zipDiffData.pageAlignCompatible,kPageAlign_inPatch),PATCH_OPENWRITE_ERROR);
     check(NewStream_open(&newStream,&out_newZip,&oldZip,  (size_t)diffInfo.newDataSize,
                          zipDiffData.newZipIsDataNormalized!=0,
                          zipDiffData.newZipCESize,zipDiffData.extraEdit,

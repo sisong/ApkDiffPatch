@@ -56,6 +56,8 @@ typedef struct ZipDiffData{
     uint32_t*   oldRefList;
     size_t      oldRefCount;
     uint32_t    oldCrc;
+    size_t      normalizeSoPageAlign;
+    bool        pageAlignCompatible;
     const hpatch_TStreamInput* hdiffzData;
     const hpatch_TStreamInput* extraEdit;
 //private:
@@ -70,6 +72,7 @@ bool ZipDiffData_openRead(ZipDiffData* self,const hpatch_TStreamInput* diffData,
                           hpatch_TDecompress* decompressPlugin);
 void ZipDiffData_close(ZipDiffData* self);
 
+static const TByte kPackedEmptyPrefix=(1<<7)|0;
 static const char* kExtraEdit = "ZiPat1&Extra";
 #define            kExtraEditLen  12  // ==strlen(kExtraEdit)
 //zip diff out:[head+hdiffzData+ ExtraData +SizeOf(ExtraData)4Byte+kExtraEdit]

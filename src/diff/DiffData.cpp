@@ -247,22 +247,18 @@ static bool _isAligned(const std::vector<ZipFilePos_t>& offsetList,ZipFilePos_t 
     }
     return true;
 }
-size_t getZipAlignSize_unsafe(UnZipper* zip){
-    //note: 该函数对没有Normalized的zip允许获取AlignSize失败;
-    int fileCount=UnZipper_fileCount(zip);
-    //ZipFilePos_t maxSkipLen=0;
-    ZipFilePos_t minOffset=1024*4; //set search max AlignSize
+
+size_t getBaseAlignSize_unsafe(UnZipper* self){
+    int fCount=UnZipper_fileCount(self);
+    ZipFilePos_t minOffset=1024*64; //set search max AlignSize
     std::vector<ZipFilePos_t> offsetList;
-    for (int i=0; i<fileCount; ++i){
-        bool isNeedAlign= (!UnZipper_file_isCompressed(zip,i));
-        if (!isNeedAlign)
-            continue;
-        ZipFilePos_t entryOffset=UnZipper_fileEntry_offset_unsafe(zip,i);
-        ZipFilePos_t lastEndPos=(i<=0)?0:UnZipper_fileEntry_endOffset(zip,i-1); //unsafe last可能并没有按顺序放置?
-        if (entryOffset<lastEndPos) return 0; //顺序有误;
-        ZipFilePos_t skipLen=entryOffset-lastEndPos;
-        //if (skipLen>maxSkipLen) maxSkipLen=skipLen;
-        ZipFilePos_t offset=UnZipper_fileData_offset(zip,i);
+    ZipFilePos_t lastDataPos=0;
+    for (int i=0; i<fCount; ++i) {
+        if (UnZipper_file_isCompressed(self,i)) continue;
+        const ZipFilePos_t dataPos=UnZipper_fileData_offset(self,i);
+        if (dataPos<=lastDataPos) return 0; // not normalized
+        ZipFilePos_t offset=dataPos-lastDataPos;
+        lastDataPos=dataPos;
         if (offset<minOffset) minOffset=offset;
         offsetList.push_back(offset);
     }
@@ -433,7 +429,16 @@ static bool _serializeZipDiffData(std::vector<TByte>& out_data,const ZipDiffData
         pushBack(out_data,(const TByte*)compressType,(const TByte*)compressType+compressTypeLen+1); //'\0'
     }
     //head info
+    //add an empty normalizeSoPageAlign tag prefix into packed PatchModel, starting with v1.8.0
+    #define kSoSmallPageAlignSize (1024*4)
+    size_t tagPageAlign=data->normalizeSoPageAlign;
+    tagPageAlign=(tagPageAlign==0)?kSoSmallPageAlignSize:((tagPageAlign==kSoSmallPageAlignSize)?0:tagPageAlign);
+    while (tagPageAlign>=kSoSmallPageAlignSize){
+        pushBack(out_data,&kPackedEmptyPrefix,1);
+        tagPageAlign/=4;
+    }
     packUInt(out_data,data->PatchModel);
+
     packUInt(out_data,data->newZipFileCount);
     packUInt(out_data,data->newZipIsDataNormalized);
     packUInt(out_data,data->newZipAlignSize);
@@ -504,5 +509,6 @@ bool serializeZipDiffData(std::vector<TByte>& out_data, UnZipper* newZip,UnZippe
     data.oldRefList=(uint32_t*)oldRefList.data();
     data.oldRefCount=oldRefList.size();
     data.oldCrc=OldStream_getOldCrc(oldZip,oldRefList.data(),oldRefList.size());
+    data.normalizeSoPageAlign=UnZipper_getHugePageAlign(newZip,newZipAlignSize);
     return _serializeZipDiffData(out_data,&data,hdiffzData,compressPlugin,newZip);
 }
