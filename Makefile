@@ -28,7 +28,7 @@ ZIPPATCH_OBJ := \
     HDiffPatch/libHDiffPatch/HPatch/patch.o \
     HDiffPatch/file_for_patch.o \
     HDiffPatch/libParallel/parallel_import.o \
-    HDiffPatch/libParallel/parallel_channel.o
+    HDiffPatch/libParallel/parallel_channel.o \
     $(ZLIB_OBJ)
 
 APKNORM_OBJ := \
