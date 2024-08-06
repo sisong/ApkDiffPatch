@@ -374,7 +374,7 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch,Z
     TByte* buf=self->_centralDirectory;
     const int fileCount=UnZipper_fileCount(self);
     size_t centralDirectory_size=_centralDirectory_size(self);
-    int curOffset=0;
+    ZipFilePos_t curOffset=0;
     memset(self->_dataDescriptors,kDataDescriptor_NO,fileCount);
     self->_dataDescriptorCount=0;
     *out_fileDataEndPos=0;
@@ -386,7 +386,7 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch,Z
         self->_fileCompressedSizes[i]=readUInt32(headBuf+20);
         writeUInt32_to(headBuf+20,0);//normalized 压缩大小占位;
         
-        uint32_t fileEntryOffset=readUInt32(headBuf+42);
+        ZipFilePos_t fileEntryOffset=readUInt32(headBuf+42);
         if (self->_fileEntryOffsets)
             self->_fileEntryOffsets[i]=fileEntryOffset;
         writeUInt32_to(headBuf+42,0);//normalized 文件Entry开始位置偏移;
@@ -406,7 +406,7 @@ static bool _UnZipper_vce_normalized(UnZipper* self,bool isFileDataOffsetMatch,Z
         if ((fileTag&(1<<3))!=0){//have descriptor?
             writeUInt16_to(headBuf+8,fileTag&(~(1<<3)));//normalized 标志中去掉data descriptor标识;
             const uint32_t crc=UnZipper_file_crc32(self,i);
-            const uint32_t uncompressedSize=UnZipper_file_uncompressedSize(self,i);
+            const ZipFilePos_t uncompressedSize=UnZipper_file_uncompressedSize(self,i);
             TByte buf[16];
             check(UnZipper_fileData_read(self,self->_fileDataOffsets[i]+self->_fileCompressedSizes[i],buf,buf+16));
             if ((readUInt32(buf)==crc)&&(readUInt32(buf+8)==uncompressedSize))
@@ -462,7 +462,7 @@ static bool _UnZipper_open_begin(UnZipper* self){
 static bool _UnZipper_open_fvce(UnZipper* self,ZipFilePos_t fvceSize,int fileCount){
     assert(self->_cache_fvce==0);
     self->_fvce_size=fvceSize;
-    size_t memSize=self->_fvce_size+1*fileCount+sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(uint32_t)*fileCount*2;
+    size_t memSize=self->_fvce_size+1*fileCount+sizeof(ZipFilePos_t)*(fileCount+1)+sizeof(ZipFilePos_t)*fileCount*2;
     if (self->_isSaved_fileEntryOffsets) memSize+=sizeof(ZipFilePos_t)*fileCount;
     self->_cache_fvce=(TByte*)malloc(memSize);
     check(self->_cache_fvce!=0);
@@ -472,8 +472,8 @@ static bool _UnZipper_open_fvce(UnZipper* self,ZipFilePos_t fvceSize,int fileCou
     self->_fileEntryOffsets=0;
     if (self->_isSaved_fileEntryOffsets){
         self->_fileEntryOffsets=(ZipFilePos_t*)curBuf; curBuf+=sizeof(ZipFilePos_t)*fileCount; }
-    self->_fileHeaderOffsets=(uint32_t*)curBuf; curBuf+=sizeof(uint32_t)*fileCount;
-    self->_fileCompressedSizes=(uint32_t*)curBuf;
+    self->_fileHeaderOffsets=(ZipFilePos_t*)curBuf; curBuf+=sizeof(ZipFilePos_t)*fileCount;
+    self->_fileCompressedSizes=(ZipFilePos_t*)curBuf;
     return true;
 }
 
@@ -897,6 +897,8 @@ bool Zipper_close(Zipper* self){
 
 #define isUsedMT(self) (self->_threadNum>1)
 
+#define kMaxExtraFieldLen ((1<<(sizeof(uint16_t)*8))-1)
+
 bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fileEntryMaxCount,
                        int ZipAlignSize,int compressLevel,int compressMemLevel,
                        size_t normalizeSoPageAlign,bool pageAlignCompatible,TPageAlignState pageAlignState){
@@ -915,19 +917,21 @@ bool Zipper_openStream(Zipper* self,const hpatch_TStreamOutput* zipStream,int fi
     assert(self->_stream==0);
     self->_stream=zipStream;
     
-    size_t memSize=kBufSize*2+sizeof(ZipFilePos_t)*(fileEntryMaxCount+1)+fileEntryMaxCount*sizeof(uint32_t);
+    size_t memSize=kBufSize*2+sizeof(ZipFilePos_t)*(fileEntryMaxCount*2+1);
     if (self->_pageAlignState==kPageAlign_inNormalize)
-        memSize+=sizeof(ZipFilePos_t)*fileEntryMaxCount;
+        memSize+=sizeof(uint16_t)*fileEntryMaxCount + (kMaxExtraFieldLen+1);
     TByte* buf=(TByte*)malloc(memSize);
     self->_buf=buf;
     self->_codeBuf=buf+kBufSize;
     size_t alignBuf=_hpatch_align_upper((buf+kBufSize*2),sizeof(ZipFilePos_t));
     self->_fileEntryOffsets=(ZipFilePos_t*)alignBuf; alignBuf+=sizeof(ZipFilePos_t)*fileEntryMaxCount;
+    self->_fileCompressedSizes=(ZipFilePos_t*)alignBuf; alignBuf+=sizeof(ZipFilePos_t)*fileEntryMaxCount;
+    memset(self->_fileCompressedSizes,0,fileEntryMaxCount*sizeof(ZipFilePos_t));//set error len
     self->_normalizeExtraFieldLens=0;
     if (self->_pageAlignState==kPageAlign_inNormalize){
-        self->_normalizeExtraFieldLens=(ZipFilePos_t*)alignBuf; alignBuf+=sizeof(ZipFilePos_t)*fileEntryMaxCount; }
-    self->_fileCompressedSizes=(uint32_t*)alignBuf;  
-    memset(self->_fileCompressedSizes,0,fileEntryMaxCount*sizeof(uint32_t));//set error len
+        self->_normalizeExtraFieldLens=(uint16_t*)alignBuf; alignBuf+=sizeof(uint16_t)*fileEntryMaxCount;
+        self->_normalizeExtraFieldBuf=(TByte*)alignBuf;
+    }
     self->_fileEntryCount=0;
     self->_fileEntryMaxCount=fileEntryMaxCount;
     self->_fileHeaderCount=0;
@@ -1039,6 +1043,29 @@ inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
     return true;
 }
 
+
+    #define ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID  ((uint16_t)0xd935)
+
+    static int _extraFieldNormalize(TByte* dstBuf,const TByte* extraFieldBuf,int extraFieldLen){
+        assert(extraFieldLen<=kMaxExtraFieldLen);
+        int result=0;
+        while (extraFieldLen>=4){// skip non-standard data when extraFieldLen<4
+            const uint16_t dataID=readUInt16(extraFieldBuf);
+            const int nodeSize=4+(int)readUInt16(extraFieldBuf+2);
+            if (nodeSize>extraFieldLen)
+                break; //non-standard data, skip remaining
+            if (((dataID==0)&&(nodeSize==4)) || (dataID==ALIGNMENT_ZIP_EXTRA_DATA_FIELD_HEADER_ID)){
+                //skip empty data
+            }else{ //copy original data
+                memcpy(dstBuf+result,extraFieldBuf,nodeSize);
+                result+=nodeSize;
+            }
+            extraFieldBuf+=nodeSize;
+            extraFieldLen-=nodeSize;
+        }
+        return result;
+    }
+
 #define assert_align(curPos,alignSize) assert(((curPos)%(alignSize))==0)
 
     //NOTE: used bit pos in generalPurposeBitFlag for saving isPageAlignSoFile tag
@@ -1062,17 +1089,10 @@ inline static bool _writeAlignSkip(Zipper* self,size_t alignSkipLen){
         return readUInt16(headBuf+30);
     }
 
-    static int _limitExtraFieldLen(const TByte* extraFieldBuf,int extraFieldLen){
-        int minExtraFieldLen=extraFieldLen;
-        while (minExtraFieldLen&&(extraFieldBuf[minExtraFieldLen-1]==0))
-            --minExtraFieldLen;
-        if (minExtraFieldLen) minExtraFieldLen+=8;
-        return minExtraFieldLen<extraFieldLen?minExtraFieldLen:extraFieldLen;
-    }
 static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,int srcFileIndex,bool isFullInfo){
     const TByte* const headBuf=fileHeaderBuf(srcZip,srcFileIndex);
     bool isCompressed=UnZipper_file_isCompressed(srcZip,srcFileIndex);
-    uint32_t compressedSize=self->_fileCompressedSizes[fileIndex];
+    ZipFilePos_t compressedSize=self->_fileCompressedSizes[fileIndex];
     if (self->_isUpdateIsCompress){
         self->_isUpdateIsCompress=false;
         if (isCompressed!=self->_newIsCompress){
@@ -1082,16 +1102,22 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
         }
     }
     const uint16_t fileNameLen=UnZipper_file_nameLen(srcZip,srcFileIndex);
-    const TByte* const extraFieldBuf=headBuf+46+fileNameLen;
+    const TByte* const fileNameBuf=headBuf+46;
+    const TByte* extraFieldBuf=fileNameBuf+fileNameLen;
     const uint16_t extraFieldLen=_file_extraFieldLen(srcZip,srcFileIndex);
-    uint16_t extraFieldLen_for_align=extraFieldLen;
+    uint16_t extraFieldBufLen=extraFieldLen;
+    if (self->_pageAlignState==kPageAlign_inNormalize){
+        extraFieldBufLen=_extraFieldNormalize(self->_normalizeExtraFieldBuf,extraFieldBuf,extraFieldLen);
+        extraFieldBuf=self->_normalizeExtraFieldBuf;
+    }
+    uint16_t extraFieldLen_for_align=extraFieldBufLen;
     const bool isNeedAlign=(!isFullInfo)&&(!isCompressed); //dir or 0 size file need align too, same AndroidSDK#zipalign
     size_t curAlignSize=self->_ZipAlignSize;
     bool   curPageAlignCompatible=(self->_pageAlignCompatible)&&(self->_pageAlignState==kPageAlign_inNormalize);
-    bool   isOldPatchSo=false;
+    bool   isOldPatchSo=false;    
     if (isNeedAlign){
         const size_t headInfoLen=30+fileNameLen;
-        const int skipLen_base=_getAlignSkipLen(self->_curFilePos+headInfoLen+extraFieldLen,curAlignSize);
+        const int skipLen_base=_getAlignSkipLen(self->_curFilePos+headInfoLen+extraFieldLen_for_align,curAlignSize);
         int skipLen=skipLen_base;
         if ((self->_pageAlignState==kPageAlign_inPatch)&& //only in patch compatible with old(<1.8.0) page-align
               ((self->_normalizeSoPageAlign!=curAlignSize)&&(self->_normalizeSoPageAlign==kSoSmallPageAlignSize)
@@ -1109,12 +1135,8 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
             }
             curAlignSize=self->_normalizeSoPageAlign;
         }
-        int minExtraFieldLen=extraFieldLen;
         if (curAlignSize!=self->_ZipAlignSize){//update skipLen
-            minExtraFieldLen=(self->_pageAlignState==kPageAlign_inNormalize)?
-                                    _limitExtraFieldLen(extraFieldBuf,extraFieldLen):extraFieldLen;
-            int skipSoLen=_getAlignSkipLen(self->_curFilePos+headInfoLen+minExtraFieldLen,curAlignSize);
-            skipSoLen -= extraFieldLen-minExtraFieldLen;
+            int skipSoLen=_getAlignSkipLen(self->_curFilePos+headInfoLen+extraFieldLen_for_align,curAlignSize);
             if (skipSoLen!=skipLen){
                 skipLen=skipSoLen;
                 ++self->_normalizeSoPageAlignCount;
@@ -1125,33 +1147,35 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
             if (fileNameLen+1>hpatch_kPathMaxSize) return false;
             // 第一个entry只能扩展其extraField来对齐;
             if ( (fileIndex==0) || ((!isOldPatchSo)&&curPageAlignCompatible&&(skipLen!=skipLen_base)) ){
-                assert(0<=(int)extraFieldLen+skipLen);
-                extraFieldLen_for_align=(uint16_t)((int)extraFieldLen+skipLen);
-                {// print WARNING 
+                assert(0<=(int)extraFieldLen_for_align+skipLen);
+                check(kMaxExtraFieldLen>=(int)extraFieldLen_for_align+skipLen);
+                extraFieldLen_for_align+=skipLen;
+                if ((extraFieldLen_for_align!=extraFieldLen)&&(self->_pageAlignState==kPageAlign_inNormalize)){// print WARNING 
+                    const int changedLen=extraFieldLen_for_align-extraFieldLen;
                     char fileName[hpatch_kPathMaxSize];
                     if (fileNameLen+1>hpatch_kPathMaxSize) return false;
                     memcpy(fileName,UnZipper_file_nameBegin(srcZip,srcFileIndex),fileNameLen);
                     fileName[fileNameLen]='\0';
                     printf("WARNING: \""); hpatch_printPath_utf8(fileName);
-                    if (skipLen>=0)
-                        printf("\" file's extraField adding %d bytes 0 for align!\n",skipLen);
+                    if (changedLen>=0)
+                        printf("\" file's extraField adding %d bytes 0 for align!\n",changedLen);
                     else
-                        printf("\" file's extraField deleted %d bytes 0 for align!\n",-skipLen);
+                        printf("\" file's extraField deleted %d bytes 0 for align!\n",-changedLen);
                 }
             }else{
-                extraFieldLen_for_align=minExtraFieldLen;
-                check(_writeAlignSkip(self,skipLen+(extraFieldLen-minExtraFieldLen)));//利用entry之间的空间对齐;
+                check(_writeAlignSkip(self,skipLen));//利用entry之间的空间对齐;
             }
         }
     }
     if (!isFullInfo){
         self->_fileEntryOffsets[fileIndex]=self->_curFilePos;
         if (self->_normalizeExtraFieldLens)
-            self->_normalizeExtraFieldLens[fileIndex]=extraFieldLen_for_align;
+            self->_normalizeExtraFieldLens[fileIndex]=self->_pageAlignCompatible?extraFieldLen_for_align:extraFieldBufLen;
     }else{
         if (self->_normalizeExtraFieldLens)
             extraFieldLen_for_align=self->_normalizeExtraFieldLens[fileIndex];
     }
+
     check(_writeUInt32(self,isFullInfo?kCENTRALHEADERMAGIC:kLOCALHEADERMAGIC));
     if (isFullInfo)
         check(_write(self,headBuf+4,2));//创建时版本;
@@ -1175,14 +1199,14 @@ static bool _write_fileHeaderInfo(Zipper* self,int fileIndex,UnZipper* srcZip,in
         check(_write(self,headBuf+34,42-34));//文件开始的分卷号--文件外部属性;
         check(_writeUInt32(self,self->_fileEntryOffsets[fileIndex]));//对应文件在文件中的偏移;
     }
-    check(_write(self,extraFieldBuf-fileNameLen,fileNameLen));//文件名称
+    check(_write(self,fileNameBuf,fileNameLen));//文件名称
     check(_write(self,extraFieldBuf,
-                ((extraFieldLen<extraFieldLen_for_align)?extraFieldLen:extraFieldLen_for_align)));//扩展字段;
-    if (extraFieldLen_for_align>extraFieldLen) //对齐;
-        check(_writeAlignSkip(self,extraFieldLen_for_align-extraFieldLen));
+                ((extraFieldBufLen<extraFieldLen_for_align)?extraFieldBufLen:extraFieldLen_for_align)));//扩展字段;
+    if (extraFieldLen_for_align>extraFieldBufLen) //对齐;
+        check(_writeAlignSkip(self,extraFieldLen_for_align-extraFieldBufLen));
     
     if (fileCommentLen>0)
-        check(_write(self,extraFieldBuf+extraFieldLen,fileCommentLen));//[+文件注释];
+        check(_write(self,fileNameBuf+fileNameLen+extraFieldLen,fileCommentLen));//[+文件注释];
     if (isNeedAlign)
         assert_align(self->_curFilePos,curAlignSize);//对齐检查;
     return  true;
@@ -1322,8 +1346,8 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     int curFileIndex=self->_fileEntryCount;
     check(curFileIndex < self->_fileEntryMaxCount);
     self->_fileEntryCount=curFileIndex+1;
-    self->_fileCompressedSizes[curFileIndex]=dstFileIsCompressed?(uint32_t)dataCompressedSize: //maybe temp value
-                                            (uint32_t)dataUncompressedSize; //finally value
+    self->_fileCompressedSizes[curFileIndex]=dstFileIsCompressed?(ZipFilePos_t)dataCompressedSize: //maybe temp value
+                                            (ZipFilePos_t)dataUncompressedSize; //finally value
     check(_write_fileHeaderInfo(self,curFileIndex,srcZip,srcFileIndex,false));//out file info
     
     append_state->self=self;
@@ -1361,13 +1385,14 @@ bool Zipper_file_append_beginWith(Zipper* self,UnZipper* srcZip,int srcFileIndex
     return true;
 }
 
-bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,uint32_t compressedSize){
+static
+bool _zipper_file_update_compressedSize(Zipper* self,int curFileIndex,ZipFilePos_t compressedSize){
     check(curFileIndex<self->_fileEntryCount);
     if (self->_fileCompressedSizes[curFileIndex]==compressedSize) return true;
     self->_fileCompressedSizes[curFileIndex]=compressedSize;
     
-    uint32_t fileEntryOffset=self->_fileEntryOffsets[curFileIndex];
-    uint32_t compressedSizeOffset=fileEntryOffset+18;
+    ZipFilePos_t fileEntryOffset=self->_fileEntryOffsets[curFileIndex];
+    ZipFilePos_t compressedSizeOffset=fileEntryOffset+18;
     
     if (compressedSizeOffset>=self->_curFilePos-self->_curBufLen){//all in cache
         TByte* buf=self->_buf+compressedSizeOffset-(self->_curFilePos-self->_curBufLen);
@@ -1427,8 +1452,8 @@ bool Zipper_file_append_end(Zipper* self){
     }
 #endif
     if (isCompressedFile){
-        assert(append_state->outputPos==(uint32_t)append_state->outputPos);
-        uint32_t compressedSize=(uint32_t)append_state->outputPos;
+        assert(append_state->outputPos==(ZipFilePos_t)append_state->outputPos);
+        ZipFilePos_t compressedSize=(ZipFilePos_t)append_state->outputPos;
         check_clear(_zipper_file_update_compressedSize(self,append_state->curFileIndex,compressedSize));
     }
 clear:
@@ -1482,7 +1507,7 @@ bool Zipper_endCentralDirectory_append(Zipper* self,UnZipper* srcZip){
     check(!self->_isUpdateCrc32);
     check(!self->_isUpdateIsCompress);
     const TByte* endBuf=srcZip->_endCentralDirectory;
-    uint32_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
+    ZipFilePos_t centralDirectory_size=self->_curFilePos-self->_centralDirectory_pos;
     
     check(_write(self,endBuf+0,8-0));//固定魔法值--Central Directory的开始分卷号;
     check(_writeUInt16(self,self->_fileEntryCount));

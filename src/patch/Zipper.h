@@ -47,8 +47,8 @@ typedef struct UnZipper{
     
     unsigned char*  _endCentralDirectory;
     unsigned char*  _centralDirectory;
-    uint32_t*       _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
-    uint32_t*       _fileCompressedSizes;
+    ZipFilePos_t*   _fileHeaderOffsets; //在_centralDirectory中的偏移位置;
+    ZipFilePos_t*   _fileCompressedSizes;
     unsigned char*  _dataDescriptors;
     int             _dataDescriptorCount;
     ZipFilePos_t*   _fileDataOffsets;
@@ -170,7 +170,8 @@ typedef struct Zipper{
     int             _fileEntryCount;
     size_t          _ZipAlignSize;
     size_t          _normalizeSoPageAlign;
-    ZipFilePos_t*   _normalizeExtraFieldLens; //only for normalize
+    uint16_t*       _normalizeExtraFieldLens; //only for normalize
+    TByte*          _normalizeExtraFieldBuf; //only for normalize
     bool            _pageAlignCompatible;
     int             _normalizeSoPageAlignCount;
     TPageAlignState _pageAlignState;
@@ -179,7 +180,7 @@ typedef struct Zipper{
     int             _fileHeaderCount;
     ZipFilePos_t    _centralDirectory_pos;
     ZipFilePos_t*   _fileEntryOffsets;
-    uint32_t*       _fileCompressedSizes;
+    ZipFilePos_t*   _fileCompressedSizes;
     unsigned char*  _codeBuf;
     Zipper_file_append_stream _append_stream;
     //mem
