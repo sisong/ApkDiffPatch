@@ -72,7 +72,10 @@ jobs:
           ndk-version: r16b
       - name: buildByAndroidNDK
         run: |
-          sudo apt install libncurses5
+          curl -O http://launchpadlibrarian.net/648013231/libtinfo5_6.4-2_amd64.deb
+          sudo dpkg -i libtinfo5_6.4-2_amd64.deb
+          curl -O http://launchpadlibrarian.net/648013227/libncurses5_6.4-2_amd64.deb
+          sudo dpkg -i libncurses5_6.4-2_amd64.deb
           git submodule update --init --recursive
           cd ./builds/android_ndk_jni_mk
           ndk-build NDK_PROJECT_PATH=. NDK_APPLICATION_MK=./Application.mk
