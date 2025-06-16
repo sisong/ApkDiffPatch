@@ -5,8 +5,6 @@ builds/vc/x64/
 *.filters
 *.layout
 *.depend
-builds/codeblocks/bin/
-builds/codeblocks/obj/
 builds/android_ndk_jni_mk/obj
 builds/android_ndk_jni_mk/libs
 xcshareddata
